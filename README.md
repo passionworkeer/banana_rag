@@ -13,6 +13,10 @@
 | 抓取调试日志 | `logs/playwright-cli-2026-06-03/` | 2026-06-03 Playwright 控制台与页面快照归档。 |
 | RAG 方法论与推荐方案 | `docs/rag-methods/` | 13 个范式级方法 + 总览 + 推荐组合,见 [docs/rag-methods/00-rag-methods-overview.md](docs/rag-methods/00-rag-methods-overview.md)。 |
 
+## 知识库 vault
+
+`knowledge-base/` 是基于 Karpathy LLM Wiki 方案的**独立 Obsidian vault**,与上表中的 `docs/`(企业 RAG 调研)、`scrapers/`(爬虫归档)、`logs/`(调试日志)互不相关。用 Obsidian 打开 `knowledge-base/` 时,只看到 `raw/` 和 `wiki/`,不会被其它目录污染。详见 [knowledge-base/README.md](knowledge-base/README.md)。
+
 ## 抓取工作流
 
 1. `scrapers/taobao-scraper/taobao_scraper.py`(Round 1)→ `data/taobao_bananain_products.{csv,json}`(51 条)
