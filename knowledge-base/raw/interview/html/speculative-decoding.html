@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Speculative Decoding 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./paged-attention.html">PagedAttention</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./kv-cache.html">KV Cache</a>
+    <a href="./quantization.html">量化</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">推理部署 · 推测解码</span>
+    <h1>Speculative Decoding：小模型起草 + 大模型验收</h1>
+    <p class="lead">用一个小的 draft model 先快速生成 K 个候选 token，再用大 target model 一次性 verify 整段。接受率 α 决定加速比。Leviathan 等 2023 提出，数学保证：接受 / 拒绝的分布与原大模型自回归生成完全一致。典型场景 2-3x 加速，且不损失质量。</p>
+    <div class="pillrow">
+      <span class="pill">Draft Model</span><span class="pill">Target Model</span><span class="pill">Acceptance Rate α</span><span class="pill">Greedy / Sampling</span><span class="pill">EAGLE / Medusa</span><span class="pill">Self-Speculative</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Speculative Decoding 流程</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 380" width="100%" height="auto" role="img" aria-label="Speculative decoding">
+          <defs>
+            <marker id="arrow-sd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <!-- Step 1: Draft -->
+          <rect x="40" y="40" width="540" height="100" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="310" y="68" text-anchor="middle" font-size="15" font-weight="700">① Draft：小型 M_q 快速生成 K=4 个 token</text>
+          <text x="310" y="90" text-anchor="middle" font-size="12" fill="#475569">"今天天气" → ["晴", "朗", "，", "适合"]</text>
+          <text x="310" y="110" text-anchor="middle" font-size="12" fill="#475569">小模型 1 次生成 K 个，比大模型快 10-20x</text>
+
+          <!-- Step 2: Verify -->
+          <rect x="600" y="40" width="540" height="100" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="870" y="68" text-anchor="middle" font-size="15" font-weight="700">② Verify：大型 M_p 并行验证 K 个 token</text>
+          <text x="870" y="90" text-anchor="middle" font-size="12" fill="#475569">一次前向算出 K 个位置的概率分布</text>
+          <text x="870" y="110" text-anchor="middle" font-size="12" fill="#475569">配合 KV Cache 几乎免费</text>
+
+          <!-- Step 3: Accept/Reject -->
+          <rect x="40" y="160" width="1100" height="100" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="185" text-anchor="middle" font-size="15" font-weight="700">③ Accept / Reject 决策</text>
+
+          <text x="80" y="215" font-size="13" fill="#0f172a">逐位检查：r ≤ p(x|x₁..xₜ₋₁) / q(x|x₁..xₜ₋₁) → 接受</text>
+          <text x="80" y="235" font-size="13" fill="#0f172a">否则拒绝；用 rejection sampling 从调整分布中重采样</text>
+
+          <text x="80" y="260" font-size="12" fill="#059669" font-weight="600">本例：4 个 token 全部接受 → 一次 verify = 大模型普通 4 步</text>
+
+          <!-- Example timeline -->
+          <text x="40" y="295" font-size="14" font-weight="700" fill="#0f172a">加速比：4 个 token 接受 = 大模型省 3 次前向</text>
+
+          <rect x="40" y="310" width="60" height="30" fill="#86efac"/>
+          <text x="70" y="330" text-anchor="middle" font-size="11" fill="#14532d">Draft</text>
+
+          <rect x="100" y="310" width="200" height="30" fill="#93c5fd"/>
+          <text x="200" y="330" text-anchor="middle" font-size="11" fill="#1e3a8a">Target 1 次 verify（≈普通 4 步）</text>
+
+          <rect x="300" y="310" width="60" height="30" fill="#86efac"/>
+          <text x="330" y="330" text-anchor="middle" font-size="11" fill="#14532d">Draft</text>
+
+          <rect x="360" y="310" width="200" height="30" fill="#93c5fd"/>
+          <text x="460" y="330" text-anchor="middle" font-size="11" fill="#1e3a8a">Target verify</text>
+
+          <text x="600" y="330" text-anchor="middle" font-size="13" fill="#059669" font-weight="600">理论加速 2-3x（α × K 决定）</text>
+
+          <line x1="580" y1="90" x2="600" y2="90" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-sd)"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Acceptance Rate α 决定加速</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\text{加速比} \approx \tfrac{1}{1 + \alpha - \alpha \cdot c}$$</p>
+        <p class="mathline">α = 接受率，c = 草稿/验证成本比</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">α=1.0, c=0.1, K=4 → ~2.4x</p>
+        <p class="mathline">α=0.7, c=0.1, K=4 → ~1.7x</p>
+        <p class="mathline">α=0.5, c=0.1, K=4 → ~1.4x</p>
+        <p class="mathnote">α 取决于 draft 和 target 模型的相似度。同一系列小/大模型（Llama-7B 起草 / Llama-70B 验收）α 普遍 0.7+；跨模型（GPT-2 起草 / LLaMA 验收）α 可能 &lt;0.4，反而负优化。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、Greedy 与 Sampling 公式</h2>
+      <div class="mathbox">
+        <p class="mathline"><strong>Greedy 模式：</strong></p>
+        <p class="mathline">若 $q(x) = p(x) \Rightarrow$ 接受</p>
+        <p class="mathline">否则拒绝并取 p(x) 最大</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline"><strong>Sampling 模式：</strong></p>
+        <p class="mathline">若 $r < p(x) / q(x) \Rightarrow$ 接受</p>
+        <p class="mathline">否则从 $\max(0,\, p - q)$ 归一化重采样</p>
+        <p class="mathnote">两种模式都数学保证输出分布与原大模型完全一致（Leviathan 2023 定理 1）。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、4 种主流变体</h2>
+      <table>
+        <thead><tr><th>变体</th><th>Draft 来源</th><th>加速比</th><th>是否需要训模型</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Classic SpD</strong></td><td>独立小模型（Llama-7B/70B）</td><td>2-3x</td><td>否（用现成小模型）</td></tr>
+          <tr><td><strong>Medusa</strong></td><td>在 target 上加若干 Medusa head（轻量 FFN）</td><td>2-3x</td><td>是（训 head）</td></tr>
+          <tr><td><strong>EAGLE / EAGLE-2</strong></td><td>target 上一层小 transformer 预测下一 token</td><td>2-4x</td><td>是（训小 transformer）</td></tr>
+          <tr><td><strong>Self-Speculative</strong></td><td>target 自身 early exit / 浅层</td><td>1.5-2x</td><td>否（结构改造）</td></tr>
+          <tr><td><strong>Lookahead Decoding</strong></td><td>Jacobi 迭代同时猜多 token</td><td>1.5-2x</td><td>否</td></tr>
+          <tr><td><strong>Draft Tree</strong></td><td>beam-like 多路径 draft 提升 α</td><td>3-5x</td><td>是</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、加速比计算示例</h2>
+      <div class="mathbox">
+        <p class="mathline">draft 7B：~30ms/步（生成 4 token）</p>
+        <p class="mathline">target 70B：~200ms/步</p>
+        <p class="mathline">α = 0.7</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">无 SpD：800ms 生成 4 token</p>
+        <p class="mathline">SpD：30 + 200 = 230ms（α 0.7 下期望）</p>
+        <p class="mathline">加速 ≈ 800/230 = 3.5x</p>
+        <p class="mathnote">α 0.7 实际能拿到，是因为小模型和大模型在同一任务上"想得差不多"。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>六、Speculative Decoding 适用场景</h2>
+      <ul>
+        <li><strong>同系列大/小模型</strong>：Qwen-1.5B + Qwen-72B、LLaMA-7B + LLaMA-70B</li>
+        <li><strong>长输出生成</strong>：加速比在长文本上更明显</li>
+        <li><strong>批处理高并发</strong>：vLLM + SpD 叠满</li>
+        <li><strong>延迟敏感</strong>：交互式对话、代码补全</li>
+        <li><strong>数学保证</strong>：Greedy/Sampling 模式输出分布与原模型一致</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>七、Speculative Decoding 不适用场景</h2>
+      <ul>
+        <li><strong>跨系列模型</strong>：GPT-2 + LLaMA 接受率 &lt; 0.4 反而拖慢</li>
+        <li><strong>短回答</strong>：加速 &lt; 2x 不值得工程复杂度</li>
+        <li><strong>极长 prefix</strong>：draft 也要处理长 context，自身慢</li>
+        <li><strong>采样温度高</strong>：低概率 token 增多，α 下降</li>
+        <li><strong>无小模型可用</strong>：训 Medusa/EAGLE head 有数据成本</li>
+      </ul>
+      <div class="callout">判断口诀：有同系列小模型 + 接受率 0.6+ + 长输出 → 上 SpD；没有同系列小模型 → 训 Medusa head 或放弃。</div>
+    </article>
+
+    <article class="card full">
+      <h2>八、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Speculative Decoding 数学保证是什么？</h3>
+          <p>A：Leviathan 2023 定理 1 证明：用 draft 模型生成 + rejection sampling 验证，最终输出分布与原大模型自回归生成完全相同。所以"用大模型小模型配合"生成的结果就是"用大模型自己生成"的结果，无损加速。</p>
+        </div>
+        <div>
+          <h3>Q2：为什么 Medusa 也能用？它没独立 draft 模型？</h3>
+          <p>A：Medusa 在 target LLM 上额外训练若干"轻量 FFN 头"，每个头预测某个未来位置的 token。这些 head 极小（每个几 MB），可一次性前向算出 K 个候选 token，配合 tree attention 让 target 一次 verify 多分支。优点：单模型部署；缺点：需要训头、且 α 略低于独立 draft。</p>
+        </div>
+        <div>
+          <h3>Q3：EAGLE 和 Medusa 区别？</h3>
+          <p>A：Medusa 用额外 FFN 头预测 token；EAGLE 在 target 倒数第二层加一个小 transformer，用 hidden state 而非 embedding 预测下一 token。EAGLE α 通常更高（用更深层特征）、训练稍慢。</p>
+        </div>
+        <div>
+          <h3>Q4：接受率 α 怎么估？</h3>
+          <p>A：在小规模验证集上跑 draft + target 配对，统计"草稿 token 被 target 接受的比率"。α 0.7+ 算优秀，0.5-0.7 可用，&lt;0.5 不建议上 SpD。生产中 α 随 prompt 分布变化，需要监控漂移。</p>
+        </div>
+        <div>
+          <h3>Q5：SpD 适合 batch 大小为 1 的场景吗？</h3>
+          <p>A：特别适合。batch=1 时大模型显存利用率极低（KV Cache 没复用），target verify 算力浪费严重。SpD 让一次 verify 处理 K 个 token，GPU 利用率显著提升。生产交互式对话 + SpD 是经典组合。</p>
+        </div>
+        <div>
+          <h3>Q6：SpD 与 KV Cache 优化冲突吗？</h3>
+          <p>A：不冲突。SpD 走的是 target 模型的 KV Cache，vLLM 的 PagedAttention 仍生效。实际生产中 vLLM + SpD 一起用：PagedAttention 省显存、SpD 省计算步骤。</p>
+        </div>
+        <div>
+          <h3>Q7：SpD 与量化冲突吗？</h3>
+          <p>A：可能略冲突。SpD 假设 draft 和 target 输出分布接近；target 量化到 INT4 时分布会偏移，α 可能下降 5-10%。需要重新校准 draft 阈值或选 FP8 target。</p>
+        </div>
+        <div>
+          <h3>Q8：怎么选 K（草稿 token 数）？</h3>
+          <p>A：K=4-8 是经验 sweet spot。K 太小 → verify 收益小；K 太大 → draft 阶段后期准确率下降，α 衰减。生产中根据 α 动态调 K：α 高时 K 调大、α 低时 K 调小。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>九、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Speculative Decoding 用小模型先草拟 K 个 token，大模型一次性 verify。接受率 α 决定加速比，2-3x 常见。关键是"数学保证输出分布与原大模型一致"——无损加速。变体有 Medusa（target 上加 head）、EAGLE（小 transformer 预测）、Self-Speculative（early exit）。配合 vLLM + PagedAttention + 量化是当前推理优化四件套。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（大模型 decode 阶段 GPU 利用率低）→ 经典 3 步流程（draft / verify / accept-reject）→ 接受率 α 与加速比公式 → Greedy / Sampling 公式 → 4 类变体（Classic / Medusa / EAGLE / Self-Speculative）→ 适用边界 → 与 PagedAttention / 量化 / FlashAttention 组合。能讲清"为什么数学保证无损"、"为什么 α 决定加速"、"为什么 Medusa 用 head 而非独立模型"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"为什么从普通推理切到 SpD"——比如客服对话场景 batch=1，大模型 70B 一次 decode 200ms，QPS 受限；加 Qwen-1.5B 起草后，α=0.75，verify 一次 200ms 处理 3-4 个 token，端到端 1 token 60ms，QPS 提升 3x 用户无感。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>SpD 不是银弹：① 需要同系列小模型；② α &lt; 0.5 时反优化；③ 短回答收益小；④ 量化时 α 下降；⑤ Medusa/EAGLE 需要训 head。诚实说"SpD 是 batch=1 + 长输出场景的杀手锏，但不是所有场景都适用"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Speculative Decoding</td><td>小模型起草 + 大模型 verify 的无损加速</td></tr>
+          <tr><td>Draft Model M_q</td><td>小模型，快速生成 K 个候选 token</td></tr>
+          <tr><td>Target Model M_p</td><td>大模型，一次 verify 整段</td></tr>
+          <tr><td>Acceptance Rate α</td><td>草稿 token 被 target 接受的比例</td></tr>
+          <tr><td>Rejection Sampling</td><td>r &lt; p/q 接受，否则从 max(0, p-q) 重采样</td></tr>
+          <tr><td>数学保证</td><td>输出分布与原大模型自回归完全相同</td></tr>
+          <tr><td>Medusa</td><td>在 target 上加多个轻量 FFN 头预测未来 token</td></tr>
+          <tr><td>EAGLE</td><td>用 target 倒数第二层 hidden state 预测下一 token</td></tr>
+          <tr><td>Self-Speculative</td><td>target 自身 early exit 起草</td></tr>
+          <tr><td>Lookahead Decoding</td><td>Jacobi 迭代同时猜多 token</td></tr>
+          <tr><td>Tree Attention</td><td>verify 多个 draft 路径时合并 attention</td></tr>
+          <tr><td>α 阈值</td><td>α ≥ 0.6 算可用，0.7+ 优秀</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

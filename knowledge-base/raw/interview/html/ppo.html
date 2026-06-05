@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PPO 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #ddd6fe;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rlhf.html">RLHF</a>
+    <a href="./grpo.html">GRPO</a>
+    <a href="./reward-model.html">Reward Model</a>
+    <a href="./dpo-advanced.html">DPO 进阶</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">对齐训练 · 策略优化</span>
+    <h1>PPO：让 LLM 对齐最稳的强化学习算法</h1>
+    <p class="lead">Proximal Policy Optimization。RLHF 阶段 3 的事实标准。本页讲清 4 件事：策略梯度从哪里来、为什么需要重要性采样、clip objective 在限制什么、GAE 在估计什么。配合 GAE、value network、KL 约束一起说，就能把"为什么 PPO 适合 LLM"讲透。</p>
+    <div class="pillrow">
+      <span class="pill">Policy Gradient</span><span class="pill">Importance Sampling</span><span class="pill">Clip Objective</span><span class="pill">GAE</span><span class="pill">Value Network</span><span class="pill">On-Policy</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、策略梯度定理</h2>
+      <div class="mathbox">
+        <p class="mathline">目标：$$J(\theta) = \mathbb{E}_{\tau \sim \pi_{\theta}}\!\left[\, R(\tau) \,\right]$$</p>
+        <p class="mathline">$$\nabla_{\theta} J(\theta) = \mathbb{E}_{\tau \sim \pi_{\theta}}\!\left[\, \nabla_{\theta} \log \pi_{\theta}(\tau) \cdot R(\tau) \,\right]$$</p>
+        <p class="mathline">每步展开：$$\nabla_{\theta} J(\theta) = \mathbb{E}\!\left[\, \sum_{t} \nabla_{\theta} \log \pi_{\theta}(a_{t} \mid s_{t}) \cdot R_{t} \,\right]$$</p>
+        <p class="mathnote">直观：奖励 R 大的轨迹，其 log-prob 沿梯度方向增大；反之减小。但直接用 R 方差极大，所以引入 baseline 和 advantage。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Baseline 与 Advantage</h2>
+      <div class="mathbox">
+        <p class="mathline">$$A(s, a) = Q(s, a) - V(s)$$</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">$$V(s) = \mathbb{E}\!\left[\, \sum_{t' \geq t} r_{t'} \,\Big|\, s_{t} = s \,\right]$$</p>
+        <p class="mathline">A 解释：在状态 s 下选 a 比平均好多少</p>
+        <p class="mathnote">减 baseline 不改期望、但大幅降方差。PPO 中 V 由 value network V_ψ(s) 拟合；优势 = 实际回报 − V 估计。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、重要性采样</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\mathbb{E}_{x \sim p}\!\left[\, f(x) \,\right] = \mathbb{E}_{x \sim q}\!\left[\, f(x) \cdot \tfrac{p(x)}{q(x)} \,\right]$$</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">PPO 用旧策略采样：</p>
+        <p class="mathline">$$J(\theta) = \mathbb{E}_{\tau \sim \pi_{\text{old}}}\!\left[\, r_{t}(\theta) \cdot A_{t} \,\right]$$</p>
+        <p class="mathline">$$r_{t}(\theta) = \frac{\pi_{\theta}(a_{t} \mid s_{t})}{\pi_{\text{old}}(a_{t} \mid s_{t})}$$</p>
+        <p class="mathnote">为什么需要：策略梯度是 on-policy，理论上每次更新都要重采样。重要性采样让旧数据能复用，提升样本效率。但新旧策略不能差太远——这就引出 clip。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、Clip Objective（PPO 核心）</h2>
+      <div class="mathbox">
+        <p class="mathline">$$L^{\text{CLIP}}(\theta) = \mathbb{E}_{t}\!\left[\, \min\!\left(\, r_{t}(\theta) \cdot A_{t},\; \text{clip}(r_{t}(\theta),\, 1 - \varepsilon,\, 1 + \varepsilon) \cdot A_{t} \,\right) \,\right]$$</p>
+        <p class="mathline">$$\varepsilon = 0.1 \sim 0.2$$</p>
+        <p class="mathnote">clip 把 r<sub>t</sub> 限制在 [1−ε, 1+ε]，即新旧策略概率比不能差超过 20%。min 保证 A&gt;0 时不激励 r 过大、A&lt;0 时不激励 r 过小。直白说：步子迈小一点，别一次改太多。</p>
+      </div>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 280" width="100%" height="auto" role="img" aria-label="PPO clip visualization">
+          <defs>
+            <marker id="arrow-ppo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+          <line x1="60" y1="240" x2="1140" y2="240" stroke="#475569" stroke-width="2"/>
+          <line x1="60" y1="20" x2="60" y2="240" stroke="#475569" stroke-width="2"/>
+          <text x="20" y="30" font-size="12" fill="#475569">A</text>
+          <text x="1140" y="260" font-size="12" fill="#475569">r(θ)</text>
+          <text x="60" y="260" font-size="11" text-anchor="middle" fill="#475569">0</text>
+          <text x="595" y="260" font-size="11" text-anchor="middle" fill="#475569">1</text>
+          <text x="1135" y="260" font-size="11" text-anchor="middle" fill="#475569">1+ε</text>
+
+          <line x1="60" y1="240" x2="595" y2="60" stroke="#10b981" stroke-width="3" marker-end="url(#arrow-ppo)"/>
+          <text x="320" y="150" font-size="13" fill="#10b981" font-weight="600">未 clip: A &gt; 0 时 r 越大越好</text>
+
+          <line x1="60" y1="240" x2="1130" y2="60" stroke="#a78bfa" stroke-width="3" stroke-dasharray="6 4"/>
+          <line x1="595" y1="240" x2="1130" y2="60" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-ppo)"/>
+          <text x="850" y="150" font-size="13" fill="#7c3aed" font-weight="600">clip 截断在 1+ε</text>
+
+          <line x1="60" y1="240" x2="60" y2="60" stroke="#a78bfa" stroke-width="3"/>
+          <line x1="60" y1="60" x2="60" y2="240" stroke="#a78bfa" stroke-width="3"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>五、PPO 完整损失（4 项）</h2>
+      <div class="mathbox">
+        <p class="mathline">$$L^{\text{PPO}}(\theta) = \mathbb{E}_{t}\!\left[\, L^{\text{CLIP}}(\theta) - c_{1} \cdot L^{\text{VF}}(\theta) + c_{2} \cdot S[\pi_{\theta}](s_{t}) \,\right]$$</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">$L^{\text{CLIP}}$：策略目标（上面）</p>
+        <p class="mathline">$$L^{\text{VF}} = \left(V_{\theta}(s_{t}) - R_{t}\right)^{2} \quad \text{（value network MSE）}$$</p>
+        <p class="mathline">$S[\pi]$：熵正则，鼓励探索</p>
+        <p class="mathline">$c_{1} \approx 1$，$c_{2} \approx 0.01$</p>
+        <p class="mathnote">3 个项各管一摊：策略项管"动作选得好不好"、value 项管"baseline 估得准不准"、熵项管"别过早收敛到单一动作"。LLM 上熵项有时省略。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>六、GAE（Generalized Advantage Estimation）</h2>
+      <div class="mathbox">
+        <p class="mathline">$$A^{\text{GAE}}_{t} = \sum_{l=0}^{\infty} (\gamma \lambda)^{l} \cdot \delta_{t+l}$$</p>
+        <p class="mathline">$$\delta_{t} = r_{t} + \gamma \cdot V(s_{t+1}) - V(s_{t})$$</p>
+        <p class="mathline">$\gamma \in [0, 1]$：discount</p>
+        <p class="mathline">$\lambda \in [0, 1]$：GAE 平滑系数</p>
+        <p class="mathnote">λ=0 → 1-step TD（低方差、高偏差）；λ=1 → Monte Carlo（高方差、低偏差）；中间值是 trade-off。LLM 训练中 λ=0.95、γ=1 是常见配置。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>七、PPO 在 LLM 上的特点</h2>
+      <ul>
+        <li><strong>On-Policy</strong>：每轮用最新策略采样，off-policy 数据不能用</li>
+        <li><strong>小步更新</strong>：clip 限制每次更新幅度，配合多次 epoch 旧数据</li>
+        <li><strong>需要 V 网络</strong>：占一份显存，与策略各 14GB（7B）</li>
+        <li><strong>需要 Reference</strong>：KL 惩罚的参考</li>
+        <li><strong>稀疏奖励</strong>：整句生成完才有 r<sub>T</sub>，中间 token 无奖励</li>
+        <li><strong>长序列</strong>：T=2048 时一条 trajectory 占大量显存</li>
+      </ul>
+      <div class="callout">这些特点导致 PPO 在 LLM 上显存极贵、训练极慢。GRPO、REINFORCE++、RLOO 等"免 critic"方案爆火，本质都是"砍掉 value network 砍一半显存"。</div>
+    </article>
+
+    <article class="card full">
+      <h2>八、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：PPO 为什么比 REINFORCE 稳？</h3>
+          <p>A：REINFORCE 用整条轨迹回报 R<sub>t</sub>，方差巨大。PPO 引入 ① 优势函数 A=Q−V 减 baseline 降方差；② 重要性采样复用旧数据；③ clip 限制策略步长防崩。三件套一起把方差和稳定性都拉上来。</p>
+        </div>
+        <div>
+          <h3>Q2：为什么需要价值网络 V？</h3>
+          <p>A：V(s) 作为 baseline，让优势函数 A=r−V 描述"相对好坏"而非绝对回报，大幅降方差。V_ψ 单独训练，用 MSE 拟合实际回报。</p>
+        </div>
+        <div>
+          <h3>Q3：clip 系数 ε 怎么选？</h3>
+          <p>A：经验 0.1-0.2。ε 大 → 允许大步更新（激进、可能崩）；ε 小 → 步子小（保守、训练慢）。0.2 是 OpenAI 默认。也有 adaptive KL 替代 clip（早期 PPO 论文）。</p>
+        </div>
+        <div>
+          <h3>Q4：为什么 PPO 是 on-policy？</h3>
+          <p>A：重要性采样理论上支持 off-policy，但新旧策略差太远时 ratio 噪声爆炸。PPO 通过 clip 限制这个差距在 [1−ε, 1+ε]，所以实际只能在"接近 on-policy"时稳定运行。每个 PPO epoch 之前会重采样。</p>
+        </div>
+        <div>
+          <h3>Q5：KL 惩罚和 clip 是冗余的吗？</h3>
+          <p>A：不一样。clip 限制单步更新幅度（局部）；KL 惩罚限制与 reference 的总偏离（全局）。LLM RLHF 中 KL 必加（防 SFT 能力遗忘），clip 必加（防训练崩）。两者互补。</p>
+        </div>
+        <div>
+          <h3>Q6：PPO 在 LLM 上最大痛点？</h3>
+          <p>A：4 个模型同时跑（policy / ref / RM / value），显存 4×14GB=56GB 起步（7B）；reward 稀疏只有末 token 有分；长序列下 trajectory 占大量显存；策略和 RM 互相博弈易震荡。</p>
+        </div>
+        <div>
+          <h3>Q7：GRPO 和 PPO 核心区别？</h3>
+          <p>A：GRPO 砍掉 value network，对同 prompt 采样 N 个回答，用组内归一化分数当 advantage。显存从 4 模型降到 2 模型，且 advantage 估计更稳定（组内对比天然去偏差）。</p>
+        </div>
+        <div>
+          <h3>Q8：LLM 上 PPO 的 GAE 怎么用？</h3>
+          <p>A：每个生成 token 位置算 δ<sub>t</sub> = r<sub>t</sub> + γV(s<sub>t+1</sub>) − V(s<sub>t</sub>)，但中间 token 无 reward（r<sub>t</sub>=0），只有末 token 有 r<sub>T</sub>。GAE 从 t=T 反向传播回算各步 advantage。γ=1、λ=0.95 常见。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>九、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>PPO 是 on-policy 的策略梯度算法，三件套：① 重要性采样复用旧数据；② clip objective 限制单步更新幅度在 [1−ε, 1+ε]；③ GAE 用 value network 估计 advantage 降方差。LLM RLHF 中 PPO 是标准选择，但 4 模型显存贵、训练不稳，所以工业界演化出 GRPO/REINFORCE++/DPO 等替代。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从策略梯度定理出发 → 引出 baseline 和 advantage → 解释重要性采样（为什么能复用旧数据）→ clip 在限制什么（步长）→ GAE 在估计什么（多步 advantage 平滑）→ LLM 上的具体改动（4 模型、稀疏 reward、KL 约束）→ 与 GRPO 对比（为什么免 critic 反而更好）。能讲清"为什么 LLM 上 PPO 这么贵"立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：踩坑案例</h3>
+          <p>讲一次真实事故：① clip 系数设 0.5，PPO 步子太大，模型崩坏；② value network 没 warmup，前 1000 步 advantage 估计全错；③ KL 系数设 0.001，模型完全偏离 SFT，生成乱码；④ reward 模型有 bug，PPO 学到了"刷 reward 分数"的能力。讲排查过程（看 ratio 分布、KL 曲线、reward 趋势）立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道 PPO 局限</h3>
+          <p>PPO 不是银弹：① 4 模型显存贵；② 训练不稳定（reward hacking）；③ on-policy 样本效率低；④ GAE 实现复杂；要诚实说"PPO 在工业界正被 GRPO/RLOO 部分替代，但仍是 RLHF 的 baseline 算法"。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>PPO</td><td>Proximal Policy Optimization，on-policy 策略梯度算法，clip objective</td></tr>
+          <tr><td>策略梯度定理</td><td>∇J = E[∇log π · R]，把奖励梯度推到动作概率上</td></tr>
+          <tr><td>Importance Sampling</td><td>用旧策略分布采的样本估计新策略期望，乘 ratio 校正</td></tr>
+          <tr><td>Clip Objective</td><td>min(r·A, clip(r, 1−ε, 1+ε)·A)，限制单步更新</td></tr>
+          <tr><td>Advantage A</td><td>A = Q − V，扣掉 baseline 后的相对优势</td></tr>
+          <tr><td>Value Network V_ψ</td><td>估计状态值 V(s)，作为 baseline</td></tr>
+          <tr><td>GAE</td><td>广义优势估计，λ-平滑多步 TD 残差</td></tr>
+          <tr><td>Entropy Bonus</td><td>熵正则项鼓励探索，防止过早收敛</td></tr>
+          <tr><td>On-Policy</td><td>必须用当前策略采样，PPO 通过 clip 限制半 off-policy</td></tr>
+          <tr><td>PPO Epoch</td><td>同一批数据上 PPO 多次更新（一般 3-4 epoch）</td></tr>
+          <tr><td>PPO-Clip vs PPO-Penalty</td><td>两种变体：clip 截断 vs KL 自适应惩罚</td></tr>
+          <tr><td>Reward Hacking</td><td>PPO 通过刷 RM 分数达成高奖励，KL 项防过度</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

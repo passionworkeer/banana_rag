@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Distillation 蒸馏 知识页</title>
+  <style>
+    :root{
+      --bg:#faf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #c8b9ee;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./lora.html">LoRA</a>
+    <a href="./reasoning-models.html">Reasoning</a>
+    <a href="./quantization.html">量化</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">训练范式 · 知识迁移</span>
+    <h1>Distillation：把大模型的能力"压"进小模型</h1>
+    <p class="lead">模型蒸馏（Distillation）让小模型（Student）模仿大模型（Teacher）的输出分布，把 Teacher 的"暗知识（dark knowledge）"——不只是 hard label，还有概率分布、中间表征、推理过程——学到。Hinton 2015 经典 KD → BERT-Pkd → MiniLLM → DeepSeek R1-Distill → Self-Distillation。本页把"原理 → 5 大类方法 → 与 SFT 区别 → R1-Distill 实战 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Logit KD</span><span class="pill">Feature KD</span><span class="pill">Self-Distill</span><span class="pill">R1-Distill</span><span class="pill">Dark Knowledge</span><span class="pill">Temperature</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要 Distillation</h2>
+      <ul>
+        <li><strong>部署成本</strong>：7B 模型在端侧 / 边缘可跑，70B 不行</li>
+        <li><strong>推理速度</strong>：小模型 latency 3-5x 低于大模型</li>
+        <li><strong>暗知识（Dark Knowledge）</strong>：Teacher 的 soft label 比 hard label 携带更多信息（哪些"近似错误"被压低）</li>
+        <li><strong>能力迁移</strong>：Reasoning、Code、Math 能力可从 671B 蒸馏到 1.5B-32B</li>
+        <li><strong>与量化互补</strong>：先蒸馏到小模型，再 INT4 量化，可保持 90%+ Teacher 能力</li>
+      </ul>
+      <div class="callout">关键认知：蒸馏 ≠ SFT。SFT 学的是"输入 → 输出"的硬标签，蒸馏学的是"Teacher 的完整概率分布"。SFT 让模型"会答"，蒸馏让模型"会思考"。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、经典 Logit KD（Hinton 2015）</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>核心公式</strong></p>
+        <p class="mathline">L<sub>KD</sub> = (1 − α) · L<sub>CE</sub>(z<sub>S</sub>, y) + α · T² · L<sub>KL</sub>(softmax(z<sub>S</sub>/T) ‖ softmax(z<sub>T</sub>/T))</p>
+        <p class="mathnote">其中：</p>
+        <p class="mathline">z<sub>S</sub>, z<sub>T</sub>：Student / Teacher 的 logits</p>
+        <p class="mathline">T：温度（&gt;1 软化分布，揭示暗知识）</p>
+        <p class="mathline">α：蒸馏损失权重（典型 0.5-0.9）</p>
+        <p class="mathline">L<sub>CE</sub>：与 hard label 的交叉熵（保 SFT 能力）</p>
+        <p class="mathline">L<sub>KL</sub>：KL 散度（与 Teacher 软分布对齐）</p>
+        <p class="mathnote"><strong>关键</strong>：温度 T 越高，分布越软、相对关系越清晰（如"猫 0.7 / 狗 0.2"比"猫 1.0"告诉 Student 更多相似度信息）。T=1 等价标准 softmax，T=20 是常见选择。乘 T² 是补偿软化后的梯度量级。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>三、Distillation 整体流程</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 480" width="100%" height="auto" role="img" aria-label="Distillation flow">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <text x="290" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Teacher（大模型，冻结）</text>
+          <text x="900" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Student（小模型，训练中）</text>
+
+          <!-- Teacher side -->
+          <rect x="180" y="70" width="220" height="60" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="290" y="98" text-anchor="middle" font-size="13" font-weight="700">Input x</text>
+          <text x="290" y="118" text-anchor="middle" font-size="11" fill="#475569">（query / prompt）</text>
+
+          <rect x="180" y="160" width="220" height="70" rx="12" fill="#ddd6fe" stroke="#7c3aed" stroke-width="3"/>
+          <text x="290" y="190" text-anchor="middle" font-size="13" font-weight="700">Teacher Forward</text>
+          <text x="290" y="210" text-anchor="middle" font-size="11" fill="#475569">（冻结，不更新）</text>
+
+          <rect x="180" y="260" width="220" height="80" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="290" y="288" text-anchor="middle" font-size="13" font-weight="700">Soft Logits / Hidden</text>
+          <text x="290" y="308" text-anchor="middle" font-size="11" fill="#475569">z<sub>T</sub> = T-softmax(logits/T)</text>
+          <text x="290" y="325" text-anchor="middle" font-size="11" fill="#475569">（携带暗知识）</text>
+
+          <line x1="290" y1="130" x2="290" y2="160" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="290" y1="230" x2="290" y2="260" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <!-- Student side -->
+          <rect x="780" y="70" width="240" height="60" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="900" y="98" text-anchor="middle" font-size="13" font-weight="700">Input x</text>
+          <text x="900" y="118" text-anchor="middle" font-size="11" fill="#475569">（同 teacher）</text>
+
+          <rect x="780" y="160" width="240" height="70" rx="12" fill="#ddd6fe" stroke="#7c3aed" stroke-width="3"/>
+          <text x="900" y="190" text-anchor="middle" font-size="13" font-weight="700">Student Forward</text>
+          <text x="900" y="210" text-anchor="middle" font-size="11" fill="#475569">（可训练，更新参数）</text>
+
+          <rect x="780" y="260" width="240" height="80" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="900" y="288" text-anchor="middle" font-size="13" font-weight="700">Soft Logits / Hidden</text>
+          <text x="900" y="308" text-anchor="middle" font-size="11" fill="#475569">z<sub>S</sub> = T-softmax(logits/T)</text>
+          <text x="900" y="325" text-anchor="middle" font-size="11" fill="#475569">（学生预测）</text>
+
+          <line x1="900" y1="130" x2="900" y2="160" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="900" y1="230" x2="900" y2="260" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <!-- Loss at bottom -->
+          <line x1="290" y1="340" x2="600" y2="400" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-m)"/>
+          <line x1="900" y1="340" x2="600" y2="400" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-m)"/>
+
+          <rect x="450" y="400" width="320" height="60" rx="12" fill="#f5f3ff" stroke="#7c3aed" stroke-width="3"/>
+          <text x="610" y="425" text-anchor="middle" font-size="14" font-weight="700">KD Loss</text>
+          <text x="610" y="448" text-anchor="middle" font-size="11" fill="#475569">KL(z<sub>S</sub>/T ‖ z<sub>T</sub>/T) · T² + CE(z<sub>S</sub>, y)</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、5 大类蒸馏方法</h2>
+      <table>
+        <thead><tr><th>类别</th><th>方法</th><th>对齐什么</th><th>代表</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Logit KD</strong></td><td>对齐输出分布</td><td>logits（soft labels）</td><td>Hinton 2015, DistilBERT</td></tr>
+          <tr><td><strong>Feature KD</strong></td><td>对齐中间表征</td><td>中间 hidden / attention</td><td>BERT-Pkd, TinyBERT, MobileBERT</td></tr>
+          <tr><td><strong>Attention Transfer</strong></td><td>对齐注意力图</td><td>attention matrix</td><td>Attention Transfer (Zagoruyko 2017)</td></tr>
+          <tr><td><strong>Relation KD</strong></td><td>对齐样本间关系</td><td>pairwise 关系矩阵</td><td>Relational KD (Park 2019)</td></tr>
+          <tr><td><strong>Self-Distillation</strong></td><td>同模型不同轮次</td><td>Teacher = Student 早期</td><td>Born-Again Networks, Self-Distill BERT</td></tr>
+          <tr><td><strong>Generation-based</strong></td><td>对齐生成序列</td><td>完整输出（含推理）</td><td>MiniLLM, GKD, R1-Distill</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">2024-2025 主流：① Generation-based（MiniLLM 2022，GKD 2023）专门为 LLM 设计，逆向 KL 处理"幻觉式生成"；② R1-Distill（DeepSeek 2025）蒸馏完整 reasoning chain 效果惊人；③ Self-Distillation（Distill step-by-step）用 rationale 中间步骤监督。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、LLM 专属蒸馏：MiniLLM / GKD / R1-Distill</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>MiniLLM（2022, Gu et al.）</strong></p>
+        <p class="mathline">用逆向 KL 替代正向 KL：L = −(1/T) · E[z<sub>T</sub> · log_softmax(z<sub>S</sub>/T)]</p>
+        <p class="mathnote">学生不再"模仿"教师的所有分布，而是"避开"教师低概率区域（mass-covering）→ 减少幻觉式生成。</p>
+        <p class="mathnote"><strong>GKD（Generalized KD, 2023, Agarwal et al.）</strong></p>
+        <p class="mathline">L = (1 − λ) · L<sub>forward</sub>(z<sub>S</sub>, z<sub>T</sub>) + λ · L<sub>reverse</sub>(z<sub>S</sub>, z<sub>T</sub>)</p>
+        <p class="mathnote">λ 控制 forward/reverse 混合，可灵活切换，On-Policy 蒸馏（用 Student 自己生成 + Teacher 评分）。</p>
+        <p class="mathnote"><strong>R1-Distill（DeepSeek 2025.1）</strong></p>
+        <p class="mathline">用 R1 生成的 800K 高质量 reasoning trace 做 SFT 蒸馏（不是 KD）</p>
+        <p class="mathnote">Qwen-1.5B / Llama-8B / Qwen-32B 用 SFT 在 R1 推理数据上 → 在 AIME / MATH 上击败 GPT-4o / o1-mini。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>六、Self-Distillation 自蒸馏</h2>
+      <p>让模型从"自己的早期版本"或"自己的多个推理"中学习，Teacher = Student 自己。</p>
+      <ul>
+        <li><strong>Born-Again Networks（2018）</strong>：Student 学 Teacher（自己旧版本）</li>
+        <li><strong>Self-Distill with CoT</strong>：用模型自己的"长 CoT 答案"训练短 CoT 答案</li>
+        <li><strong>Self-Refine / Self-Rewarding</strong>：自评 + 自训，LLM-as-Judge 评分</li>
+        <li><strong>Self-Taught Reasoner (STaR)</strong>：模型自己解 → 正确解做训练数据</li>
+        <li><strong>Quiet-STaR</strong>：在预训练中内化思考</li>
+      </ul>
+      <div class="callout">Self-Distillation 的妙处：无需外部大模型作 Teacher，成本低；但质量上限受限于 Student 自己。生产中常配合 RLAIF（用 AI 反馈）做"自己教自己"。</div>
+    </article>
+
+    <article class="card">
+      <h2>七、与 SFT 的关键区别</h2>
+      <table>
+        <thead><tr><th>维度</th><th>SFT</th><th>Distillation</th></tr></thead>
+        <tbody>
+          <tr><td>学习目标</td><td>Hard label（"答案是 A"）</td><td>Soft label（"A: 0.7, B: 0.2, C: 0.1"）</td></tr>
+          <tr><td>数据来源</td><td>人工标注 / 业务数据</td><td>Teacher 模型生成</td></tr>
+          <tr><td>信息密度</td><td>低（只学对错）</td><td>高（学相似度、边界、置信度）</td></tr>
+          <tr><td>能力上限</td><td>数据 / 标注上限</td><td>Teacher 能力上限</td></tr>
+          <tr><td>成本</td><td>标注贵 / 训练便宜</td><td>Teacher 推理贵 / 训练便宜</td></tr>
+          <tr><td>适用</td><td>新任务、领域适配</td><td>能力压缩、部署优化</td></tr>
+          <tr><td>组合</td><td>先 SFT 打底 → 再 KD 微调</td><td>KD 完后可继续 SFT 领域化</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>八、R1-Distill 实战与意义</h2>
+      <ul>
+        <li><strong>数据</strong>：DeepSeek-R1 生成 800K 高质量 reasoning trace（带 R1 思考过程的答案）</li>
+        <li><strong>学生</strong>：Qwen-1.5B / Llama-8B / Qwen-32B / Llama-70B（开源 base）</li>
+        <li><strong>方法</strong>：纯 SFT on reasoning data（不是 logit KD）</li>
+        <li><strong>效果</strong>：Qwen-1.5B 在 AIME 28.9 / MATH-500 71.8%，超过 o1-mini；Qwen-32B 超过 o1-preview</li>
+        <li><strong>意义</strong>：① 证明 reasoning 能力可"蒸馏"到小模型；② 推理时算力可被压缩；③ 小模型 + 强 CoT 数据 &gt; 大模型 + 弱数据</li>
+        <li><strong>争议</strong>：纯 SFT 蒸馏 ≠ 真正学会推理（部分研究显示迁移到难题时退化）</li>
+      </ul>
+      <table>
+        <thead><tr><th>模型</th><th>训练方法</th><th>AIME 2024</th><th>MATH-500</th><th>GPQA Diamond</th></tr></thead>
+        <tbody>
+          <tr><td>GPT-4o</td><td>—</td><td>9.3</td><td>76.6</td><td>50.6</td></tr>
+          <tr><td>o1-mini</td><td>—</td><td>44.6</td><td>89.2</td><td>60.0</td></tr>
+          <tr><td>DeepSeek-R1-Distill-Qwen-1.5B</td><td>SFT on R1 trace</td><td>28.9</td><td>71.8</td><td>33.8</td></tr>
+          <tr><td>DeepSeek-R1-Distill-Qwen-32B</td><td>SFT on R1 trace</td><td>72.6</td><td>94.3</td><td>62.1</td></tr>
+          <tr><td>DeepSeek-R1（671B）</td><td>RL（GRPO）</td><td>79.8</td><td>97.3</td><td>71.5</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">R1-Distill 关键发现：强 reasoning 数据比强 base 模型更重要。Qwen-1.5B 用 R1 数据训练后超过 7B 用普通数据的模型。2025 年起"小模型 + 强 CoT 数据"成为 reasoning 模型主流打法。</div>
+    </article>
+
+    <article class="card full">
+      <h2>九、训练 / 工程实践</h2>
+      <ul>
+        <li><strong>数据生成</strong>：Teacher 在大量 prompt 上生成 100K-1M 样本；筛选高质量 + 多样性</li>
+        <li><strong>温度选择</strong>：T=4-20 常见，Classification 任务 T 小，Generation 任务 T 大</li>
+        <li><strong>蒸馏权重 α</strong>：0.5-0.9，混合 CE（保任务能力）+ KL（学暗知识）</li>
+        <li><strong>On-Policy vs Off-Policy</strong>：Off-Policy（直接用 Teacher 生成数据）+ On-Policy（Student 生成 + Teacher 评分）</li>
+        <li><strong>特征蒸馏</strong>：当 Student 隐藏维 ≠ Teacher 时，需 projection 层映射</li>
+        <li><strong>渐进蒸馏</strong>：从大 Teacher → 中 → 小，多阶段压缩（DistilBERT 6 层 → TinyBERT 4 层）</li>
+        <li><strong>与量化结合</strong>：先蒸馏到 1/2 尺寸 → 再 INT4 量化 → 保持 90%+ Teacher 能力</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>十、项目落地 / 业务场景</h2>
+      <ul>
+        <li><strong>边缘部署</strong>：Llama-70B → Llama-8B，INT4 量化 → 端侧 4GB 内存可跑</li>
+        <li><strong>成本压缩</strong>：自研客服 70B → 7B，QPS 提升 10x，单次推理成本 1/10</li>
+        <li><strong>Reasoning 下放</strong>：GPT-o1 类能力 → 自有 7B 模型，私有化部署 + 数据合规</li>
+        <li><strong>行业模型</strong>：通用 70B + 行业 1 万条 SFT → 行业 7B，比从零训练省钱</li>
+        <li><strong>多语言</strong>：英文 Teacher 70B → 中文 Student 7B，知识跨语言迁移</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Logit KD</td>
+            <td>经典 Hinton KD 蒸馏 7B → 1.5B</td>
+            <td>"用 Logit KD + MiniLLM 蒸馏 70B→7B，GLUE 保留 96%，latency 降至 1/4"</td>
+          </tr>
+          <tr>
+            <td>R1-Distill</td>
+            <td>用 R1 reasoning trace SFT 7B</td>
+            <td>"用 DeepSeek-R1 蒸馏 7B reasoning 模型，AIME 从 9% 提升到 52%，超过 o1-mini 70% 表现"</td>
+          </tr>
+          <tr>
+            <td>Self-Distill</td>
+            <td>自评 + 自训循环</td>
+            <td>"用 Self-Distillation + LLM-as-Judge 训练客服模型，幻觉率从 18% 降至 5%"</td>
+          </tr>
+          <tr>
+            <td>蒸馏 + 量化</td>
+            <td>先 70B→7B KD，再 INT4</td>
+            <td>"蒸馏 + GPTQ 量化，模型从 70B×2字节 140GB 降至 7B×0.5字节 3.5GB，能力保留 89%"</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十一、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：蒸馏的核心思想是什么？</h3>
+          <p>A：让 Student 学 Teacher 的"软标签"——完整概率分布，而不只是 hard label。软标签携带暗知识（哪些近似类被压低、相似度关系）。Hinton 2015 经典公式：CE + α·T²·KL。</p>
+        </div>
+        <div>
+          <h3>Q2：温度 T 起什么作用？</h3>
+          <p>A：T 越大 softmax 越软，概率分布越平 → 暴露更多暗知识（如"猫 0.7 / 狗 0.2"比"猫 1.0"告诉 Student 狗跟猫有一定相似）。T=1 等价标准，T=4-20 常见。乘 T² 补偿软化后梯度量级。</p>
+        </div>
+        <div>
+          <h3>Q3：蒸馏和 SFT 区别？</h3>
+          <p>A：SFT 学 hard label（"答案是 A"），蒸馏学 soft label（"A:0.7, B:0.2"）。SFT 能力上限看数据 / 标注，蒸馏能力上限看 Teacher。SFT 用于任务 / 领域适配，蒸馏用于能力压缩。生产中常组合：SFT 打底 → KD 微调。</p>
+        </div>
+        <div>
+          <h3>Q4：Forward KL vs Reverse KL 区别？</h3>
+          <p>A：Forward KL (z<sub>S</sub> ‖ z<sub>T</sub>)：Student 分布尽量"覆盖" Teacher 分布（mass-covering），适合分类。Reverse KL：Student 避开 Teacher 低概率区域（mode-seeking），适合生成（避免幻觉式生成）。MiniLLM 用 Reverse KL，生成质量更好。</p>
+        </div>
+        <div>
+          <h3>Q5：R1-Distill 为什么用 SFT 不用 KD？</h3>
+          <p>A：① R1 的 reasoning trace 是 100K+ token 长 CoT，logit 维度巨大（128K vocab × 100K seq），KD 显存 / 计算代价高；② SFT 直接学"输入→完整推理+答案"序列，简化且有效；③ 800K 高质量 trace 数据本身就是强监督信号；④ 实验显示 SFT-distill 在 reasoning 任务上 ≥ logit KD。</p>
+        </div>
+        <div>
+          <h3>Q6：Self-Distillation 怎么做？</h3>
+          <p>A：Teacher = Student 自己。常见方式：① 不同轮次（早 → 晚）相互学；② 自己多采样投票；③ Self-Rewarding（LLM-as-Judge 打分自己）；④ STaR（自己解题 → 正确解做训练数据）。优点是免费；缺点是质量上限受限于自己。</p>
+        </div>
+        <div>
+          <h3>Q7：特征蒸馏有什么坑？</h3>
+          <p>A：当 Student hidden dim ≠ Teacher 时（如 768 vs 4096），需 projection 层映射（增加参数）。Attention Transfer 需对齐 attention 头数。Feature KD 比 Logit KD 显存大（要存中间 hidden states），不适合超大模型。</p>
+        </div>
+        <div>
+          <h3>Q8：什么时候用 KD 什么时候用 SFT？</h3>
+          <p>A：① Teacher 同源 / 能力远超 Student → KD 划算；② 新任务 / 领域（Teacher 不会）→ SFT；③ 想保留 Teacher 暗知识（推理 / 风格）→ KD；④ 数据稀缺 / 标注贵 → KD（Teacher 生成）；⑤ 端侧 / 高 QPS → KD 后量化。</p>
+        </div>
+        <div>
+          <h3>Q9：蒸馏后还能继续训练吗？</h3>
+          <p>A：可以。常见三阶段：① Pretrain → ② SFT（领域）→ ③ KD（能力压缩）。DistilBERT、Qwen-Distill 都验证可继续 SFT / DPO。KD 后继续 SFT 不会破坏已学能力，前提是 lr 小、数据不冲突。</p>
+        </div>
+        <div>
+          <h3>Q10：R1-Distill 到底算"真推理"还是"模仿"？</h3>
+          <p>A：争议中。支持：① AIME / MATH 显著超过 base；② 推理 token 长度自适应（难题长，简单题短）；③ 错题时能自我纠正。反对：① 复杂规划任务上仍弱于真正 R1；② 难题可能"模仿失败"；③ 学术界（Apple 等）质疑 reasoning 真实性。生产中够用即可。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：蒸馏让小 Student 学大 Teacher 的软标签分布，捕获暗知识（哪些近似类被压低、相似度关系）。Hinton 2015 经典公式：CE + α·T²·KL。LLM 时代有 MiniLLM（逆向 KL 抗幻觉）、GKD（on-policy 蒸馏）、R1-Distill（DeepSeek 2025 用 800K reasoning trace 蒸馏 1.5B-70B，效果惊人）。生产中蒸馏 + 量化是端侧部署标配。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（部署成本 / 暗知识）→ Hinton KD 公式 → 5 大类方法（Logit / Feature / Attention / Relation / Self / Generation）→ MiniLLM & GKD 的逆向 KL 创新 → R1-Distill 实战 → 与 SFT 区别 → 训练工程实践 → 业务落地。能讲清"为什么 R1-Distill 用 SFT 不用 KD"、"Forward vs Reverse KL 在生成任务上的差异"，立刻显得有真研究。</p>
+        </div>
+        <div>
+          <h3>加分：知道蒸馏局限</h3>
+          <p>蒸馏不是银弹：① Teacher 能力上限 = Student 上限（无法超越）；② Logit KD 显存大（要存 Teacher 输出 / hidden）；③ 特征蒸馏需对齐 hidden dim；④ R1-Distill 复杂推理任务仍弱于真正 R1；⑤ 数据生成成本高（Teacher 跑 N 次）；⑥ 量化后能力会再降，需蒸馏 + 量化联合优化。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：用 70B Teacher 蒸馏 7B Student，Logit KD 一开始不收敛（T=1 时 Student 拟合 70B 的 128K vocab softmax 困难）→ 改 T=4 后 loss 下降但生成重复 → 换 MiniLLM 逆向 KL + T=2 → 质量提升；最终 R1-Distill 直接用 SFT on reasoning trace 比 Logit KD 更好。讲清"KD 调参 → 换方法 → 换范式"三步，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+      <tbody>
+          <tr><td>原理</td><td>暗知识是什么？</td><td>答"soft label 的相对关系"：Teacher 给"猫 0.7 / 狗 0.2"比给"猫 1.0"携带更多信息——狗跟猫是相似的，狐狸跟猫也相似。Hard label 把这些都丢掉了。T 越大，暗知识越显。</td></tr>
+          <tr><td>温度</td><td>温度 T 怎么选？</td><td>答"按任务"：分类 T=1-4（softmax 已经够软），生成 T=4-20（需要更多暗知识）。T 太小 → 退化成 hard label；T 太大 → 梯度消失。一般 T=4 是好的起点，调 2-20 网格。</td></tr>
+          <tr><td>KD vs SFT</td><td>什么时候用 KD 不用 SFT？</td><td>答"Teacher 强 + 数据缺"：Teacher 70B 跑 1M prompt 成本 << 1M 人工标注；KD 后 Student 拿到 90% Teacher 能力。SFT 用于新任务 / 领域适配，KD 用于能力压缩。生产组合：SFT 打底 → KD 微调。</td></tr>
+          <tr><td>Forward/Reverse KL</td><td>为什么生成用 Reverse KL？</td><td>答"mode-seeking vs mass-covering"：Forward KL 让 Student 覆盖 Teacher 分布（容易学"什么都像"），Reverse KL 让 Student 避开 Teacher 低概率区域（学"专精"）。生成任务希望 Student 不乱生成 → Reverse KL。</td></tr>
+          <tr><td>R1-Distill</td><td>R1-Distill 怎么做的？</td><td>答"SFT on R1 reasoning trace"：用 DeepSeek-R1 生成 800K 高质量 reasoning trace（带思考过程），Qwen-1.5B/7B/32B/Llama-8B/70B 上 SFT。AIME 28.9%（1.5B）超过 o1-mini 44.6%（小尺寸），32B 接近 R1 原版。</td></tr>
+          <tr><td>Self-Distill</td><td>Self-Distill 怎么避免"自己骗自己"？</td><td>答"外部验证 + 多样化反馈"：LLM-as-Judge + Ground Truth + 多采样投票。纯自评容易"自欺"，需用工具 / 测试 / 多模型交叉验证。STaR 用正确解做训练数据，Self-Rewarding 用 reward model 评分。</td></tr>
+      </tbody>
+      </table>
+      <div class="callout">最后提示：蒸馏是 2024-2026 部署 + 推理研究双热门。面试允许说"我只了解原理，未深入训练"，但要能讲清 Hinton KD 公式、温度作用、Forward vs Reverse KL、R1-Distill 创新、与 SFT 区别。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Distillation</td><td>大模型教小模型，迁移暗知识</td></tr>
+          <tr><td>Teacher / Student</td><td>大模型（冻结）vs 小模型（训练中）</td></tr>
+          <tr><td>Hard Label</td><td>one-hot 真实标签，"答案是 A"</td></tr>
+          <tr><td>Soft Label</td><td>Teacher 软化后的概率分布，"A:0.7, B:0.2"</td></tr>
+          <tr><td>Dark Knowledge</td><td>软标签携带的相似度、置信度、边界信息</td></tr>
+          <tr><td>Temperature T</td><td>softmax 软化系数，T&gt;1 暴露暗知识</td></tr>
+          <tr><td>Hinton KD</td><td>2015 经典，CE + α·T²·KL 双损失</td></tr>
+          <tr><td>Feature KD</td><td>对齐中间 hidden / attention 表征</td></tr>
+          <tr><td>Attention Transfer</td><td>对齐 attention matrix</td></tr>
+          <tr><td>Self-Distillation</td><td>Teacher = Student 自己，Born-Again / STaR</td></tr>
+          <tr><td>MiniLLM</td><td>2022 逆向 KL 抗幻觉，专为 LLM 设计</td></tr>
+          <tr><td>GKD</td><td>2023 Generalized KD，On-Policy + Forward/Reverse 混合</td></tr>
+          <tr><td>R1-Distill</td><td>DeepSeek 2025.1，800K reasoning trace SFT，1.5B 超 o1-mini</td></tr>
+          <tr><td>Forward KL</td><td>mass-covering，覆盖 Teacher 分布</td></tr>
+          <tr><td>Reverse KL</td><td>mode-seeking，避开 Teacher 低概率区域</td></tr>
+          <tr><td>DistilBERT</td><td>经典 Logit KD 蒸馏 BERT，6 层 / 60% 参 / 97% 能力</td></tr>
+          <tr><td>STaR</td><td>Self-Taught Reasoner，自己解题→正确解训练</td></tr>
+          <tr><td>Self-Rewarding</td><td>LLM-as-Judge 评自己，迭代训练</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

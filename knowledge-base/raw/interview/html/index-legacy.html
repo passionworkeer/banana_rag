@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>面试知识图谱</title>
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#dbe3ee;
+      --accent:#2563eb;
+      --accent-weak:#dbeafe;
+      --code:#0f172a;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        linear-gradient(180deg,#eef4ff 0%, #f8fafc 18%, #f8fafc 100%);
+    }
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1200px;margin:0 auto;padding:28px 20px 56px}
+    .top{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:28px;
+      box-shadow:var(--shadow);
+    }
+    .eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-weak);padding:8px 12px;border-radius:999px}
+    h1{margin:18px 0 10px;font-size:40px;line-height:1.1}
+    .lead{max-width:880px;color:var(--muted);font-size:17px;line-height:1.75;margin:0}
+    .nav{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:18px
+    }
+    .nav a{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 14px;border-radius:999px;border:1px solid var(--line);
+      background:#fff;color:#0f172a;font-size:14px
+    }
+    .grid{
+      display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:22px
+    }
+    .card{
+      grid-column:span 4;background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);padding:20px
+    }
+    .card h2{margin:0 0 10px;font-size:20px}
+    .card p{margin:0;color:var(--muted);line-height:1.7}
+    .tagrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .tag{font-size:12px;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:6px 10px;border-radius:999px}
+    .section{
+      margin-top:22px;background:var(--panel);border:1px solid var(--line);
+      border-radius:24px;box-shadow:var(--shadow);padding:22px
+    }
+    .section h2{margin:0 0 12px;font-size:24px}
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:16px}
+    th,td{padding:14px 12px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}
+    th{font-size:13px;color:#475569;background:#f8fafc}
+    td{color:#0f172a;line-height:1.7}
+    .footer{margin-top:20px;color:#64748b;font-size:13px;line-height:1.7}
+    @media (max-width: 980px){.card{grid-column:span 6}}
+    @media (max-width: 640px){h1{font-size:30px}.card{grid-column:span 12}.top{padding:20px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <span class="eyebrow">Interview knowledge pages</span>
+      <h1>面试知识图谱</h1>
+      <p class="lead">这里是面试题库的可视化入口。每个主题都有单独 HTML 页面，里面包含图示、公式、知识点拆解、工程落地和面试答法。建议先看首页，再打开具体专题页。</p>
+      <div class="nav">
+        <a href="./rag.html">RAG</a>
+        <a href="./transformer.html">Transformer</a>
+        <a href="./agent.html">Agent</a>
+        <a href="./sft.html">SFT</a>
+        <a href="./dpo.html">DPO</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <a class="card" href="./rag.html">
+        <h2>RAG</h2>
+        <p>检索增强生成的完整链路：切片、召回、重排、上下文拼装、生成和评估。</p>
+        <div class="tagrow">
+          <span class="tag">BM25</span><span class="tag">Dense</span><span class="tag">Rerank</span><span class="tag">Faithfulness</span>
+        </div>
+      </a>
+      <a class="card" href="./transformer.html">
+        <h2>Transformer</h2>
+        <p>Attention、Multi-Head、KV Cache、长上下文、MoE 和复杂度控制。</p>
+        <div class="tagrow">
+          <span class="tag">Attention</span><span class="tag">RoPE</span><span class="tag">KV Cache</span><span class="tag">MoE</span>
+        </div>
+      </a>
+      <a class="card" href="./agent.html">
+        <h2>Agent</h2>
+        <p>规划、工具调用、记忆、Router、Human-in-the-loop、评估和延迟优化。</p>
+        <div class="tagrow">
+          <span class="tag">MCP</span><span class="tag">Function Call</span><span class="tag">Memory</span><span class="tag">Workflow</span>
+        </div>
+      </a>
+      <a class="card" href="./sft.html">
+        <h2>SFT</h2>
+        <p>监督微调的训练数据、shift right、mask、LoRA 和样本质量。</p>
+        <div class="tagrow">
+          <span class="tag">Causal LM</span><span class="tag">Shift</span><span class="tag">Mask</span><span class="tag">LoRA</span>
+        </div>
+      </a>
+      <a class="card" href="./dpo.html">
+        <h2>DPO</h2>
+        <p>偏好对齐、reference model、beta、KL、PPO 对比和 reward hacking。</p>
+        <div class="tagrow">
+          <span class="tag">Preference</span><span class="tag">KL</span><span class="tag">Beta</span><span class="tag">RLHF</span>
+        </div>
+      </a>
+      <div class="card">
+        <h2>使用方式</h2>
+        <p>直接双击 HTML 打开。建议从首页开始，再进入专题页。每页都可以当成一份独立讲解稿，面试前快速过图和公式。</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>统一阅读法</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>层次</th>
+            <th>你要说什么</th>
+            <th>面试官听到什么</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>结论</td>
+            <td>先一句话定义问题和答案。</td>
+            <td>你知道这题在问什么。</td>
+          </tr>
+          <tr>
+            <td>图</td>
+            <td>先看流程图，再看模块关系。</td>
+            <td>你能把抽象概念画出来。</td>
+          </tr>
+          <tr>
+            <td>公式</td>
+            <td>把关键公式拆成变量解释。</td>
+            <td>你不只是背结论，还懂原理。</td>
+          </tr>
+          <tr>
+            <td>落地</td>
+            <td>说项目里怎么用、怎么验证。</td>
+            <td>你能把知识转成业务结果。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="footer">提示：这些页面是本地知识卡，不依赖网络。后续如果你继续补题，我可以继续按同样风格扩成更多 HTML 页面。</p>
+  </div>
+</body>
+</html>
+

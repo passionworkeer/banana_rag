@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>大模型调优知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./llm-cache.html">大模型缓存</a>
+    <a href="./model-distributed.html">分布式部署</a>
+    <a href="./llm-tuning.html">大模型调优</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">学习资源 · 推理优化</span>
+    <h1>大模型调优</h1>
+    <p class="lead">Prompt 调优、采样参数、结构化输出、推理能力激活 — 不改权重也能大幅提升效果。</p>
+    <div class="pillrow">
+      <span class="pill">Prompt</span><span class="pill">Temperature</span><span class="pill">Top-p</span><span class="pill">CoT</span><span class="pill">JSON Mode</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Prompt 调优维度</h2>
+      <ul>
+        <li><strong>Prompt 工程</strong>：
+          <ul>
+            <li><strong>Zero-Shot</strong>：直接给指令（"翻译成英文：..."）</li>
+            <li><strong>Few-Shot</strong>：给 3-5 个示例（input-output 对），准确率显著提升</li>
+            <li><strong>角色设定</strong>："你是一名资深 X 专家" 改变输出风格</li>
+            <li><strong>约束条件</strong>："用 100 字以内"、"列出 3 点"、"必须用 JSON"</li>
+            <li><strong>思维链</strong>：加 "Let's think step by step" 激活推理</li>
+            <li><strong>结构化</strong>：用 Markdown / XML 标签分层（"### Context / ### Question / ### Answer"）</li>
+          </ul>
+        </li>
+        <li><strong>采样参数</strong>：
+          <ul>
+            <li><strong>Temperature</strong>：高（&gt;0.7）= 发散有创造性，低（&lt;0.3）= 确定保守，T=0 退化为贪心</li>
+            <li><strong>Top-p (nucleus)</strong>：按概率累加截断（如 0.9 = 保留累积概率 90% 的 token），动态候选数</li>
+            <li><strong>Top-k</strong>：保留 top k 个高概率 token，固定候选数</li>
+            <li><strong>Frequency penalty</strong>：抑制重复（按出现频次惩罚），-2 到 2</li>
+            <li><strong>Presence penalty</strong>：抑制重复（按是否出现惩罚），鼓励新话题</li>
+          </ul>
+        </li>
+        <li><strong>结构化输出</strong>：
+          <ul>
+            <li><strong>JSON Mode</strong>：OpenAI <code>response_format: {type: "json_object"}</code>，强制 JSON 语法</li>
+            <li><strong>Function Calling</strong>：通过 Tool schema 强制结构化（见 tool-use.html）</li>
+            <li><strong>Grammar Constrained Decoding</strong>：用 BNF / 正则约束每步生成的 token（Outlines、Guidance、JSONformer）</li>
+          </ul>
+        </li>
+        <li><strong>推理激活</strong>：
+          <ul>
+            <li><strong>CoT</strong>：思维链，让模型先想后答</li>
+            <li><strong>Self-Consistency</strong>：采样 N 次投票（多答案 + 多数表决）</li>
+            <li><strong>ReAct</strong>：推理 + 行动循环（见 react-cot.html）</li>
+            <li><strong>ToT</strong>：Tree of Thoughts，搜索多个推理路径</li>
+          </ul>
+        </li>
+        <li><strong>评估</strong>：困惑度（perplexity）、BLEU / ROUGE、人工评估、A/B 测试、LLM-as-Judge</li>
+        <li><strong>不改权重的边界</strong>：复杂任务（垂直领域 / 特定风格 / 新知识）仍需微调（SFT / DPO / RLHF）</li>
+      </ul>
+      <table>
+        <thead><tr><th>任务类型</th><th>Temperature</th><th>Top-p</th><th>Few-Shot</th><th>CoT</th><th>JSON Mode</th></tr></thead>
+        <tbody>
+          <tr><td>事实问答</td><td>0.0-0.3</td><td>0.9-0.95</td><td>可选</td><td>否</td><td>可选</td></tr>
+          <tr><td>代码生成</td><td>0.0-0.2</td><td>0.95</td><td>推荐</td><td>可选</td><td>否</td></tr>
+          <tr><td>创作写作</td><td>0.7-1.0</td><td>0.9</td><td>否</td><td>否</td><td>否</td></tr>
+          <tr><td>数学推理</td><td>0.0-0.3</td><td>0.9</td><td>推荐</td><td>必选</td><td>否</td></tr>
+          <tr><td>数据抽取</td><td>0.0</td><td>0.9</td><td>推荐</td><td>否</td><td>必选</td></tr>
+          <tr><td>对话聊天</td><td>0.6-0.8</td><td>0.9</td><td>否</td><td>否</td><td>否</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>Prompt 调优 vs 微调 边界</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Prompt 调优</th><th>SFT 微调</th><th>DPO 偏好对齐</th><th>RLHF</th></tr></thead>
+        <tbody>
+          <tr><td>改动</td><td>不改权重</td><td>改所有权重</td><td>改偏好对齐</td><td>改生成策略</td></tr>
+          <tr><td>成本</td><td>零（仅 API 费）</td><td>高（GPU + 数据）</td><td>高（GPU + 偏好对）</td><td>极高（RL 训练）</td></tr>
+          <tr><td>数据量</td><td>0 条（Few-Shot 3-5）</td><td>1k-100k 条</td><td>5k-50k 偏好对</td><td>10k+ 标注</td></tr>
+          <tr><td>训练时间</td><td>0（实时）</td><td>几小时-几天</td><td>几小时</td><td>几周</td></tr>
+          <tr><td>效果上限</td><td>中（80% 场景够用）</td><td>高（垂直领域）</td><td>高（风格对齐）</td><td>最高（通用）</td></tr>
+          <tr><td>可解释</td><td>强（看得见 prompt）</td><td>弱（黑盒）</td><td>弱</td><td>弱</td></tr>
+          <tr><td>迭代速度</td><td>分钟级</td><td>天级</td><td>天级</td><td>周级</td></tr>
+          <tr><td>适用</td><td>通用任务、风格调整</td><td>垂直知识、特定格式</td><td>风格、安全、偏好</td><td>通用对齐（GPT-4）</td></tr>
+          <tr><td>风险</td><td>prompt 越写越长</td><td>过拟合 / 灾难性遗忘</td><td>过拟合偏好</td><td>训练不稳定</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战经验：80% 场景 Prompt 调优够用，先用 1-2 周把 prompt 调到极限，效果不达预期再上 SFT。SFT 用 LoRA（成本低 + 可回滚），DPO 用于风格 / 安全对齐（替代 RLHF）。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、Prompt 调优决策树</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 440" width="100%" height="auto" role="img" aria-label="Prompt tuning decision tree">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="460" y="20" width="260" height="60" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="48" text-anchor="middle" font-size="14" font-weight="700">需求分析</text>
+          <text x="590" y="68" text-anchor="middle" font-size="11" fill="#475569">任务类型 / 评估指标 / 约束</text>
+
+          <rect x="200" y="120" width="240" height="60" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="320" y="148" text-anchor="middle" font-size="14" font-weight="700">选 Prompt 策略</text>
+          <text x="320" y="168" text-anchor="middle" font-size="11" fill="#475569">Zero / Few-Shot / CoT</text>
+
+          <rect x="700" y="120" width="240" height="60" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="820" y="148" text-anchor="middle" font-size="14" font-weight="700">选采样参数</text>
+          <text x="820" y="168" text-anchor="middle" font-size="11" fill="#475569">Temp / Top-p / Penalty</text>
+
+          <rect x="460" y="220" width="260" height="60" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="248" text-anchor="middle" font-size="14" font-weight="700">运行评估</text>
+          <text x="590" y="268" text-anchor="middle" font-size="11" fill="#475569">自动指标 + 人工评</text>
+
+          <rect x="200" y="320" width="240" height="60" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="320" y="348" text-anchor="middle" font-size="14" font-weight="700">达预期？</text>
+          <text x="320" y="368" text-anchor="middle" font-size="11" fill="#475569">Yes → 上线 / No → 调优</text>
+
+          <rect x="700" y="320" width="240" height="60" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="820" y="348" text-anchor="middle" font-size="14" font-weight="700">不达标？</text>
+          <text x="820" y="368" text-anchor="middle" font-size="11" fill="#475569">No → 上线</text>
+
+          <line x1="590" y1="80" x2="320" y2="120" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="590" y1="80" x2="820" y2="120" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <line x1="320" y1="180" x2="590" y2="220" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="820" y1="180" x2="590" y2="220" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <line x1="590" y1="280" x2="320" y2="320" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="590" y1="280" x2="820" y2="320" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <path d="M 320 380 Q 320 410 590 410 Q 860 410 860 380" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <text x="590" y="428" text-anchor="middle" font-size="11" fill="#475569">不达预期 → 回到"选 Prompt 策略"循环</text>
+
+          <text x="590" y="60" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">输入</text>
+        </svg>
+      </div>
+      <p class="muted">Prompt 调优是循环迭代过程：分析需求 → 选策略（Zero/Few/CoT）→ 选采样参数（Temp/Top-p）→ 跑评估 → 对比基线 → 不达标回循环。关键：每次只改一个变量（控制变量法），记录所有实验（参数 + 指标），最后选最优组合上线。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、Temperature 缩放</h2>
+      <div class="mathbox">
+        <p class="mathline">$$P'(x) = \tfrac{P(x)^{1/T}}{\sum_{i} P(x_{i})^{1/T}}$$</p>
+        <p class="mathnote"><strong>Temperature 缩放</strong>：对原始概率做幂次缩放再归一化。T 控制分布"尖锐度"：T 越小分布越尖锐（趋向贪心），T 越大分布越平滑（趋向均匀）。</p>
+        <p class="mathline" style="margin-top:14px">$T = 1$：原始分布，按模型训练时的概率采样</p>
+        <p class="mathnote">T = 1 是模型"自然"输出，适合通用场景。</p>
+        <p class="mathline" style="margin-top:14px">$T \to 0$：趋向 one-hot，贪心选最高概率 token（确定性）</p>
+        <p class="mathnote">适合事实问答、代码生成、抽取等需要确定性的场景。T = 0 实际效果等同 greedy decoding。</p>
+        <p class="mathline" style="margin-top:14px">$T \to \infty$：趋向均匀分布，完全随机</p>
+        <p class="mathnote">实际不用，但理解极限有助。T = 2 已经非常发散（top token 概率 < 30%）。</p>
+        <p class="mathline" style="margin-top:14px">实践：Top-p 通常和 Temperature 配合（同时设）</p>
+        <p class="mathnote">先调 T（粗粒度控制风格），再用 Top-p（截断长尾）。OpenAI 建议：T=0.7-1.0 + Top-p=0.9-0.95 创作；T=0-0.3 + Top-p=0.95 事实。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、消息格式</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>Request</strong>（Client → Server）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_products",
+    "arguments": { "keyword": "袜子" }
+  }
+}</pre>
+        <p class="mathnote"><strong>Response</strong>（Server → Client）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": { "items": [...] }
+}</pre>
+        <p class="mathnote"><strong>Error</strong>（参数缺失 / 工具不存在）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": { "code": -32602, "message": "keyword is required" }
+}</pre>
+        <p class="mathnote"><strong>Notification</strong>（Server 主动推送，无需回复）</p>
+        <pre style="margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "method": "notifications/resources/updated",
+  "params": { "uri": "file:///orders/2026-06-03.json" }
+}</pre>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>消息字段速查</h2>
+      <table>
+        <thead><tr><th>参数</th><th>范围</th><th>作用</th><th>典型值</th></tr></thead>
+        <tbody>
+          <tr><td><code>temperature</code></td><td>0-2</td><td>控制分布尖锐度</td><td>创作 0.7-1.0 / 事实 0-0.3</td></tr>
+          <tr><td><code>top_p</code></td><td>0-1</td><td>nucleus 采样</td><td>0.9-0.95</td></tr>
+          <tr><td><code>top_k</code></td><td>1-100</td><td>保留 top k token</td><td>40-50</td></tr>
+          <tr><td><code>frequency_penalty</code></td><td>-2 to 2</td><td>抑制重复（频次）</td><td>0-0.5</td></tr>
+          <tr><td><code>presence_penalty</code></td><td>-2 to 2</td><td>抑制重复（出现）</td><td>0-0.5</td></tr>
+          <tr><td><code>max_tokens</code></td><td>1+</td><td>最大生成长度</td><td>256-2048</td></tr>
+          <tr><td><code>stop</code></td><td>string[]</td><td>停止序列</td><td>["\n\n", "###"]</td></tr>
+          <tr><td><code>seed</code></td><td>int</td><td>固定随机性</td><td>42（测试时）</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：小蕉 AI 提示词调优（5 个场景化 prompt 模板 + 温度参数，客服场景 T=0.2 / 创意场景 T=0.8 / 代码 T=0，场景化准确率 +18%）</li>
+        <li><strong>假设场景</strong>：蕉内数字员工场景化 Prompt 调优（商品咨询 / 售后客服 / 内容生成 / 数据查询 4 个场景，每个独立 prompt + 参数）</li>
+        <li><strong>简历表达</strong>：Prompt 工程 / 采样参数 / 推理激活 / LLM-as-Judge 评估</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Prompt 模板</td>
+            <td>设计 5 个场景化 Few-Shot 模板 + 角色设定</td>
+            <td>"设计场景化 Prompt 模板，Few-Shot 准确率从 72% 提升到 89%"</td>
+          </tr>
+          <tr>
+            <td>采样参数</td>
+            <td>按场景选 Temperature / Top-p / Penalty</td>
+            <td>"按场景调采样参数，事实场景准确率 +15%，创作场景多样性 +40%"</td>
+          </tr>
+          <tr>
+            <td>结构化输出</td>
+            <td>用 JSON Mode + Grammar Constrained 稳定格式</td>
+            <td>"JSON Mode + 严格 schema，输出格式合规率 100%"</td>
+          </tr>
+          <tr>
+            <td>推理激活</td>
+            <td>CoT + Self-Consistency 提升推理任务准确率</td>
+            <td>"推理任务加 CoT，数学题准确率从 45% 提升到 78%"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"Prompt 维度 → 采样参数 → 结构化输出 → 推理激活 → 评估方法"五段说清楚，再带具体数字（准确率 / 格式合规率 / 评估一致性），立刻与只会用默认参数的人拉开差距。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Temperature 怎么选？</h3>
+          <p>A：按任务类型。事实问答 / 抽取 / 代码用 0.0-0.3（确定性，避免编造）；数学 / 推理用 0.0-0.3 + CoT；通用对话 0.6-0.8（平衡）；创作写作 0.7-1.0（多样性）；不要超过 1.5（太发散）。生产中常 0.7 起步，效果不满意再微调。</p>
+        </div>
+        <div>
+          <h3>Q2：Top-p 和 Top-k 区别？</h3>
+          <p>A：Top-k 固定候选数（永远保留概率最高的 k 个），简单但分布变化时不够灵活。Top-p 按概率分布动态截断（保留累积概率 ≥ p 的 token），分布尖锐时候选少，分布平坦时候选多。OpenAI 官方推荐 Top-p 而非 Top-k，因为 Top-p 适配不同上下文。建议 Top-p=0.9-0.95 同时配合 Temperature。</p>
+        </div>
+        <div>
+          <h3>Q3：怎么让输出稳定 JSON？</h3>
+          <p>A：四种方法（按推荐度）。① JSON Mode（OpenAI <code>response_format: {type: "json_object"}</code>，强制 JSON 语法，最简单）；② Function Calling（通过 Tool schema 强制结构化，最稳定）；③ Grammar Constrained Decoding（用 BNF / 正则约束每步 token，100% 合规但慢，Outlines / Guidance）；④ Prompt 强约束（"必须用 JSON 输出"，最弱，80% 合规）。生产推荐 ② 或 ③。</p>
+        </div>
+        <div>
+          <h3>Q4：CoT 什么时候用？</h3>
+          <p>A：四类任务适合：① 推理任务（数学 / 逻辑 / 代码）；② 多步规划（"先做 A 再做 B"）；③ 复杂判断（多因素权衡）；④ 解释型问题（"为什么 X"）。不适合：简单事实问答、抽取、翻译（推理链反而拖慢 + 引入噪声）。激活方式：Zero-Shot CoT（"Let's think step by step"）或 Few-Shot CoT（给 3-5 个推理示例）。</p>
+        </div>
+        <div>
+          <h3>Q5：Prompt 调优和微调选哪个？</h3>
+          <p>A：80% 场景用 Prompt 调优（成本低、迭代快、可解释）。需要微调的场景：① 垂直领域知识（医疗 / 法律 / 蕉内内部商品）；② 特定输出风格（按品牌话术）；③ 降低 token 成本（长 prompt → 微调后省 tokens）；④ 推理能力（CoT 难激活的复杂推理）。微调用 LoRA（成本低 + 可回滚），DPO 用于风格对齐。</p>
+        </div>
+        <div>
+          <h3>Q6：怎么评估 Prompt 效果？</h3>
+          <p>A：五个层次。① 困惑度（perplexity，自动化但弱相关）；② 业务指标（准确率 / 召回率 / F1）；③ LLM-as-Judge（用 GPT-4 评估输出质量，规模化但需校准）；④ 人工评估（金标准，成本高）；⑤ A/B 测试（生产环境对比，最真实）。建议组合：自动指标 + LLM-as-Judge 做回归测试，重要版本发版前加人工评估。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>选型决策清单</h2>
+      <div class="qa">
+        <div>
+          <h3>只调 Prompt 的场景</h3>
+          <p>通用任务（问答 / 总结 / 翻译）、风格调整（语气 / 长度 / 格式）、需快速迭代（分钟级）、可解释性要求高。先用 1-2 周把 prompt 调到极限。</p>
+        </div>
+        <div>
+          <h3>加采样参数调优的场景</h3>
+          <p>输出不稳定（同一 prompt 不同答案）、需控制多样性 / 创造性、JSON 抽取等结构化任务。Temperature + Top-p 联合调，是性价比最高的优化手段。</p>
+        </div>
+        <div>
+          <h3>加 CoT / Self-Consistency 的场景</h3>
+          <p>推理任务（数学 / 逻辑 / 代码）、多步规划、复杂判断。Self-Consistency 适合可验证答案（数学题有唯一答案），可多花 3-5 倍 token 换准确率。</p>
+        </div>
+        <div>
+          <h3>上 SFT 微调的场景</h3>
+          <p>垂直领域知识（医疗 / 法律 / 蕉内商品）、特定风格（品牌话术）、长 prompt 成本高、Prompt 调到极限仍不达标。LoRA 微调（成本低 + 可回滚）。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>学习路径与资源</h2>
+      <table>
+        <thead><tr><th>阶段</th><th>内容</th><th>推荐资源</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td>入门</td><td>理解 Few-Shot / CoT / 角色设定</td><td>OpenAI Prompt Engineering Guide、Anthropic Prompt Library</td><td>能写有效 Prompt</td></tr>
+          <tr><td>进阶</td><td>采样参数原理 + 结构化输出</td><td>Outlines / Guidance 文档、JSON Mode 实战</td><td>能稳定输出 JSON</td></tr>
+          <tr><td>推理激活</td><td>CoT / Self-Consistency / ToT</td><td>CoT 论文、Self-Consistency 论文</td><td>能提升推理任务准确率</td></tr>
+          <tr><td>评估</td><td>LLM-as-Judge / A/B 测试</td><td>MT-Bench / Chatbot Arena、PromptFoo</td><td>能搭评估 pipeline</td></tr>
+          <tr><td>微调</td><td>SFT / DPO / LoRA</td><td>Hugging Face TRL、Axolotl、Unsloth</td><td>能微调 7B-13B 模型</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">一句话总结：大模型调优的核心是"不改权重也能提升效果"。原则：先 Prompt（成本最低、迭代最快）→ 加采样参数（控风格）→ 加 CoT（提推理）→ 评估（确认有效）→ 不行再 SFT。80% 场景 prompt 调优够用。</div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

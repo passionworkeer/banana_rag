@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VLM 视觉语言模型 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./llm-tuning.html">大模型调优</a>
+    <a href="./lora.html">LoRA</a>
+    <a href="./embedding.html">Embedding</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">多模态 · 视觉语言</span>
+    <h1>VLM：让 LLM 看见世界的桥</h1>
+    <p class="lead">Visual Language Model 把图像 / 视频编码为"视觉 token"，与文本 token 一起送入 LLM 主干。LLaVA / Qwen-VL / InternVL 是开源代表，GPT-4V / Claude 3.5 Sonnet / Gemini 1.5 Pro 是闭源旗舰。架构 3 段：Vision Encoder → Projector → LLM。本页讲清训练 3 阶段、模态对齐、典型评测、应用边界。</p>
+    <div class="pillrow">
+      <span class="pill">Vision Encoder</span><span class="pill">Projector</span><span class="pill">LLaVA</span><span class="pill">Qwen-VL</span><span class="pill">InternVL</span><span class="pill">多模态对齐</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、VLM 三段架构</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="VLM architecture">
+          <defs>
+            <marker id="arrow-vm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="320" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="200" y="70" text-anchor="middle" font-size="16" font-weight="700">① Vision Encoder</text>
+          <text x="200" y="92" text-anchor="middle" font-size="12" fill="#475569">把图像编码为视觉特征</text>
+
+          <rect x="70" y="115" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="200" y="135" text-anchor="middle" font-size="13" font-weight="600">CLIP ViT / SigLIP / DINOv2</text>
+          <text x="200" y="153" text-anchor="middle" font-size="11" fill="#475569">通常冻结（已有强表征）</text>
+
+          <rect x="70" y="180" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="200" y="200" text-anchor="middle" font-size="13" font-weight="600">输入：H × W × 3 图像</text>
+          <text x="200" y="218" text-anchor="middle" font-size="11" fill="#475569">切 patch → ViT → 特征</text>
+
+          <rect x="70" y="245" width="260" height="50" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="200" y="265" text-anchor="middle" font-size="13" font-weight="600">输出：N × D 视觉特征</text>
+          <text x="200" y="283" text-anchor="middle" font-size="11" fill="#475569">N = patch 数 (576 for ViT-14)</text>
+
+          <rect x="400" y="40" width="280" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="540" y="70" text-anchor="middle" font-size="16" font-weight="700">② Projector</text>
+          <text x="540" y="92" text-anchor="middle" font-size="12" fill="#475569">视觉空间 → 文本空间</text>
+
+          <rect x="430" y="115" width="220" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="540" y="135" text-anchor="middle" font-size="13" font-weight="600">MLP / Q-Former</text>
+          <text x="540" y="153" text-anchor="middle" font-size="11" fill="#475569">LLaVA 用线性 + GELU</text>
+
+          <rect x="430" y="180" width="220" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="540" y="200" text-anchor="middle" font-size="13" font-weight="600">输入：N × D 视觉特征</text>
+          <text x="540" y="218" text-anchor="middle" font-size="11" fill="#475569">D 通常 1024-4096</text>
+
+          <rect x="430" y="245" width="220" height="50" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="540" y="265" text-anchor="middle" font-size="13" font-weight="600">输出：M × d 视觉 token</text>
+          <text x="540" y="283" text-anchor="middle" font-size="11" fill="#475569">d = LLM hidden (e.g. 4096)</text>
+
+          <rect x="720" y="40" width="420" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="930" y="70" text-anchor="middle" font-size="16" font-weight="700">③ LLM 主干</text>
+          <text x="930" y="92" text-anchor="middle" font-size="12" fill="#475569">把视觉 + 文本统一生成</text>
+
+          <rect x="750" y="115" width="360" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="930" y="135" text-anchor="middle" font-size="13" font-weight="600">输入：视觉 token + 文本 token 拼接</text>
+
+          <rect x="750" y="180" width="360" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="930" y="200" text-anchor="middle" font-size="13" font-weight="600">LLM（Causal LM）</text>
+          <text x="930" y="218" text-anchor="middle" font-size="11" fill="#475569">LLaMA / Qwen / Mistral / InternLM</text>
+
+          <rect x="750" y="245" width="360" height="50" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="930" y="265" text-anchor="middle" font-size="13" font-weight="600">输出：自然语言回答</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、视觉编码器选型</h2>
+      <ul>
+        <li><strong>CLIP ViT-L/14</strong>：LLaVA 默认，强语义对齐</li>
+        <li><strong>SigLIP</strong>：Google 出，sigmoid loss 训得更稳，Qwen-VL 用</li>
+        <li><strong>DINOv2</strong>：Meta 自监督，强几何 / 细节</li>
+        <li><strong>InternViT</strong>：上海 AI Lab，专门为 VLM 设计</li>
+        <li><strong>分辨率</strong>：224-336（标准）/ 448 / 896 / 动态（高分辨率图表必备）</li>
+      </ul>
+      <div class="callout">视觉编码器常"冻结"——避免破坏已学表征；Projector 才是"对齐"关键训练对象。</div>
+    </article>
+
+    <article class="card">
+      <h2>三、Projector 设计</h2>
+      <ul>
+        <li><strong>线性投影（Linear）</strong>：LLaVA-1.0 风格，单层线性</li>
+        <li><strong>2 层 MLP</strong>：LLaVA-1.5 默认，能力更强</li>
+        <li><strong>Q-Former</strong>：BLIP-2 风格，perceiver 重采样压缩 token 数</li>
+        <li><strong>Cross-Attention</strong>：Flamingo 风格，LLM 主干中插入 cross-attn 层</li>
+        <li><strong>动态分辨率</strong>：高分辨率图切多块，每块独立编码</li>
+      </ul>
+      <div class="callout">Projector 决定"信息密度"——压缩比例太高丢信息，太低 LLM 处理成本高。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、3 阶段训练</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="VLM training stages">
+          <defs>
+            <marker id="arrow-vt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="340" height="240" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="210" y="70" text-anchor="middle" font-size="16" font-weight="700">Stage 1 · 模态对齐</text>
+          <text x="210" y="92" text-anchor="middle" font-size="12" fill="#475569">只训 Projector</text>
+          <text x="80" y="125" font-size="12">冻结 Vision Encoder</text>
+          <text x="80" y="145" font-size="12">冻结 LLM</text>
+          <text x="80" y="170" font-size="12" fill="#7c3aed">数据：image-caption 对（百万级）</text>
+          <text x="80" y="195" font-size="12">目标：让视觉 token 进 LLM 后有意义</text>
+          <text x="80" y="220" font-size="12">成本：低，1×A100 几小时</text>
+
+          <rect x="420" y="40" width="340" height="240" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="590" y="70" text-anchor="middle" font-size="16" font-weight="700">Stage 2 · 指令微调</text>
+          <text x="590" y="92" text-anchor="middle" font-size="12" fill="#475569">训 Projector + LLM</text>
+          <text x="460" y="125" font-size="12">冻结 Vision Encoder</text>
+          <text x="460" y="145" font-size="12">LLM LoRA / 全量</text>
+          <text x="460" y="170" font-size="12" fill="#7c3aed">数据：image-instruction-response（百万级）</text>
+          <text x="460" y="195" font-size="12">目标：学会"看图回答"</text>
+          <text x="460" y="220" font-size="12">成本：中-高，几张 A100 几天</text>
+
+          <rect x="800" y="40" width="340" height="240" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="970" y="70" text-anchor="middle" font-size="16" font-weight="700">Stage 3 · 对齐 / 偏好</text>
+          <text x="970" y="92" text-anchor="middle" font-size="12" fill="#475569">可选：RLHF / DPO</text>
+          <text x="840" y="125" font-size="12">与 LLM 对齐相同思路</text>
+          <text x="840" y="150" font-size="12" fill="#7c3aed">数据：image + 偏好对</text>
+          <text x="840" y="175" font-size="12">目标：安全 / 风格 / 减少幻觉</text>
+          <text x="840" y="200" font-size="12">成本：高，参考 RLHF</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>五、5 大开源 VLM 对比</h2>
+      <table>
+        <thead><tr><th>模型</th><th>Vision</th><th>LLM</th><th>特色</th></tr></thead>
+        <tbody>
+          <tr><td>LLaVA-1.5</td><td>CLIP ViT-L/14</td><td>Vicuna-13B</td><td>经典架构，MLP Projector</td></tr>
+          <tr><td>Qwen-VL</td><td>ViT-big</td><td>Qwen-7B</td><td>中文强，Q-Former 风格</td></tr>
+          <tr><td>InternVL</td><td>InternViT-6B</td><td>InternLM</td><td>动态分辨率，强 OCR</td></tr>
+          <tr><td>CogVLM</td><td>EVA2-CLIP</td><td>基座</td><td>深度视觉-语言融合</td></tr>
+          <tr><td>DeepSeek-VL</td><td>SigLIP</td><td>DeepSeek</td><td>高分辨率混合编码</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>六、VLM 评测 4 类</h2>
+      <ul>
+        <li><strong>VQA 基础</strong>：VQA v2、OK-VQA（常识）</li>
+        <li><strong>OCR / 文档</strong>：DocVQA、ChartQA（图表理解）</li>
+        <li><strong>幻觉</strong>：POPE、HallusionBench（评估"胡说"率）</li>
+        <li><strong>综合</strong>：MMBench、MMT-Bench（多任务综合）</li>
+      </ul>
+      <div class="callout">VLM 评测比纯文本难——同一图可能有多个"正确"描述，需要用 GPT-4V 当 judge。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：VLM 三段架构各自作用？</h3>
+          <p>A：Vision Encoder（CLIP / SigLIP）把图编为视觉特征；Projector（MLP / Q-Former）把视觉空间映射到 LLM 的 token 空间；LLM 主干（Causal LM）把视觉 token 和文本 token 一起处理生成回答。VLM 训练的核心是"让视觉 token 看起来像文本 token"。</p>
+        </div>
+        <div>
+          <h3>Q2：VLM 训练为什么分 3 阶段？</h3>
+          <p>A：① Stage 1 只训 Projector，成本低、避免破坏视觉 / 文本已学表征；② Stage 2 训 Projector + LLM，让模型学"看图回答"；③ Stage 3 RLHF/DPO 选做，对齐人类偏好。3 阶段渐进解耦，避免灾难性遗忘。</p>
+        </div>
+        <div>
+          <h3>Q3：为什么 Vision Encoder 通常冻结？</h3>
+          <p>A：CLIP / SigLIP 已经在大规模图文对上预训练，表征已很强。冻结可避免破坏 + 省显存。少数 SOTA VLM（InternVL）解冻 Vision Encoder 进一步提效果，但成本涨。</p>
+        </div>
+        <div>
+          <h3>Q4：VLM 主要瓶颈是什么？</h3>
+          <p>A：3 个：① 高分辨率图像 token 数爆炸（1024×1024 → 4096 token）；② OCR / 细节能力（图表、文档理解）；③ 幻觉（VLM 容易"看见不存在"的东西）。Qwen-VL / InternVL 在 ②③ 上领先。</p>
+        </div>
+        <div>
+          <h3>Q5：VLM 和 LLM 相比新引入了什么风险？</h3>
+          <p>A：① 视觉注入（图片里嵌入恶意文本 → 间接 prompt injection）；② 训练数据偏见放大（视觉偏见比文本更难去）；③ OCR 错误传播（识别错 → 推理全错）。安全上需要"图像内容审查"层。</p>
+        </div>
+        <div>
+          <h3>Q6：动态分辨率 VLM 怎么工作？</h3>
+          <p>A：把高分辨率图切多块（如 448×448 patch 切 4-16 块），每块独立编码成 token，再加一个"缩略图" token 保留全局信息。Qwen-VL / InternVL 都用此招处理图表 / 文档。代价是 token 数线性涨。</p>
+        </div>
+        <div>
+          <h3>Q7：VLM 怎么和 Agent 集成？</h3>
+          <p>A：3 个场景：① 截图理解（VLM 看浏览器 / App 截图，操作 UI）；② 文档理解（VLM 解析 PDF / 图表，回答问题）；③ 视频分析（VLM 处理视频帧序列）。Computer Use / Browser Agent 是热门方向。</p>
+        </div>
+        <div>
+          <h3>Q8：开源 VLM 怎么选？</h3>
+          <p>A：① 中文场景优先 Qwen-VL / InternVL；② 英文 OCR 强选 InternVL / CogVLM；③ 部署成本敏感选 LLaVA-1.5（轻量）；④ 通用能力最强闭源 GPT-4V / Claude 3.5 / Gemini 1.5 Pro。生产上多模型 ensemble 也是常见选择。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>VLM = Vision Encoder + Projector + LLM 主干。视觉编码（CLIP / SigLIP）把图转特征，Projector（MLP / Q-Former）映射到 LLM token 空间，LLM 统一处理生成回答。3 阶段训练：模态对齐 / 指令微调 / RLHF-DPO。代表：LLaVA / Qwen-VL / InternVL / GPT-4V / Claude 3.5。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（LLM 看不见）→ 3 段架构 → 视觉编码器选型（CLIP / SigLIP / DINOv2）→ Projector 设计（MLP / Q-Former / Cross-Attn）→ 3 阶段训练（对齐 / 指令 / RLHF）→ 5 大开源 VLM 对比 → 4 类评测 → 与 Agent 集成（Computer Use / 文档解析）。能讲清"为什么分 3 阶段训练"、"为什么视觉 Encoder 通常冻结"、"高分辨率怎么解决"，立刻显得跟得上时代。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"从 OCR + LLM 切到 VLM"——比如原本文档解析是 PaddleOCR 抽文字 + LLM 总结，遇到图表就废；切 Qwen-VL 后图、表格、文字统一处理，文档 QA 准确率从 65% 升到 88%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>VLM 不是银弹：① 高分辨率 token 爆炸；② 幻觉比纯 LLM 严重；③ 训练成本高；④ 视觉注入是新攻击面。诚实说"VLM 适合图表 / 文档 / 截图，不适合纯文本场景"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>VLM</td><td>Visual Language Model，视觉语言模型</td></tr>
+          <tr><td>Vision Encoder</td><td>把图像编为视觉特征（CLIP / SigLIP / DINOv2）</td></tr>
+          <tr><td>Projector</td><td>视觉空间 → LLM token 空间映射层（MLP / Q-Former）</td></tr>
+          <tr><td>LLM 主干</td><td>把视觉 + 文本 token 统一处理生成回答</td></tr>
+          <tr><td>LLaVA</td><td>经典开源 VLM，CLIP ViT + Vicuna + 2 层 MLP</td></tr>
+          <tr><td>Qwen-VL</td><td>中文 VLM 代表，动态分辨率、Q-Former 风格</td></tr>
+          <tr><td>InternVL</td><td>OCR 强、动态分辨率高</td></tr>
+          <tr><td>3 阶段训练</td><td>模态对齐 → 指令微调 → RLHF/DPO</td></tr>
+          <tr><td>动态分辨率</td><td>高分辨率切多块 + 缩略图保留全局</td></tr>
+          <tr><td>视觉注入</td><td>图片嵌入恶意文本的 prompt injection</td></tr>
+          <tr><td>VQA</td><td>Visual Question Answering，基础评测</td></tr>
+          <tr><td>POPE / HallusionBench</td><td>VLM 幻觉评测</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

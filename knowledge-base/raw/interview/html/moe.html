@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MoE 混合专家 知识页</title>
+  <style>
+    :root{
+      --bg:#fff8ee;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#f1deb0;
+      --accent:#d97706;
+      --accent-soft:#fef3c7;
+      --accent-soft-2:#fff7ed;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#fff7ed);border:1px solid #f0d7a9;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#fff7ed;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./model-distributed.html">分布式</a>
+    <a href="./lora.html">LoRA</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">架构范式 · 稀疏激活</span>
+    <h1>MoE 混合专家：用稀疏激活换参数规模</h1>
+    <p class="lead">MoE（Mixture of Experts）把"一个密集 FFN"换成"多个专家 + 路由器"，每 token 只激活 K 个专家。Mixtral 8x7B（46B 总参数 / 12B 激活）、DeepSeek-V3（671B / 37B 激活）、Qwen-MoE、GPT-4 都用 MoE。本页把"动机 → 原理 → 路由策略 → 负载均衡 → 5 大开源 MoE 对比 → 通信与并行 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Top-K Routing</span><span class="pill">Sparse Activation</span><span class="pill">Expert Parallel</span><span class="pill">Load Balance</span><span class="pill">Mixtral</span><span class="pill">DeepSeek-V3</span><span class="pill">Switch</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要 MoE</h2>
+      <ul>
+        <li><strong>算力与参数的解耦</strong>：Dense 模型"参数 = 计算量"，1T 参数要 1T FLOPs/token。MoE 做到"1T 总参数 / 100B 激活"，推理成本可控</li>
+        <li><strong>可扩展性</strong>：加专家数不影响单 token 计算，只加显存 → 比 Dense 更易扩到千亿 / 万亿规模</li>
+        <li><strong>专业化</strong>：不同专家学习不同领域（代码 / 数学 / 写作），单 token 路由到最匹配的专家</li>
+        <li><strong>训练效率</strong>：相同激活 FLOPs 下，MoE 训练收敛更快（参数多 → 容量大）</li>
+        <li><strong>代价</strong>：① 显存不省（所有专家常驻）；② 通信开销大（Expert Parallel）；③ 负载均衡是核心难点</li>
+      </ul>
+      <div class="callout">口诀："Dense 是 1 个厨师做 1 道菜，MoE 是 8 个厨师，每道菜分给 2 个厨师做，路由器决定分给谁"。每 token 计算量 = 2/N，总参数 = N × 单专家容量。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、核心结构与公式</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>MoE 层（替代 Transformer FFN）</strong></p>
+        <p class="mathline">y = Σ<sub>i ∈ TopK(x)</sub> g<sub>i</sub>(x) · E<sub>i</sub>(x)</p>
+        <p class="mathnote">其中：</p>
+        <p class="mathline">g(x) = Softmax(W<sub>g</sub> · x) &nbsp;&nbsp;&nbsp; 路由器打分（logits → 概率）</p>
+        <p class="mathline">TopK(g, K)：选概率最高的 K 个专家索引</p>
+        <p class="mathline">E<sub>i</sub>(x)：第 i 个专家的 FFN（前馈网络，W<sub>up</sub> → SwiGLU → W<sub>down</sub>）</p>
+        <p class="mathline">g<sub>i</sub>(x)：路由权重（仅 K 个非零）</p>
+        <p class="mathnote"><strong>关键点</strong>：每 token 只激活 K 个专家（K=2 for Mixtral, K=6 for DeepSeek-V3），其它专家不参与计算。训练时所有专家都被梯度更新（被路由到的专家）。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>三、MoE 架构图</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 540" width="100%" height="auto" role="img" aria-label="MoE architecture">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#d97706"></path>
+            </marker>
+          </defs>
+
+          <rect x="500" y="20" width="180" height="50" rx="12" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+          <text x="590" y="50" text-anchor="middle" font-size="14" font-weight="700">Input Token x</text>
+
+          <rect x="500" y="100" width="180" height="70" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
+          <text x="590" y="128" text-anchor="middle" font-size="14" font-weight="700">Router W<sub>g</sub></text>
+          <text x="590" y="148" text-anchor="middle" font-size="11" fill="#475569">g = Softmax(W·x)</text>
+
+          <rect x="500" y="200" width="180" height="60" rx="12" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+          <text x="590" y="228" text-anchor="middle" font-size="13" font-weight="700">Top-K 选择</text>
+          <text x="590" y="248" text-anchor="middle" font-size="11" fill="#475569">K=2 / K=6</text>
+
+          <line x1="590" y1="70" x2="590" y2="100" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="590" y1="170" x2="590" y2="200" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <!-- 8 experts -->
+          <text x="590" y="300" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">8 Experts (FFN × 8)</text>
+
+          <rect x="60" y="320" width="100" height="60" rx="10" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+          <text x="110" y="345" text-anchor="middle" font-size="13" font-weight="700">E1</text>
+          <text x="110" y="365" text-anchor="middle" font-size="10" fill="#475569">激活</text>
+
+          <rect x="200" y="320" width="100" height="60" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
+          <text x="250" y="345" text-anchor="middle" font-size="13" font-weight="700">E2</text>
+          <text x="250" y="365" text-anchor="middle" font-size="10" fill="#475569">激活</text>
+
+          <rect x="340" y="320" width="100" height="60" rx="10" fill="#fff" stroke="#d97706" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="390" y="345" text-anchor="middle" font-size="13" fill="#94a3b8">E3</text>
+          <text x="390" y="365" text-anchor="middle" font-size="10" fill="#94a3b8">不激活</text>
+
+          <rect x="480" y="320" width="100" height="60" rx="10" fill="#fff" stroke="#d97706" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="530" y="345" text-anchor="middle" font-size="13" fill="#94a3b8">E4</text>
+          <text x="530" y="365" text-anchor="middle" font-size="10" fill="#94a3b8">不激活</text>
+
+          <rect x="620" y="320" width="100" height="60" rx="10" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+          <text x="670" y="345" text-anchor="middle" font-size="13" font-weight="700">E5</text>
+          <text x="670" y="365" text-anchor="middle" font-size="10" fill="#475569">激活</text>
+
+          <rect x="760" y="320" width="100" height="60" rx="10" fill="#fff" stroke="#d97706" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="810" y="345" text-anchor="middle" font-size="13" fill="#94a3b8">E6</text>
+          <text x="810" y="365" text-anchor="middle" font-size="10" fill="#94a3b8">不激活</text>
+
+          <rect x="900" y="320" width="100" height="60" rx="10" fill="#fff" stroke="#d97706" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="950" y="345" text-anchor="middle" font-size="13" fill="#94a3b8">E7</text>
+          <text x="950" y="365" text-anchor="middle" font-size="10" fill="#94a3b8">不激活</text>
+
+          <rect x="1040" y="320" width="100" height="60" rx="10" fill="#fff" stroke="#d97706" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="1090" y="345" text-anchor="middle" font-size="13" fill="#94a3b8">E8</text>
+          <text x="1090" y="365" text-anchor="middle" font-size="10" fill="#94a3b8">不激活</text>
+
+          <line x1="590" y1="260" x2="110" y2="320" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+          <line x1="590" y1="260" x2="250" y2="320" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+          <line x1="590" y1="260" x2="670" y2="320" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+
+          <rect x="490" y="420" width="200" height="60" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
+          <text x="590" y="448" text-anchor="middle" font-size="14" font-weight="700">Weighted Sum</text>
+          <text x="590" y="468" text-anchor="middle" font-size="11" fill="#475569">y = Σ g<sub>i</sub> · E<sub>i</sub>(x)</text>
+
+          <line x1="110" y1="380" x2="490" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+          <line x1="250" y1="380" x2="540" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+          <line x1="670" y1="380" x2="660" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+
+          <text x="590" y="510" text-anchor="middle" font-size="12" fill="#475569">每 token 激活 3 个专家（K=3）— 图示 K=3，实际常用 K=2~8</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、路由策略对比</h2>
+      <table>
+        <thead><tr><th>策略</th><th>做法</th><th>代表</th><th>优缺点</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Top-K Softmax（经典）</strong></td><td>Softmax → 选 K 个最大</td><td>Mixtral 8x7B（K=2）</td><td>简单、成熟；可能负载不均</td></tr>
+          <tr><td><strong>Top-1 / Switch</strong></td><td>只选 1 个专家</td><td>Switch Transformer（Google, 2021）</td><td>最省算力；负载更易不均</td></tr>
+          <tr><td><strong>Expert Choice</strong></td><td>每个专家选 Top-K token</td><td>DeepSeek-V2 / V3</td><td>天然均衡；可能 token 被选多次</td></tr>
+          <tr><td><strong>细粒度 + 共享专家</strong></td><td>细专家 + 1 共享专家</td><td>DeepSeek-MoE / V3</td><td>细粒度路由 + 通用知识不分流</td></tr>
+          <tr><td><strong>Hash 路由</strong></td><td>token id hash 选专家</td><td>Google GLaM 早期</td><td>完全均衡；缺乏内容感知</td></tr>
+          <tr><td><strong>BASE / EBR（随机）</strong></td><td>按概率采样 K 个</td><td>BASE Layer</td><td>探索性强；训练不稳</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">DeepSeek-V3 用"细粒度专家（256 路由 + 1 共享）+ K=8 激活"，比传统 8 专家 K=2 更细粒度、专家利用率高，且共享专家吸收通用知识避免路由抖动。2024-2025 主流方案。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、负载均衡（Load Balance）</h2>
+      <p>MoE 最大工程难题：路由器会"偏好"少数专家（路由坍缩），导致其它专家欠训练，浪费容量。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>辅助损失（Auxiliary Loss, Switch Transformer）</strong></p>
+        <p class="mathline">L<sub>aux</sub> = α · N · Σ<sub>i=1</sub><sup>N</sup> f<sub>i</sub> · p<sub>i</sub></p>
+        <p class="mathnote">其中 f<sub>i</sub> = 专家 i 被路由到的 token 比例，p<sub>i</sub> = 平均路由概率。f<sub>i</sub> · p<sub>i</sub> 越小（均衡时接近 1/N²）→ 损失越大。乘以 N 后最小值是 1（完全均衡时）。</p>
+        <p class="mathnote"><strong>DeepSeek-V3 无辅助损失均衡</strong>（创新）</p>
+        <p class="mathline">L<sub>bal</sub> = α · Σ<sub>i</sub> (1/N - f<sub>i</sub>) · g<sub>i</sub> &nbsp;&nbsp; 偏向项，路由时直接加 bias</p>
+        <p class="mathnote">不增加 loss 项，训练目标更纯净；用动态 bias 调整专家倾向，避免过载专家被持续路由。</p>
+      </div>
+      <ul>
+        <li><strong>辅助损失</strong>：标准做法，损失加一项鼓励均衡（如 Switch）</li>
+        <li><strong>Router z-loss</strong>：约束 router logits 模长，避免数值爆炸</li>
+        <li><strong>Dropout on experts</strong>：随机丢弃专家防止过拟合</li>
+        <li><strong>Capacity Factor (CF)</strong>：每个专家最多处理 token 数 = (T/N) × CF，CF=1.0 标准，超出截断</li>
+        <li><strong>DeepSeek 无损均衡</strong>：动态 bias 调整 + 共享专家 + 细粒度，2024 主流</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、专家并行（Expert Parallel, EP）</h2>
+      <p>MoE 训练不能用普通 TP/PP，因为每 token 只路由到 K 个专家，专家分布在不同 GPU 上。需要 All-to-All 通信。</p>
+      <ul>
+        <li><strong>EP 拓扑</strong>：N 个 GPU 各自放 N 个专家（或子集），router 决定后 All-to-All 调度 token</li>
+        <li><strong>通信模式</strong>：每个 step 都有 All-to-All（dispatch 阶段 + combine 阶段）</li>
+        <li><strong>通信量</strong>：与 token 数 × 隐藏维 × K 线性相关，可被 token drop / 量化压缩</li>
+        <li><strong>DeepSeek-V3 创新</strong>：DualPipe 流水 + 跨节点 EP + FP8 通信，训练 671B 跑出极致效率</li>
+        <li><strong>Megatron-Core / DeepSpeed MoE</strong>：开源框架支持 EP 训练</li>
+      </ul>
+      <div class="callout">MoE 训练的"成本重心"在通信。优化方向：① All-to-All 重叠计算；② 专家分组减少节点数；③ Token drop 降负载；④ 量化通信（FP8/INT8）；⑤ DualPipe / DualPipe-Overlap。</div>
+    </article>
+
+    <article class="card">
+      <h2>七、5 大开源 MoE 模型对比</h2>
+      <table>
+        <thead><tr><th>模型</th><th>总参数</th><th>激活参数</th><th>专家数</th><th>K</th><th>路由策略</th><th>团队 / 时间</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Mixtral 8x7B</strong></td><td>46.7B</td><td>~12.9B</td><td>8</td><td>2</td><td>Top-2 Softmax</td><td>Mistral AI / 2023.12</td></tr>
+          <tr><td><strong>Mixtral 8x22B</strong></td><td>141B</td><td>~39B</td><td>8</td><td>2</td><td>Top-2 Softmax</td><td>Mistral AI / 2024.4</td></tr>
+          <tr><td><strong>DeepSeek-V2</strong></td><td>236B</td><td>21B</td><td>160 路由 + 2 共享</td><td>6</td><td>细粒度 + 共享</td><td>DeepSeek / 2024.5</td></tr>
+          <tr><td><strong>DeepSeek-V3</strong></td><td>671B</td><td>37B</td><td>256 路由 + 1 共享</td><td>8</td><td>细粒度 + 共享 + 无损均衡</td><td>DeepSeek / 2024.12</td></tr>
+          <tr><td><strong>Qwen-MoE A2.5</strong></td><td>140B+</td><td>~15B</td><td>64</td><td>4</td><td>细粒度</td><td>阿里 / 2024</td></tr>
+          <tr><td><strong>Llama-4 (传闻)</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Meta / 2025.4（MoE 化）</td></tr>
+          <tr><td><strong>GPT-4 (公开传闻)</strong></td><td>1.8T (估)</td><td>~280B (估)</td><td>16 × 8 (估)</td><td>2</td><td>Top-2 (估)</td><td>OpenAI / 2023</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>八、训练 / 推理 / 部署要点</h2>
+      <table>
+        <thead><tr><th>环节</th><th>挑战</th><th>主流解法</th></tr></thead>
+        <tbody>
+          <tr><td><strong>训练</strong></td><td>路由坍缩、负载不均、通信慢</td><td>辅助损失 / DeepSeek 无损均衡、All-to-All 重叠、FP8 通信</td></tr>
+          <tr><td><strong>推理吞吐</strong></td><td>专家分布在不同卡，token 跳卡</td><td>专家并行 + 高带宽（NVLink/IB），Token drop 降负载</td></tr>
+          <tr><td><strong>推理显存</strong></td><td>所有专家常驻</td><td>Expert Offload（冷专家放 CPU/SSD）、预取</td></tr>
+          <tr><td><strong>推理延迟</strong></td><td>首 token 需等所有专家</td><td>Prefill 阶段 EP 调度，Decode 阶段批量</td></tr>
+          <tr><td><strong>量化</strong></td><td>FP8 路由权重敏感</td><td>DeepSeek-V3 验证 FP8 训练可行；推理用 AWQ/GPTQ 量化专家</td></tr>
+          <tr><td><strong>LoRA 适配</strong></td><td>改专家还是改 router？</td><td>LoRA on FFN 专家 + Router LoRA（小 lr），效果比 dense 微调更稳</td></tr>
+          <tr><td><strong>vLLM 推理</strong></td><td>需支持 MoE</td><td>vLLM 0.5+ 支持 Mixtral / DeepSeek-V3，FP8 + EP</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>九、项目落地 / 业务场景</h2>
+      <ul>
+        <li><strong>千亿级模型成本控制</strong>：Dense 1T 要 1T 算力，MoE 1T 总参 / 100B 激活 → 推理成本 1/10</li>
+        <li><strong>多语言 / 多任务</strong>：不同语言 / 任务路由到不同专家，比 dense 单模型更易扩展</li>
+        <li><strong>企业专属化</strong>：基础模型 + 领域专家（如医疗 / 法律），主模型不动，加 K 个领域专家 + 路由</li>
+        <li><strong>DeepSeek-V3 实战</strong>：671B / 37B 激活，FP8 训练，2.788M H800 小时 ≈ $5.5M；远低于 Llama-3 405B 的 $60M+</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>路由策略</td>
+            <td>从 Top-2 切到 Expert Choice + 共享专家</td>
+            <td>"路由从 Top-2 改 Expert Choice，路由坍缩率从 18% 降至 0.4%，训练收敛快 1.4x"</td>
+          </tr>
+          <tr>
+            <td>负载均衡</td>
+            <td>无辅助损失动态 bias 均衡</td>
+            <td>"引入 DeepSeek-V3 无损均衡，expert 利用率从 62% 提升到 96%，无需调 aux loss 权重"</td>
+          </tr>
+          <tr>
+            <td>推理优化</td>
+            <td>vLLM + EP + FP8 部署 Mixtral 8x7B</td>
+            <td>"用 vLLM FP8 EP 部署 8x7B，QPS 提升 3.2x，推理成本降至 1/3"</td>
+          </tr>
+          <tr>
+            <td>领域适配</td>
+            <td>基座 MoE + 医疗专家 LoRA</td>
+            <td>"基座 MoE 插入 8 个医疗专家 LoRA，医疗 QA 准确率 +14pp，通用能力不掉"</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：MoE 核心思想是什么？</h3>
+          <p>A：用 N 个专家 FFN 替代 1 个密集 FFN，每 token 只激活 K 个。路由器 W<sub>g</sub> 算 N 个 logits，TopK 选 K 个专家，加权求和输出。总参 N×单专家，激活 K×单专家 → "总参大、激活小"。</p>
+        </div>
+        <div>
+          <h3>Q2：MoE 和 Dense 比有什么 trade-off？</h3>
+          <p>A：① 参数量大幅提升（千亿级可行），激活算力可控；② 训练路由坍缩是核心难点（辅助损失 / 无损均衡）；③ 推理显存不省（所有专家常驻），需 Expert Offload；④ 通信大（All-to-All），EP + 高带宽互联；⑤ 工程复杂，框架支持不成熟。</p>
+        </div>
+        <div>
+          <h3>Q3：Mixtral 8x7B 的 8x7B 是什么意思？</h3>
+          <p>A：8 个专家，每个专家 7B 参数，共享 attention 层。总参数约 46.7B（共享 attention 7B + 8×专家 7B = 7B + 8×7B 实际约 46.7B），每 token 激活 Top-2 ≈ 12.9B FLOPs。</p>
+        </div>
+        <div>
+          <h3>Q4：为什么 K 不能太大？</h3>
+          <p>A：K 大 → 激活参数大、计算贵、失去稀疏优势。一般 K=1（Switch）到 K=8（DeepSeek-V3）。Switch 最省算力但负载最易不均；DeepSeek 用 256 专家 + K=8 + 共享专家 1 个，兼顾细粒度和均衡。</p>
+        </div>
+        <div>
+          <h3>Q5：路由坍缩（router collapse）怎么解决？</h3>
+          <p>A：四个层面：① 辅助损失（Switch / Mixtral 标准做法）；② 路由 z-loss 约束 logits；③ DeepSeek 无损均衡（动态 bias）；④ Capacity Factor 截断过载专家（强制均摊）。生产中前两个必加，DeepSeek 风格避免损失污染主目标。</p>
+        </div>
+        <div>
+          <h3>Q6：MoE 怎么和 Dense 模型对比推理速度？</h3>
+          <p>A：单 token FLOPs：MoE = K/N × Dense（理想）。但实际：① 通信开销（All-to-All 调度）吃 10-30% 性能；② 显存带宽瓶颈（专家大）；③ MoE 实际峰值 FLOPs 利用率 50-70%，Dense 可达 80%+。在 batch 大、通信快的场景（≥16）MoE 优势明显。</p>
+        </div>
+        <div>
+          <h3>Q7：DeepSeek-V3 为什么 671B 训练只要 $5.5M？</h3>
+          <p>A：三个核心：① MoE 671B / 37B 激活 → 单 token 算力仅 37B 模型级别；② FP8 训练（混合精度 + FP8 GEMM）；③ DualPipe 流水线 + 跨节点 EP 通信优化。算下来单 token 算力低 + H800 高利用率 = 极低训练成本。</p>
+        </div>
+        <div>
+          <h3>Q8：MoE 怎么 LoRA 微调？</h3>
+          <p>A：常见两种：① LoRA on 专家 FFN：每个专家上加低秩 adapter；② Router LoRA：小学习率微调 router。生产中常组合：基座 MoE 冻结 + 专家 LoRA（仅 5-10% 专家加 LoRA），训练便宜且不掉通用能力。</p>
+        </div>
+        <div>
+          <h3>Q9：MoE 推理为什么显存大？</h3>
+          <p>A：所有专家常驻显存。Mixtral 8x7B = 8 × 7B × 2 字节 = 112GB FP16。要降到 A100 80GB 需：① 专家 offload（冷专家放 CPU/SSD）；② 量化（INT4 → 28GB）；③ 分片 EP（每卡 1-2 个专家）。</p>
+        </div>
+        <div>
+          <h3>Q10：MoE 什么时候不值得用？</h3>
+          <p>A：① 参数量需求不大（&lt;30B 激活就够）—— Dense 更简单；② 单卡部署（MoE 通信 / 显存 / 工具链复杂）；③ 训练算力受限（MoE 训练门槛高，需大集群 + DeepSpeed / Megatron）；④ 任务简单、单领域 —— Dense + LoRA 更划算。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：MoE（Mixture of Experts）把密集 FFN 换成"路由器 + N 个专家"，每 token 只激活 K 个。总参数 N×单专家，激活 K×单专家 → 用 1T 总参 / 100B 激活的稀疏模型，达到 Dense 1T 模型效果。Mixtral 8x7B（46B/12B）、DeepSeek-V3（671B/37B）代表。难点是路由坍缩、负载均衡、All-to-All 通信。生产中 MoE 已成千亿模型标配。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（解耦算力与参数）→ 核心公式 (TopK 加权) → 路由策略（Top-K / Switch / Expert Choice）→ 负载均衡（辅助损失 / 无损均衡）→ 专家并行与通信 → 5 大开源模型对比（Mixtral / DeepSeek-V3）→ 训练 / 推理 / 部署要点 → 业务落地。能讲清"DeepSeek-V3 无损均衡为什么创新"、"MoE 推理显存不省的根因"，立刻显得有真研究。</p>
+        </div>
+        <div>
+          <h3>加分：知道 MoE 局限</h3>
+          <p>MoE 不是银弹：① 训练门槛高（All-to-All 通信 + 大集群）；② 推理显存不省（专家常驻）；③ 路由坍缩难调（aux loss 权重难定）；④ 框架支持不成熟（vLLM / TensorRT-LLM 2024 后逐步支持）；⑤ 单卡部署难（多卡 EP）；⑥ 量化路径不成熟（FP8 训练最新，INT4 量化在研究）。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：训练 Mixtral 8x7B 时路由坍缩（3 个专家承担 90% token），加 aux loss 权重 α=0.01 后均衡但主 loss 上涨；改用 DeepSeek 无损均衡 + 共享专家，训练收敛 1.4x，expert 利用率 96%。讲清"路由坍缩 → 调 aux → 改无损均衡"三步，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>原理</td><td>MoE 怎么路由？</td><td>答"Router + TopK"：W<sub>g</sub> 算 N 个 logits，Softmax 后取 K 个最大。Mixtral Top-2、Switch Top-1、DeepSeek Top-8。Router 是可学习的 Linear，与专家一起训练。</td></tr>
+          <tr><td>负载均衡</td><td>路由坍缩怎么解决？</td><td>答"三层防御"：① 辅助损失（Switch 标准，损失加一项鼓励均衡）；② 路由 z-loss 约束 logits；③ DeepSeek 无损均衡（动态 bias）。生产中无损均衡是 2024-2025 主流，避免污染主 loss。</td></tr>
+          <tr><td>通信</td><td>MoE 训练为什么通信大？</td><td>答"All-to-All"：每 step router 决定后，token 要被发送到对应专家所在 GPU，输出再合并回原卡。All-to-All 通信量与 token 数 × 隐藏维 × K 线性相关。优化：通信重叠 + 专家分组 + FP8 量化。</td></tr>
+          <tr><td>vs Dense</td><td>MoE 比 Dense 强在哪？</td><td>答"算力解耦 + 容量大"：相同激活 FLOPs 下，MoE 总参大 → 容量大、表达力强、训练收敛快。Mixtral 8x7B（12B 激活）效果超过 Llama-2 70B（70B 激活）。</td></tr>
+          <tr><td>推理</td><td>MoE 推理为什么显存大？</td><td>答"专家常驻"：所有专家权重在显存待命。Mixtral 8x7B = 112GB FP16。优化：① 量化（INT4 → 28GB）；② 专家 offload（冷专家放 CPU/SSD）；③ EP 分片（每卡 1-2 专家）；④ vLLM + FP8 推理。</td></tr>
+          <tr><td>选型</td><td>MoE vs Dense 怎么选？</td><td>答"按规模 + 成本"：&lt;30B 激活 → Dense + LoRA 更简单；≥70B 激活需求 → MoE 划算（Mixtral 8x7B / DeepSeek-V3）；边缘 / 端侧 → Dense；超大规模 → MoE 主流（GPT-4 / DeepSeek-V3 / Qwen-MoE）。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：MoE 是 2024-2026 大模型架构必考点。面试允许说"我只了解原理，未深入训练"，但要能讲清路由公式、负载均衡、通信、Mixtral/DeepSeek-V3 对比。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>MoE</td><td>Mixture of Experts，N 个专家 + 路由器，每 token 激活 K 个</td></tr>
+          <tr><td>Top-K Routing</td><td>Softmax → 选概率最高的 K 个专家</td></tr>
+          <tr><td>Switch</td><td>Top-1 路由，Google Switch Transformer 2021</td></tr>
+          <tr><td>Expert Choice</td><td>每个专家选 Top-K token，天然均衡，DeepSeek-V2/V3</td></tr>
+          <tr><td>细粒度专家</td><td>把每个专家拆小（如 256 个小专家），DeepSeek-MoE 创新</td></tr>
+          <tr><td>共享专家</td><td>始终激活的专家，吸收通用知识避免路由抖动</td></tr>
+          <tr><td>路由坍缩</td><td>Router 偏好少数专家，其它专家欠训练，MoE 核心难题</td></tr>
+          <tr><td>辅助损失</td><td>Aux Loss，损失加一项鼓励专家均衡</td></tr>
+          <tr><td>无损均衡</td><td>DeepSeek-V3 创新，动态 bias 调整，不污染主 loss</td></tr>
+          <tr><td>Expert Parallel (EP)</td><td>专家分布在不同 GPU，All-to-All 通信调度</td></tr>
+          <tr><td>All-to-All</td><td>EP 训练核心通信原语，token 在 GPU 间重新分布</td></tr>
+          <tr><td>Capacity Factor</td><td>专家 token 容量倍数，CF=1.0 标准，超出截断</td></tr>
+          <tr><td>Mixtral 8x7B</td><td>Mistral 2023.12，8 专家 K=2，46B/12B 激活</td></tr>
+          <tr><td>DeepSeek-V3</td><td>671B / 37B 激活，256 路由 + 1 共享，K=8，2024.12</td></tr>
+          <tr><td>FP8 训练</td><td>DeepSeek-V3 验证 FP8 全流程训练可行，省 30%+ 显存</td></tr>
+          <tr><td>DualPipe</td><td>DeepSeek 流水线 + EP 重叠，训练效率极致</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

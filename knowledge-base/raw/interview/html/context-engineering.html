@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Context Engineering 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./prompt-engineering.html">Prompt Engineering</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./ai-pm.html">AI PM</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Anthropic 2025 · AI PM 视角</span>
+    <h1>Context Engineering：Prompt Engineering 的"上半场"</h1>
+    <p class="lead">Anthropic 2025 提出的概念：把所有"模型决策时能看到的信息"——system prompt、few-shot、RAG 检索、工具结果、长期记忆——都视为可设计的"上下文工程"。比 Prompt Engineering 视角更宽：解决"为什么模型在长对话中忘记约束"、"为什么 RAG 检索回来反而干扰"等问题。</p>
+    <div class="pillrow">
+      <span class="pill">Context Engineering</span><span class="pill">Just-in-Time</span><span class="pill">Memory</span><span class="pill">Tools</span><span class="pill">RAG</span><span class="pill">Few-shot</span><span class="pill">Anthropic</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Prompt Engineering vs Context Engineering</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="Prompt vs Context Engineering">
+          <defs>
+            <marker id="arrow-ce" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="540" height="240" rx="16" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="310" y="68" text-anchor="middle" font-size="18" font-weight="700">Prompt Engineering</text>
+          <text x="310" y="92" text-anchor="middle" font-size="12" fill="#475569">关注"用户那一句话"</text>
+
+          <rect x="80" y="120" width="460" height="50" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+          <text x="310" y="142" text-anchor="middle" font-size="13" font-weight="600">User Prompt：</text>
+          <text x="310" y="160" text-anchor="middle" font-size="11" fill="#475569">"把这份报告总结成 3 句话"</text>
+
+          <rect x="80" y="190" width="220" height="60" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="190" y="215" text-anchor="middle" font-size="12" font-weight="600">System Prompt</text>
+          <text x="190" y="235" text-anchor="middle" font-size="11" fill="#475569">角色 + 风格</text>
+
+          <rect x="320" y="190" width="220" height="60" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="430" y="215" text-anchor="middle" font-size="12" font-weight="600">User 输入</text>
+          <text x="430" y="235" text-anchor="middle" font-size="11" fill="#475569">当前任务</text>
+
+          <rect x="600" y="40" width="540" height="240" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="870" y="68" text-anchor="middle" font-size="18" font-weight="700">Context Engineering</text>
+          <text x="870" y="92" text-anchor="middle" font-size="12" fill="#475569">关注"模型决策时能看到的全部信息"</text>
+
+          <rect x="640" y="120" width="460" height="40" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="870" y="142" text-anchor="middle" font-size="12" font-weight="600">System Prompt（角色 / 风格 / 约束）</text>
+
+          <rect x="640" y="170" width="220" height="35" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="750" y="190" text-anchor="middle" font-size="11">Few-shot 示例</text>
+
+          <rect x="880" y="170" width="220" height="35" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="990" y="190" text-anchor="middle" font-size="11">Long-term Memory</text>
+
+          <rect x="640" y="215" width="220" height="35" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="750" y="235" text-anchor="middle" font-size="11">RAG 检索结果</text>
+
+          <rect x="880" y="215" width="220" height="35" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="990" y="235" text-anchor="middle" font-size="11">Tool 输出</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Context Engineering 4 大组成</h2>
+      <ul>
+        <li><strong>Instructions</strong>：system prompt + user prompt（角色 / 任务 / 约束）</li>
+        <li><strong>Knowledge</strong>：RAG 检索、长期记忆、文档引用</li>
+        <li><strong>Tools</strong>：可用工具的定义、tool 输出回填</li>
+        <li><strong>Examples</strong>：few-shot 示例、之前成功 / 失败的样本</li>
+      </ul>
+      <div class="callout">Anthropic 原话："Context Engineering 是精心策划的、刚好够用、刚好及时的信息集合，让 LLM 完成任务。"</div>
+    </article>
+
+    <article class="card">
+      <h2>三、Just-in-Time Context</h2>
+      <ul>
+        <li><strong>静态 Context</strong>：把"所有可能用到的信息"塞 system prompt（贵 + 易超长）</li>
+        <li><strong>JIT Context</strong>：按需动态检索 / 加载（省 token + 更准）</li>
+        <li><strong>类比</strong>：传统软件把所有依赖打进二进制 vs 按需 npm install</li>
+      </ul>
+      <div class="callout">Agent 系统几乎都是 JIT：RAG 按 query 检索、Tools 按需调用、Memory 按需 retrieve。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、Context Engineering 设计 5 原则</h2>
+      <table>
+        <thead><tr><th>原则</th><th>含义</th><th>反例</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Just Enough</strong></td><td>给"刚好够用"的信息，不多不少</td><td>把所有工具描述塞 prompt</td></tr>
+          <tr><td><strong>Just-in-Time</strong></td><td>按需动态加载</td><td>每次 system prompt 全量</td></tr>
+          <tr><td><strong>Structured</strong></td><td>结构化（JSON / Schema）让模型易解析</td><td>纯自然语言大段文字</td></tr>
+          <tr><td><strong>Attributed</strong></td><td>每条信息标来源（用于"如果 X 不可信"）</td><td>把检索结果当事实</td></tr>
+          <tr><td><strong>Lifecycle</strong></td><td>Context 也有生命周期（生成 / 维护 / 失效）</td><td>Memory 永远不被更新</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、Context 常见失败模式</h2>
+      <ul>
+        <li><strong>Context Poisoning</strong>：检索回幻觉 / 错误信息，污染后续推理</li>
+        <li><strong>Context Distraction</strong>：context 太多反而分散注意力</li>
+        <li><strong>Context Confusion</strong>：不同 context 块（如 system vs user）冲突，模型不知道听谁</li>
+        <li><strong>Context Clash</strong>：工具结果和 system prompt 矛盾</li>
+        <li><strong>Context Forgetting</strong>：长对话中 system prompt 约束被"挤掉"（attention 集中在最新 token）</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、Context Engineering 与 RAG 关系</h2>
+      <p>RAG 是 Context Engineering 的一个子集——负责"知识"这一维度。但 Context Engineering 更宽：</p>
+      <ul>
+        <li><strong>Prompt</strong>：instruction context</li>
+        <li><strong>RAG</strong>：knowledge context</li>
+        <li><strong>Tool</strong>：actionable context（让模型能"做"）</li>
+        <li><strong>Memory</strong>：historical context（让模型记得过去）</li>
+        <li><strong>Examples</strong>：demonstrative context（让模型会做）</li>
+      </ul>
+      <div class="callout">判断口诀：单一对话用 Prompt Engineering；多步 / 多工具 / 多 session 用 Context Engineering。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Context Engineering 和 Prompt Engineering 区别？</h3>
+          <p>A：Prompt Engineering 关注"用户那一句话和 system prompt"；Context Engineering 关注"模型决策时能看到的全部信息"——包括 RAG 检索结果、工具输出、长期记忆、few-shot 示例。Context Engineering 是更宽的视角，承认"提示词只是 context 的一部分"。</p>
+        </div>
+        <div>
+          <h3>Q2：Context Engineering 适合什么场景？</h3>
+          <p>A：① Agent 系统（多步 + 多工具 + 多 session）；② 复杂 RAG（多次检索、多源融合）；③ 长对话助手（需维护 user preference）；④ 多用户个性化（每个用户有独立 context）。简单单轮对话用 Prompt Engineering 足矣。</p>
+        </div>
+        <div>
+          <h3>Q3：Context 越丰富越好吗？</h3>
+          <p>A：不一定。"Lost in the Middle" + Context Distraction 都说明：context 多了反而干扰。原则是"just enough, just in time"——只给当前任务真正需要的信息，按需加载。Anthropic 建议"为模型做减法"。</p>
+        </div>
+        <div>
+          <h3>Q4：Context Engineering 怎么评估？</h3>
+          <p>A：3 层：① 任务完成率（context 是否含必要信息）；② Token 成本（context 是否精炼）；③ 失败模式（Context Poisoning / Confusion 频率）。可建评估集对比"加 context 前 vs 后"差异。</p>
+        </div>
+        <div>
+          <h3>Q5：Context 顺序有讲究吗？</h3>
+          <p>A：有。"Lost in the Middle"显示：放在头尾的 context 关注度高、中间低。所以关键约束（system prompt 核心规则）放头、关键事实放尾、中间放"参考但不关键"。Claude / GPT 都有"position bias"。</p>
+        </div>
+        <div>
+          <h3>Q6：Context Engineering vs Memory 关系？</h3>
+          <p>A：Memory 是 Context Engineering 的一部分——历史 context。但 Memory 有"持久化"特征（跨 session），其他 context 多为"一次性"（当前 session）。生产中 Memory 需要定期去重、过期、合并。</p>
+        </div>
+        <div>
+          <h3>Q7：RAG 检索结果会污染 context 吗？</h3>
+          <p>A：会。Context Poisoning 是 RAG 系统的最大风险——检索回错误 / 旧 / 矛盾信息，模型会"信以为真"。解法：① 标 attribution（这条信息来自 X）；② 多源交叉验证；③ 检索评分低于阈值的丢弃。</p>
+        </div>
+        <div>
+          <h3>Q8：Context Engineering 有现成框架吗？</h3>
+          <p>A：没有"Context Engineering 框架"这种统一抽象，但 LangChain / LlamaIndex 在 prompt 模板 + RAG + Memory 层面的设计就是 Context Engineering 实践。Anthropic 提供"Contextual Retrieval"（检索结果额外用 LLM 加 context 后再 embedding）的具体方案。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Context Engineering 是 Anthropic 2025 提出的"Prompt Engineering 升级版"——把模型决策时能看到的全部信息（system + RAG + tools + memory + few-shot）视为可设计的"上下文工程"。5 原则：Just Enough / Just-in-Time / Structured / Attributed / Lifecycle。常见失败：Poisoning / Distraction / Confusion / Forgetting。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（Prompt Engineering 不够用）→ 4 大组成（Instructions / Knowledge / Tools / Examples）→ Just-in-Time vs 静态 → 5 设计原则 → 5 失败模式 → 与 RAG / Memory 关系 → 与 Prompt Engineering 边界。能讲清"为什么 Just-in-Time 比全量塞入好"、"为什么 Context 顺序有讲究"，立刻显得跟得上 2025 趋势。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"从 Prompt Engineering 升级到 Context Engineering"——比如客服 Agent 早期 system prompt 100 行（含全部工具说明 + 全部 FAQ），token 贵、模型"分心"；改 Context Engineering 后 system prompt 30 行 + 工具按需加载 + RAG 检索 FAQ，单次成本 -50%，完成率 +15%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>Context Engineering 不是银弹：① 多了仍会 "Lost in the Middle"；② Context Poisoning 难完全防；③ 评估难（context 维度太多）；④ 不适合单轮简单任务。诚实说"Context Engineering 是 Agent 时代的系统设计视角，不是 prompt 技巧"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Context Engineering</td><td>Anthropic 2025 提出，模型决策时所有可设计信息的工程</td></tr>
+          <tr><td>Just Enough</td><td>只给模型"刚好够用"的信息</td></tr>
+          <tr><td>Just-in-Time</td><td>按需动态加载 context</td></tr>
+          <tr><td>Structured Context</td><td>结构化（JSON / Schema）让模型易解析</td></tr>
+          <tr><td>Attribution</td><td>每条信息标来源，让模型能识别"信不信"</td></tr>
+          <tr><td>Context Poisoning</td><td>检索 / 输入含错误信息污染后续推理</td></tr>
+          <tr><td>Context Distraction</td><td>context 太多反而分散注意力</td></tr>
+          <tr><td>Context Confusion</td><td>不同 context 块冲突，模型不知听谁</td></tr>
+          <tr><td>Context Forgetting</td><td>长对话中早期 system prompt 约束被忽略</td></tr>
+          <tr><td>Lifecycle</td><td>Context 也有生成 / 维护 / 失效周期</td></tr>
+          <tr><td>Position Bias</td><td>context 头尾关注度高、中间低</td></tr>
+          <tr><td>Contextual Retrieval</td><td>Anthropic 方案：检索结果额外用 LLM 加 context 再 embedding</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

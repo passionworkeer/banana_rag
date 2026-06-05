@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>模型微调工具链 知识页</title>
+  <style>
+    :root{
+      --bg:#fff1f2;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#fecdd3;
+      --accent:#be123c;
+      --accent-soft:#ffe4e6;
+      --accent-soft-2:#fff1f2;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#fff1f2);border:1px solid #fecdd3;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#fff1f2;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./llm-tuning.html">LLM 微调</a>
+    <a href="./lora.html">LoRA</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./dpo.html">DPO</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">训练工具链 · Finetune Stack</span>
+    <h1>模型微调工具链：Axolotl / Unsloth / LLaMA-Factory / TRL / PEFT</h1>
+    <p class="lead">2023 年以来 LLM 微调工具链爆发式发展——从 HuggingFace PEFT/TRL 标准库，到 Unsloth 的内核级加速、Axolotl 的 YAML 配置范式、LLaMA-Factory 的 Web UI、Swift 的国产模型覆盖、bitsandbytes 的 4-bit 量化。生产级微调不再是"手写 Trainer + 写 dataloader"，而是用一站式框架：YAML 写配置 / Web UI 点点 / 一行命令启动分布式。本页把 8 大工具、完整流水线、代码模板、选型决策、面试 FAQ 一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Axolotl</span><span class="pill">Unsloth</span><span class="pill">LLaMA-Factory</span><span class="pill">TRL</span><span class="pill">PEFT</span><span class="pill">LoRA</span><span class="pill">QLoRA</span><span class="pill">Swift</span><span class="pill">bitsandbytes</span><span class="pill">DeepSpeed</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要专门的微调工具</h2>
+      <ul>
+        <li><strong>重复造轮子代价高</strong>：从零写 PyTorch 训练循环要处理：混合精度（AMP / BF16）、梯度累积、ZeRO 切分、LoRA 注入、packing、checkpoint 续训——动辄 1000+ 行</li>
+        <li><strong>生态碎片化</strong>：LoRA 实现有十几种（PEFT / LoRA+ / DoRA / AdaLoRA / IA3 / LongLoRA / ReLoRA），量化有 GPTQ/AWQ/bnb 4bit/NF4，需要统一入口</li>
+        <li><strong>训练稳定性坑多</strong>：gradient checkpointing、flash attention、sequence packing、liger kernel、ROPE scaling、NEFTune 噪声——一行配错就 OOM</li>
+        <li><strong>模型/数据集格式混乱</strong>：每个基座（Llama/Qwen/GLM/Baichuan）chat template 不同，工具链统一抽象</li>
+        <li><strong>分布式需求</strong>：DDP / FSDP / DeepSpeed ZeRO-3 / 多机多卡需要配置——框架把这些做成一行配置项</li>
+        <li><strong>评测 / 部署一站式</strong>：训练完直接 vLLM / SGLang / Ollama 部署、lm-eval-harness 跑分、merge LoRA 权重</li>
+      </ul>
+      <div class="callout">核心结论：2024 年后做 LLM 微调，99% 场景应直接用现成框架（Axolotl/Unsloth/LLaMA-Factory），不要自己从 Trainer 写。手写 Trainer 只在：① 顶会论文要发新算法；② 定制化 GPU 集群；③ 训练范式特殊（如 RLHF 全链路自研）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、8 大微调工具全景对比</h2>
+      <table>
+        <thead><tr><th>工具</th><th>定位</th><th>支持方法</th><th>易用性</th><th>性能</th><th>代表用户</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Axolotl</strong></td><td>开源 SFT 框架标杆</td><td>LoRA / QLoRA / Full / DPO / RLHF / Pretrain</td><td>YAML 一行配置</td><td>中（依赖原生 Trainer）</td><td>开源社区 / 学术</td></tr>
+          <tr><td><strong>Unsloth</strong></td><td>速度优化 + 显存节省</td><td>LoRA / QLoRA / Full（4bit 量化推理）</td><td>Colab 三行起步</td><td>极强（2-5x 加速，显存 -40%）</td><td>个人 / 小团队 / Colab</td></tr>
+          <tr><td><strong>LLaMA-Factory</strong></td><td>国产一站式 + Web UI</td><td>SFT / DPO / PPO / ORPO / KTO / SimPO</td><td>Web UI 可视化</td><td>中（集成 DeepSpeed / LoRA）</td><td>国内中小团队 / 国产模型</td></tr>
+          <tr><td><strong>Firefly</strong></td><td>国产训练 + 推理</td><td>SFT / DPO / LoRA</td><td>脚本式 + 文档</td><td>中</td><td>中文 SFT / CodeGen 场景</td></tr>
+          <tr><td><strong>HuggingFace TRL</strong></td><td>HF 官方 SFT/DPO/PPO 库</td><td>SFTTrainer / DPOTrainer / PPOTrainer / GRPOTrainer</td><td>Python API 灵活</td><td>中（无内核优化）</td><td>HF 生态 / 二次开发</td></tr>
+          <tr><td><strong>Swift（ModelScope）</strong></td><td>阿里开源，覆盖 100+ 模型</td><td>SFT / DPO / GRPO / LoRA 全系</td><td>CLI + Web UI</td><td>中</td><td>国内大厂 / 通义系</td></tr>
+          <tr><td><strong>HuggingFace PEFT</strong></td><td>参数高效微调方法库</td><td>LoRA / QLoRA / DoRA / AdaLoRA / IA3 / Prefix / Prompt</td><td>库 / 集成 Trainer</td><td>中（上层框架调用）</td><td>所有 HF 生态</td></tr>
+          <tr><td><strong>bitsandbytes</strong></td><td>4/8-bit 量化 + 优化器</td><td>NF4 / FP4 / 8-bit Adam / LLM.int8()</td><td>库 / 透明调用</td><td>强（QLoRA 依赖）</td><td>QLoRA 训练 / 量化推理</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">关系链：PEFT + TRL + bitsandbytes 是底层库，Axolotl/Unsloth/LLaMA-Factory 是上层框架（组合调用）。Unsloth 自带 Triton 手写 kernel；Axolotl 基于 HF Trainer；LLaMA-Factory 基于 transformers + 自己的 Trainer；Swift 基于 ms-swift 自研。</div>
+    </article>
+
+    <article class="card full">
+      <h2>三、完整微调流水线（数据 → 训练 → 评估 → 部署）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="finetune pipeline">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#be123c"></path>
+            </marker>
+          </defs>
+          <text x="590" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">LLM 微调完整流水线</text>
+
+          <rect x="40"  y="70" width="150" height="60" rx="12" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="115" y="100" text-anchor="middle" font-size="13" font-weight="700">① 数据准备</text>
+          <text x="115" y="118" text-anchor="middle" font-size="10" fill="#475569">Alpaca / ShareGPT</text>
+
+          <rect x="220" y="70" width="150" height="60" rx="12" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="295" y="100" text-anchor="middle" font-size="13" font-weight="700">② Tokenize</text>
+          <text x="295" y="118" text-anchor="middle" font-size="10" fill="#475569">Chat Template / Packing</text>
+
+          <rect x="400" y="70" width="150" height="60" rx="12" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="475" y="100" text-anchor="middle" font-size="13" font-weight="700">③ 加载模型</text>
+          <text x="475" y="118" text-anchor="middle" font-size="10" fill="#475569">Llama / Qwen / 4/8/16-bit</text>
+
+          <rect x="580" y="70" width="150" height="60" rx="12" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="655" y="100" text-anchor="middle" font-size="13" font-weight="700">④ LoRA 注入</text>
+          <text x="655" y="118" text-anchor="middle" font-size="10" fill="#475569">PEFT LoraConfig</text>
+
+          <rect x="760" y="70" width="150" height="60" rx="12" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="835" y="100" text-anchor="middle" font-size="13" font-weight="700">⑤ 训练</text>
+          <text x="835" y="118" text-anchor="middle" font-size="10" fill="#475569">SFT/DPO/GRPO + DS/FSDP</text>
+
+          <rect x="940" y="70" width="200" height="60" rx="12" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="1040" y="100" text-anchor="middle" font-size="13" font-weight="700">⑥ 评估</text>
+          <text x="1040" y="118" text-anchor="middle" font-size="10" fill="#475569">lm-eval / OpenCompass / Human</text>
+
+          <line x1="190" y1="100" x2="220" y2="100" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="370" y1="100" x2="400" y2="100" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="550" y1="100" x2="580" y2="100" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="730" y1="100" x2="760" y2="100" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="910" y1="100" x2="940" y2="100" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <rect x="120" y="170" width="220" height="60" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="230" y="200" text-anchor="middle" font-size="13" font-weight="700">⑦ 合并权重</text>
+          <text x="230" y="218" text-anchor="middle" font-size="10" fill="#475569">LoRA → 全量</text>
+
+          <rect x="380" y="170" width="220" height="60" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="490" y="200" text-anchor="middle" font-size="13" font-weight="700">⑧ 量化导出</text>
+          <text x="490" y="218" text-anchor="middle" font-size="10" fill="#475569">GPTQ / AWQ / GGUF</text>
+
+          <rect x="640" y="170" width="220" height="60" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="750" y="200" text-anchor="middle" font-size="13" font-weight="700">⑨ 部署推理</text>
+          <text x="750" y="218" text-anchor="middle" font-size="10" fill="#475569">vLLM / SGLang / Ollama</text>
+
+          <rect x="900" y="170" width="220" height="60" rx="12" fill="#fff1f2" stroke="#be123c" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="1010" y="200" text-anchor="middle" font-size="13" font-weight="700">⑩ 持续监控</text>
+          <text x="1010" y="218" text-anchor="middle" font-size="10" fill="#475569">Langfuse / Phoenix / Badcase</text>
+
+          <line x1="230" y1="130" x2="230" y2="170" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="490" y1="130" x2="490" y2="170" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="750" y1="130" x2="750" y2="170" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="1010" y1="130" x2="1010" y2="170" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <text x="590" y="280" text-anchor="middle" font-size="12" fill="#475569">微调本质：数据驱动的迭代闭环（训练 + 数据 + 评估 + 部署 + 监控）</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、LoRA 训练代码（PEFT + TRL 标准范式）</h2>
+      <pre class="code"># 标准 LoRA SFT 训练：PEFT + TRL + transformers
+import torch
+from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import LoraConfig, prepare_model_for_kbit_training
+from trl import SFTTrainer, SFTConfig
+
+# 1. 4-bit 量化（QLoRA）
+bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                         bnb_4bit_compute_dtype=torch.bfloat16,
+                         bnb_4bit_use_double_quant=True)
+# 2. 加载 + 冻结 base
+model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-7B-Instruct",
+    quantization_config=bnb, device_map="auto", torch_dtype=torch.bfloat16)
+tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
+tok.pad_token = tok.eos_token
+model = prepare_model_for_kbit_training(model)
+# 3. LoRA 配置：r=16 / alpha=32 覆盖全 attention+MLP
+lora = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, bias="none",
+    task_type="CAUSAL_LM",
+    target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"])
+# 4. 数据
+ds = load_dataset("yahma/alpaca-cleaned", split="train")
+ds = ds.map(lambda x: {"text": f"### I:\n{x['instruction']}\n### R:\n{x['output']}"})
+# 5. 训练
+args = SFTConfig(output_dir="./qwen7b-lora", num_train_epochs=3,
+    per_device_train_batch_size=4, gradient_accumulation_steps=4,
+    gradient_checkpointing=True, learning_rate=2e-4, bf16=True,
+    max_seq_length=2048, packing=True)
+trainer = SFTTrainer(model=model, args=args, train_dataset=ds,
+                     peft_config=lora, processing_class=tok)
+trainer.train()
+# 6. 合并（可选）
+trainer.model.merge_and_unload().save_pretrained("./qwen7b-merged")</pre>
+      <div class="callout">关键参数：① r=16 / alpha=32 是 LLaMA-Factory 默认；② target_modules 覆盖全 attention+MLP（7B 约 0.5% 参数量）；③ packing=True 提升 30% 吞吐；④ bf16 + gradient_checkpointing 是显存优化标配。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、LLaMA-Factory Web UI 流程</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 200" width="100%" height="auto" role="img" aria-label="LLaMA-Factory Web UI flow">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#be123c"></path>
+            </marker>
+          </defs>
+          <text x="590" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">LLaMA-Factory Web UI 工作流</text>
+
+          <rect x="40"  y="60" width="180" height="50" rx="10" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="130" y="85" text-anchor="middle" font-size="13" font-weight="700">① 选择基座</text>
+          <text x="130" y="100" text-anchor="middle" font-size="10" fill="#475569">Qwen2.5/Llama3/GLM4</text>
+
+          <rect x="240" y="60" width="180" height="50" rx="10" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="330" y="85" text-anchor="middle" font-size="13" font-weight="700">② 上传数据</text>
+          <text x="330" y="100" text-anchor="middle" font-size="10" fill="#475569">Alpaca/ShareGPT/自定义</text>
+
+          <rect x="440" y="60" width="180" height="50" rx="10" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="530" y="85" text-anchor="middle" font-size="13" font-weight="700">③ 配置参数</text>
+          <text x="530" y="100" text-anchor="middle" font-size="10" fill="#475569">LoRA/QLoRA/SFT/DPO</text>
+
+          <rect x="640" y="60" width="180" height="50" rx="10" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="730" y="85" text-anchor="middle" font-size="13" font-weight="700">④ 启动训练</text>
+          <text x="730" y="100" text-anchor="middle" font-size="10" fill="#475569">Loss/GPU 监控</text>
+
+          <rect x="840" y="60" width="180" height="50" rx="10" fill="#ffe4e6" stroke="#be123c" stroke-width="2"/>
+          <text x="930" y="85" text-anchor="middle" font-size="13" font-weight="700">⑤ 评估导出</text>
+          <text x="930" y="100" text-anchor="middle" font-size="10" fill="#475569">Chat/榜单/合并/部署</text>
+
+          <line x1="220" y1="85" x2="240" y2="85" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="420" y1="85" x2="440" y2="85" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="620" y1="85" x2="640" y2="85" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="820" y1="85" x2="840" y2="85" stroke="#be123c" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <rect x="40"  y="150" width="980" height="40" rx="10" fill="#fff1f2" stroke="#be123c" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="530" y="175" text-anchor="middle" font-size="12" fill="#475569">⑥ 实验对比（多 run Loss / 评测榜单 / API 部署 / 一键导出 vLLM/Ollama）</text>
+        </svg>
+      </div>
+      <div class="callout">LLaMA-Factory 优势：零代码训练 + 100+ 模型覆盖 + Web UI 监控 Loss/显存 + 内置 DPO/PPO/ORPO。适合中小团队 / 非算法工程师 / 国产模型（Qwen/GLM/Baichuan）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>六、显存优化对比（Unsloth vs Axolotl vs TRL）</h2>
+      <table>
+        <thead><tr><th>工具</th><th>7B LoRA</th><th>7B QLoRA</th><th>加速比</th><th>关键优化</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Unsloth</strong></td><td>~16GB</td><td>~6GB</td><td><strong>2-5x</strong></td><td>Triton 手写 kernel + RoPE/MLP 融合 + 4-bit cache</td></tr>
+          <tr><td><strong>Axolotl</strong></td><td>~24GB</td><td>~10GB</td><td>1x（基准）</td><td>FlashAttn 2 + gradient checkpointing + 灵活配置</td></tr>
+          <tr><td><strong>TRL + PEFT</strong></td><td>~24GB</td><td>~10GB</td><td>1x</td><td>HF 原生 + QLoRA + SDPA</td></tr>
+          <tr><td><strong>LLaMA-Factory</strong></td><td>~24GB</td><td>~10GB</td><td>1-1.5x</td><td>集成 FlashAttn + DeepSpeed + LoRA+</td></tr>
+          <tr><td><strong>LF + Unsloth backend</strong></td><td>~14GB</td><td>~5GB</td><td>2-5x</td><td>Unsloth 加速 + LLaMA-Factory UI</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">Unsloth 为何快？① Triton 手写 RoPE/SwiGLU/CrossEntropy 前向；② 静态计算图 + 算子融合；③ QLoRA 训练时只更新 LoRA 矩阵，但 base 仍参与前向 → Unsloth 加速 base 前向；④ 仅支持单 GPU（多卡 DDP 还在补齐）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、与训练框架的集成（DeepSpeed / FSDP）</h2>
+      <pre class="code"># Axolotl 集成 DeepSpeed ZeRO-3：ds_config.json
+{
+  "zero_optimization": {
+    "stage": 3,
+    "offload_optimizer": {"device": "cpu"},
+    "offload_param": {"device": "cpu"},
+    "overlap_comm": true,
+    "contiguous_gradients": true
+  },
+  "bf16": {"enabled": true},
+  "optimizer": {"type": "AdamW", "params": {"lr": "2e-4", "weight_decay": 0.0}},
+  "scheduler": {"type": "cosine", "params": {"warmup_num_steps": 100}}
+}
+
+# config.yaml
+base_model: meta-llama/Llama-3.1-8B
+model_type: LlamaForCausalLM
+load_in_4bit: true
+adapter: qlora
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: [q_proj, v_proj, k_proj, o_proj, gate_proj, up_proj, down_proj]
+dataset:
+  - path: yahma/alpaca-cleaned
+    type: alpaca
+output_dir: ./llama3-8b-qlora
+deepspeed: ds_config.json
+gradient_checkpointing: true
+micro_batch_size: 2
+gradient_accumulation_steps: 8
+num_epochs: 3
+learning_rate: 2e-4
+bf16: true
+flash_attention: fa2
+sequence_len: 4096
+
+# 启动：accelerate launch -m axolotl.cli.train config.yaml</pre>
+      <div class="callout">选型：① 单卡 ≤24GB → Unsloth QLoRA；② 多卡 8xA100 → Axolotl + ZeRO-2；③ 多机 32+ GPU → Axolotl + ZeRO-3 + CPU offload；④ 不想写 YAML → LLaMA-Factory Web UI；⑤ 极致科研 → HF TRL + 自写 Trainer。</div>
+    </article>
+
+    <article class="card full">
+      <h2>八、选型决策（个人 / 小团队 / 大厂 / 国产模型）</h2>
+      <table>
+        <thead><tr><th>角色</th><th>推荐</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>个人 / Colab 单卡</td><td>Unsloth</td><td>2-5x 加速、显存省 40%、三行起步</td></tr>
+          <tr><td>小团队（2-4 卡）</td><td>Axolotl + LoRA</td><td>YAML 标准化、100+ 模型、HF 生态最广</td></tr>
+          <tr><td>中小团队国产模型</td><td>LLaMA-Factory</td><td>Web UI、Qwen/GLM 内置、全算法</td></tr>
+          <tr><td>中文 SFT / CodeGen</td><td>Firefly / Swift</td><td>中文 pipeline、ModelScope 生态</td></tr>
+          <tr><td>大厂多机多卡</td><td>Axolotl + DeepSpeed ZeRO-3</td><td>K8s 集成、4D 并行</td></tr>
+          <tr><td>科研新算法 / RLHF</td><td>HF TRL + PEFT</td><td>Python API 灵活、PPO/DPO/GRPO 全算法</td></tr>
+          <tr><td>阿里通义系</td><td>Swift（ms-swift）</td><td>Qwen 系列优化、LoRA 全系</td></tr>
+          <tr><td>显存极紧张</td><td>Unsloth + 4bit + IA3</td><td>最低 5GB 显存可训 7B</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">避坑：① 不要混用 Unsloth 和 DeepSpeed（Unsloth 仅单卡）；② 训练 Llama3 必须 flash_attention_2 + packing；③ QLoRA 训练必 prepare_model_for_kbit_training；④ chat template 必须和 base model 一致；⑤ 不要在 4090 跑全参 7B（必 OOM）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>九、项目落地 / 简历表达</h2>
+      <table>
+        <thead><tr><th>项目</th><th>技术栈</th><th>简历表达</th></tr></thead>
+        <tbody>
+          <tr><td>客服 SFT</td><td>Qwen2.5-7B + LoRA + 5k 客服对话</td><td>"基于 Qwen2.5-7B + LoRA 微调客服 Agent，3 epoch 业务准确率从 78% → 90%"</td></tr>
+          <tr><td>代码助手 DPO</td><td>DeepSeek-Coder + DPO + 10k 偏好对</td><td>"用 DPO 对 DeepSeek-Coder 做偏好对齐，HumanEval 从 65% → 77%"</td></tr>
+          <tr><td>领域知识注入</td><td>LLaMA-3 + QLoRA + 1w 文档</td><td>"用 LLaMA-3 + QLoRA 注入 1w 领域文档，闭卷 QA 准确率 +25%"</td></tr>
+          <tr><td>QLoRA 成本优化</td><td>LLaMA-3-8B + Unsloth + QLoRA</td><td>"用 Unsloth + QLoRA 单卡 4090 微调 LLaMA-3-8B，显存 16GB→6GB、速度 +2.5x"</td></tr>
+          <tr><td>训练平台搭建</td><td>Axolotl + DeepSpeed + K8s</td><td>"基于 Axolotl + DeepSpeed ZeRO-3 搭建训练平台，支持 100+ 模型一键训练，团队 5 个项目复用"</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Unsloth 怎么加速的？</h3>
+          <p>A：① 手写 Triton kernel 替换 RoPE / SwiGLU / CrossEntropy；② 算子融合（一次 kernel 多步）；③ QLoRA 训练时加速 base 模型前向（虽然 base 冻结）；④ 静态计算图优化；⑤ 4-bit cache 节省显存。实测 2-5x 加速、显存省 40%。代价：仅单卡、生态兼容性略差。</p>
+        </div>
+        <div>
+          <h3>Q2：LLaMA-Factory 优势？</h3>
+          <p>A：① 国产一站式 + 100+ 模型（Qwen/GLM/Baichuan/InternLM）；② Web UI 可视化（零代码训练）；③ 全算法（SFT/DPO/PPO/ORPO/KTO/SimPO）；④ 集成 DeepSpeed/FlashAttn；⑤ 中文文档完善。适合非算法工程师 / 国产模型场景。</p>
+        </div>
+        <div>
+          <h3>Q3：TRL 和 Axolotl 区别？</h3>
+          <p>A：TRL 是 HF 官方 SFT/DPO/PPO/GRPO Trainer 库（Python API 灵活、源码易改、科研友好）。Axolotl 是上层框架（YAML 配置 + 一键启动、面向 100+ 模型、生态标准化）。生产推荐 Axolotl + TRL（Axolotl 内部就是用 TRL）；科研新算法用 TRL 自写。</p>
+        </div>
+        <div>
+          <h3>Q4：PEFT LoRA 怎么注入？</h3>
+          <p>A：① LoraConfig 配置 r/alpha/dropout/target_modules；② get_peft_model(model, config) 包装原模型；③ prepare_model_for_kbit_training 准备 4-bit；④ 训练时只有 LoRA 矩阵反向传播；⑤ merge_and_unload() 合并权重；⑥ target_modules 一般覆盖所有 attention + MLP（q/k/v/o + gate/up/down）。</p>
+        </div>
+        <div>
+          <h3>Q5：QLoRA 和 LoRA 区别？</h3>
+          <p>A：LoRA：base 模型保持 FP16/BF16 全精度 + 注入低秩矩阵。QLoRA（Dettmers 2023）：base 模型 4-bit NF4 量化 + Double Quant + Paged Optimizer + LoRA。QLoRA 把 65B 模型训练从 780GB 降到 <48GB（单卡）。代价：训练速度比 LoRA 慢 30%，但能训更大的模型。</p>
+        </div>
+        <div>
+          <h3>Q6：训练时显存爆了怎么办？</h3>
+          <p>A：① 开 gradient_checkpointing（省 30% 激活）；② 减小 batch_size + 增大 gradient_accumulation；③ QLoRA 4-bit base；④ ZeRO-3 + CPU offload；⑤ sequence packing 减 padding；⑥ bf16；⑦ 减 max_seq_length；⑧ Liger Kernel / FlashAttn 2；⑨ 换 Unsloth。</p>
+        </div>
+        <div>
+          <h3>Q7：LoRA rank 怎么选？</h3>
+          <p>A：经验值：① 简单任务 / 风格微调 → r=8；② 中等任务（领域问答）→ r=16；③ 复杂任务（指令微调 / 推理）→ r=32-64；④ 多任务（adapter 组合）→ r=64-128。LLaMA-Factory 默认 r=16 / alpha=32。alpha 通常 = 2*r。DoRA / AdaLoRA 可在小 rank 下接近大 rank 效果。</p>
+        </div>
+        <div>
+          <h3>Q8：训练后怎么部署？</h3>
+          <p>A：① merge LoRA → 全量权重；② 量化（GPTQ/AWQ/GGUF）；③ vLLM / SGLang / TGI 高吞吐推理（生产首选）；④ Ollama / LM Studio 本地（开发）；⑤ 评估（lm-eval-harness / OpenCompass）；⑥ 监控（Langfuse / Helicone）。LLaMA-Factory 可一键导出 + 部署。</p>
+        </div>
+        <div>
+          <h3>Q9：DeepSpeed 和 FSDP 选哪个？</h3>
+          <p>A：DeepSpeed（微软）：ZeRO-1/2/3 + 优化器切分 + CPU/NVMe offload，成熟稳定。FSDP（PyTorch 原生）：与 PyTorch 深度集成、API 更现代。生产中两者性能接近，DeepSpeed 文档多、FSDP 趋势好。中小规模（≤32 GPU）任选；超大规模（≥64 GPU）推荐 FSDP + Activation Checkpointing。</p>
+        </div>
+        <div>
+          <h3>Q10：训练数据格式有哪些？</h3>
+          <p>A：① Alpaca：`{instruction, input, output}`；② ShareGPT：多轮对话 `[{role, content}, ...]`；③ OpenAI Chat：messages 数组；④ Pretrain：纯文本；⑤ Preference（DPO）：`{prompt, chosen, rejected}`。LLaMA-Factory / Axolotl 都内置识别。生产中 80% 用 ShareGPT 多轮格式。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问 + 回答模板</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问 / 模板</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>30 秒电梯</td><td>自我介绍</td><td>"2024 后 LLM 微调工具链是上层框架（Axolotl/Unsloth/LLaMA-Factory/Swift）+ 底层库（TRL+PEFT+bitsandbytes）两层。生产首选 PEFT+TRL+DeepSpeed；单卡选 Unsloth；国产选 LLaMA-Factory。"</td></tr>
+          <tr><td>5 分钟深入</td><td>完整讲解</td><td>动机 → 8 工具对比 → 流水线（数据→训练→评估→部署）→ LoRA 代码（PEFT+TRL 7 步）→ Unsloth 加速原理 → 显存优化 → 选型。讲清"Unsloth 为何能快"、"QLoRA vs LoRA"、"TRL 与 Axolotl 关系"立刻显出真经验。</td></tr>
+          <tr><td>Unsloth</td><td>怎么加速的？</td><td>答"Triton 手写 kernel"：RoPE/SwiGLU/CrossEntropy 手写 + 算子融合 + 静态计算图 + 4-bit cache。2-5x 加速、显存省 40%。代价：仅单卡 + PyTorch 版本严格。</td></tr>
+          <tr><td>LoRA</td><td>rank 怎么选？</td><td>答"经验值"：简单 r=8、中等 r=16、复杂 r=32-64。alpha=2r。target_modules 覆盖所有 attention+MLP。过拟合小数据 → 降 r；DoRA/AdaLoRA 可在小 r 接近大 r 效果。</td></tr>
+          <tr><td>QLoRA</td><td>QLoRA vs LoRA？</td><td>答"显存优先"：LoRA base FP16；QLoRA base 4-bit NF4 + Double Quant + Paged Optimizer。QLoRA 65B 从 780GB 降到 48GB（单卡），代价速度慢 30%。</td></tr>
+          <tr><td>训练框架</td><td>DeepSpeed vs FSDP？</td><td>答"等价"：DeepSpeed 微软 / ZeRO-1/2/3 + offload 成熟稳定；FSDP（PyTorch 原生）API 现代。中小规模任选，超大规模（≥64 GPU）选 FSDP。</td></tr>
+          <tr><td>数据格式</td><td>有哪些？</td><td>答"5 种"：Alpaca（单轮 instruction）、ShareGPT（多轮对话，80% 生产场景）、OpenAI Chat、Pretrain、Preference（DPO）。LLaMA-Factory / Axolotl 都内置识别。</td></tr>
+          <tr><td>显存优化</td><td>OOM 怎么办？</td><td>答"9 步"：gradient_checkpointing → batch_size↓ → QLoRA → ZeRO-3+CPU offload → packing → bf16 → max_seq_len↓ → Liger/FlashAttn2 → 换 Unsloth。最后一招：换更大 GPU。</td></tr>
+          <tr><td>选型</td><td>国产模型用啥？</td><td>答"按场景"：Qwen/GLM 业务 → LLaMA-Factory；通义系 → Swift；中文 SFT/CodeGen → Firefly。共性：都内置 QLoRA + DeepSpeed。</td></tr>
+          <tr><td>局限</td><td>工具缺点？</td><td>Unsloth 仅单卡、LLaMA-Factory 速度不如 Unsloth、Axolotl 入门略陡、TRL 无 UI 集成、bnb 仅 CUDA、LoRA merge 后多任务切换需重训、数据质量决定 80% 效果。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：微调工具链是 LLM 工程师日常基础。面试允许说"我只用过 Axolotl / LLaMA-Factory，没深入 Unsloth 内核"，但要能讲清 LoRA 注入流程、QLoRA 原理、显存优化手段、训练数据格式、部署链路（merge → 量化 → vLLM）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Axolotl</td><td>开源 SFT 框架标杆，YAML 配置 + 100+ 模型</td></tr>
+          <tr><td>Unsloth</td><td>Triton 手写 kernel 加速，2-5x + 显存省 40%</td></tr>
+          <tr><td>LLaMA-Factory</td><td>国产一站式 + Web UI，100+ 模型 + 全算法</td></tr>
+          <tr><td>Firefly</td><td>国产训练推理框架，中文 SFT / CodeGen</td></tr>
+          <tr><td>Swift (ms-swift)</td><td>阿里 ModelScope 出品，覆盖 100+ 模型</td></tr>
+          <tr><td>HuggingFace TRL</td><td>HF 官方 SFT/DPO/PPO/GRPO Trainer 库</td></tr>
+          <tr><td>HuggingFace PEFT</td><td>参数高效微调方法库（LoRA/QLoRA/DoRA/AdaLoRA/IA3）</td></tr>
+          <tr><td>bitsandbytes</td><td>4/8-bit 量化库，QLoRA 依赖</td></tr>
+          <tr><td>LoRA</td><td>低秩适配，r=16/alpha=32，target=all linear</td></tr>
+          <tr><td>QLoRA</td><td>4-bit NF4 + Double Quant + Paged Optimizer，65B 单卡可训</td></tr>
+          <tr><td>DoRA</td><td>LoRA 改进，分解 magnitude/direction，更稳定</td></tr>
+          <tr><td>AdaLoRA</td><td>自适应 rank 分配，关键层高 rank、非关键层低 rank</td></tr>
+          <tr><td>IA3</td><td>更轻量的 PEFT，缩放激活值，参数更少</td></tr>
+          <tr><td>DeepSpeed</td><td>微软分布式训练，ZeRO-1/2/3 + CPU/NVMe offload</td></tr>
+          <tr><td>FSDP</td><td>PyTorch 原生分布式训练，与 DeepSpeed 等价</td></tr>
+          <tr><td>gradient_checkpointing</td><td>用时间换空间，激活不存而是重算，省 30% 显存</td></tr>
+          <tr><td>sequence packing</td><td>把多条短样本拼到 max_seq_len，提升 30% 吞吐</td></tr>
+          <tr><td>flash_attention_2</td><td>IO 感知的精确注意力，省显存 + 提速 2-4x</td></tr>
+          <tr><td>liger kernel</td><td>LinkedIn 开源 Triton kernel 集合，跨框架加速</td></tr>
+          <tr><td>Alpaca 格式</td><td>单轮 instruction：{instruction, input, output}</td></tr>
+          <tr><td>ShareGPT 格式</td><td>多轮对话：[{role, content}, ...]，80% 生产</td></tr>
+          <tr><td>merge_and_unload</td><td>LoRA 合并到 base，推理前必做</td></tr>        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

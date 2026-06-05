@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>低代码 / 无代码 LLM 平台 知识页</title>
+  <style>
+    :root{
+      --bg:#f0fafa;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#cfe1e3;
+      --accent:#0e7490;
+      --accent-soft:#cffafe;
+      --accent-soft-2:#ecfeff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#ecfeff);border:1px solid #a3d8d8;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#ecfeff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./langchain.html">LangChain</a>
+    <a href="./mcp.html">MCP</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">应用层 · 低代码 / 无代码 LLM 平台</span>
+    <h1>低代码 / 无代码 LLM 平台：Dify / Coze / FastGPT / RAGFlow 全景</h1>
+    <p class="lead">Dify、Coze、FastGPT、RAGFlow、Flowise、Langflow、Botpress、Voiceflow、MaxKB 等共同构成 LLM 应用低代码生态。本页聚焦"为什么需要低代码 → 12 大平台横向对比 → Dify DSL 架构图 → Coze 生态图 → RAGFlow 文档解析流程 → 私有化部署对比 → 选型决策 → 与代码框架的 trade-off → 项目落地 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Dify</span><span class="pill">Coze</span><span class="pill">FastGPT</span><span class="pill">RAGFlow</span><span class="pill">Flowise</span><span class="pill">Langflow</span><span class="pill">Botpress</span><span class="pill">Voiceflow</span><span class="pill">MaxKB</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要低代码 / 无代码 LLM 平台</h2>
+      <ul>
+        <li><strong>PM / 业务方零代码搭建</strong>：Dify / Coze 可视化拖拽 + 模板，业务方 1 小时搭出客服 Bot，无需研发</li>
+        <li><strong>私有化部署刚需</strong>：金融 / 政企 / 医疗等场景数据敏感，FastGPT / RAGFlow / Dify / MaxKB 支持本地化部署，LangChain 不行</li>
+        <li><strong>降低 LLM 应用门槛</strong>：内置 RAG / Agent / Workflow / 插件市场，零 Prompt 工程也能跑出 70-80% 效果</li>
+        <li><strong>运维一体化</strong>：监控、日志、用户管理、知识库管理、模型路由、计费——平台一站式打包</li>
+        <li><strong>多端发布</strong>：Coze 一键发布到飞书 / 抖音 / 微信 / Web；Dify 提供 API + WebApp + 嵌入式</li>
+        <li><strong>代价</strong>：① 灵活度低于代码框架（深度定制受限）；② 自定义 Agent 逻辑难；③ 部分平台厂商绑定（Coze = 字节生态）；④ 高级 RAG 范式（多跳 / Agentic RAG）支持弱</li>
+      </ul>
+      <div class="callout">核心判断：低代码 ≠ 取代代码框架。生产建议 ① 业务方 / 内部工具 / 客服知识库 → 低代码平台；② 核心产品 / 高定制 / 高并发 → 代码框架（LangChain / LlamaIndex）；③ 私有化 + 安全 → 国产开源（Dify / FastGPT / RAGFlow / MaxKB）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、12 大平台全景对比表</h2>
+      <table>
+        <thead><tr><th>平台</th><th>开源 / 闭源</th><th>私有化</th><th>主打场景</th><th>RAG</th><th>Agent</th><th>价格</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Dify</strong></td><td>开源（GitHub 70k+）</td><td>支持</td><td>LLM 应用一站式</td><td>强</td><td>支持</td><td>云端按量 / 自部署免费</td></tr>
+          <tr><td><strong>Coze（扣子）</strong></td><td>闭源</td><td>不支持（企业版私有）</td><td>零代码 Bot / 多端发布</td><td>中</td><td>强</td><td>免费 / 企业版付费</td></tr>
+          <tr><td><strong>FastGPT</strong></td><td>开源（国产）</td><td>支持</td><td>知识库问答</td><td>强</td><td>支持</td><td>免费自部署</td></tr>
+          <tr><td><strong>RAGFlow</strong></td><td>开源（国产，InfiniFlow）</td><td>支持</td><td>深度文档理解 RAG</td><td>极强</td><td>中</td><td>免费自部署</td></tr>
+          <tr><td><strong>Flowise</strong></td><td>开源</td><td>支持</td><td>LangChain 拖拽低代码</td><td>强</td><td>支持</td><td>免费自部署</td></tr>
+          <tr><td><strong>Langflow</strong></td><td>开源</td><td>支持</td><td>LangChain 拖拽（Python）</td><td>强</td><td>支持</td><td>免费自部署</td></tr>
+          <tr><td><strong>Botpress</strong></td><td>开源 + 云</td><td>支持</td><td>对话平台 / 客服</td><td>中</td><td>支持</td><td>免费层 + 按量</td></tr>
+          <tr><td><strong>Voiceflow</strong></td><td>闭源</td><td>不支持</td><td>语音 / 对话设计</td><td>弱</td><td>中</td><td>订阅制</td></tr>
+          <tr><td><strong>Stack AI</strong></td><td>闭源</td><td>企业版</td><td>海外无代码 AI 工作流</td><td>中</td><td>支持</td><td>订阅制</td></tr>
+          <tr><td><strong>Relevance AI</strong></td><td>闭源</td><td>企业版</td><td>海外 AI Workforce</td><td>中</td><td>强</td><td>订阅制</td></tr>
+          <tr><td><strong>CustomGPT</strong></td><td>闭源</td><td>不支持</td><td>海外知识库 Bot</td><td>强</td><td>弱</td><td>订阅制</td></tr>
+          <tr><td><strong>MaxKB</strong></td><td>开源（国产，飞致云）</td><td>支持</td><td>企业知识库问答</td><td>强</td><td>支持</td><td>免费自部署</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>三、Dify 架构图（DSL + 工作流）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 480" width="100%" height="auto" role="img" aria-label="Dify architecture">
+          <defs>
+            <marker id="arrow-d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e7490"></path>
+            </marker>
+          </defs>
+          <text x="590" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Dify 架构：DSL（YAML） + 工作流 + 多模型路由</text>
+          <!-- Center: DSL -->
+          <rect x="490" y="190" width="200" height="100" rx="16" fill="#cffafe" stroke="#0e7490" stroke-width="3"/>
+          <text x="590" y="225" text-anchor="middle" font-size="18" font-weight="700">DSL（YAML）</text>
+          <text x="590" y="248" text-anchor="middle" font-size="11" fill="#475569">Dify 核心 · App 即代码</text>
+          <text x="590" y="268" text-anchor="middle" font-size="11" fill="#475569">可视化编辑 + YAML 导出</text>
+          <!-- Top: Studio -->
+          <rect x="60" y="60" width="240" height="100" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="180" y="92" text-anchor="middle" font-size="14" font-weight="700">Dify Studio（Web）</text>
+          <text x="180" y="115" text-anchor="middle" font-size="11" fill="#475569">Prompt IDE · 工作流编排</text>
+          <text x="180" y="135" text-anchor="middle" font-size="11" fill="#475569">知识库管理 · Agent 设计</text>
+          <text x="180" y="155" text-anchor="middle" font-size="11" fill="#475569">模型管理 · 监控日志</text>
+          <line x1="300" y1="110" x2="490" y2="210" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-d)"/>
+          <!-- Right: Workflow -->
+          <rect x="900" y="60" width="220" height="100" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="1010" y="92" text-anchor="middle" font-size="14" font-weight="700">Workflow（工作流）</text>
+          <text x="1010" y="115" text-anchor="middle" font-size="11" fill="#475569">节点：LLM / 知识库 / 代码 /</text>
+          <text x="1010" y="135" text-anchor="middle" font-size="11" fill="#475569">条件 / HTTP / 工具调用</text>
+          <text x="1010" y="155" text-anchor="middle" font-size="11" fill="#475569">Chatflow / Workflow 两种范式</text>
+          <line x1="900" y1="110" x2="690" y2="210" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-d)"/>
+          <!-- Bottom Left: Knowledge Base -->
+          <rect x="60" y="320" width="240" height="100" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="180" y="352" text-anchor="middle" font-size="14" font-weight="700">知识库（RAG）</text>
+          <text x="180" y="375" text-anchor="middle" font-size="11" fill="#475569">多源文档 · 自动切片</text>
+          <text x="180" y="395" text-anchor="middle" font-size="11" fill="#475569">Embedding · 向量检索 · Rerank</text>
+          <line x1="180" y1="320" x2="490" y2="290" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-d)"/>
+          <!-- Bottom Right: Models + API -->
+          <rect x="900" y="320" width="220" height="100" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="1010" y="352" text-anchor="middle" font-size="14" font-weight="700">Models + API</text>
+          <text x="1010" y="375" text-anchor="middle" font-size="11" fill="#475569">OpenAI / Claude / Ollama</text>
+          <text x="1010" y="395" text-anchor="middle" font-size="11" fill="#475569">REST API + WebApp + 嵌入式</text>
+          <line x1="900" y1="370" x2="690" y2="290" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-d)"/>
+          <text x="590" y="450" text-anchor="middle" font-size="12" fill="#475569">DSL 即 App：可视化编辑与 YAML 一一对应；支持 Chatflow（对话流）/ Workflow（自动化）/ Agent 三种 App 类型</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、Coze 生态图（Bot + 插件 + 多端）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 440" width="100%" height="auto" role="img" aria-label="Coze ecosystem">
+          <defs>
+            <marker id="arrow-c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e7490"></path>
+            </marker>
+          </defs>
+          <text x="590" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Coze 生态：Bot 编排 + 插件市场 + 多端发布</text>
+          <!-- Center: Bot -->
+          <rect x="490" y="180" width="200" height="90" rx="16" fill="#cffafe" stroke="#0e7490" stroke-width="3"/>
+          <text x="590" y="215" text-anchor="middle" font-size="18" font-weight="700">Coze Bot</text>
+          <text x="590" y="238" text-anchor="middle" font-size="11" fill="#475569">零代码 · 提示词 / 插件 / 知识库 / 工作流</text>
+          <text x="590" y="258" text-anchor="middle" font-size="11" fill="#475569">字节跳动出品</text>
+          <!-- Top Left: Plugin Market -->
+          <rect x="60" y="60" width="220" height="80" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="170" y="92" text-anchor="middle" font-size="14" font-weight="700">插件市场</text>
+          <text x="170" y="112" text-anchor="middle" font-size="11" fill="#475569">搜索 / 新闻 / 数据库 / 自定义 API</text>
+          <text x="170" y="130" text-anchor="middle" font-size="11" fill="#475569">100+ 官方 + 社区插件</text>
+          <line x1="280" y1="100" x2="490" y2="200" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-c)"/>
+          <!-- Top Right: Workflow -->
+          <rect x="900" y="60" width="220" height="80" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="1010" y="92" text-anchor="middle" font-size="14" font-weight="700">工作流</text>
+          <text x="1010" y="112" text-anchor="middle" font-size="11" fill="#475569">可视化节点编排</text>
+          <text x="1010" y="130" text-anchor="middle" font-size="11" fill="#475569">LLM / 条件 / 代码 / 循环</text>
+          <line x1="900" y1="100" x2="690" y2="200" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-c)"/>
+          <!-- Bottom: Publishing -->
+          <rect x="60" y="320" width="1060" height="80" rx="14" fill="#cffafe" stroke="#0e7490" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="590" y="352" text-anchor="middle" font-size="14" font-weight="700">多端发布（一键）</text>
+          <text x="590" y="375" text-anchor="middle" font-size="11" fill="#475569">飞书 · 抖音 · 微信客服 · 微信公众号 · Web · API SDK</text>
+          <line x1="590" y1="270" x2="590" y2="320" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-c)"/>
+          <text x="590" y="420" text-anchor="middle" font-size="12" fill="#475569">Coze 杀手锏：零代码 + 字节生态多端发布 + 海量插件；劣势：闭源、不可私有化、强绑字节生态</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>五、RAGFlow 文档解析流程图</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 280" width="100%" height="auto" role="img" aria-label="RAGFlow document parsing">
+          <defs>
+            <marker id="arrow-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e7490"></path>
+            </marker>
+          </defs>
+          <text x="590" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">RAGFlow 深度文档理解：5 步解析流程</text>
+          <!-- Steps -->
+          <rect x="20" y="80" width="200" height="80" rx="14" fill="#cffafe" stroke="#0e7490" stroke-width="2"/>
+          <text x="120" y="110" text-anchor="middle" font-size="14" font-weight="700">1. 文档上传</text>
+          <text x="120" y="132" text-anchor="middle" font-size="11" fill="#475569">PDF / Word / 图片 / Excel</text>
+          <text x="120" y="150" text-anchor="middle" font-size="11" fill="#475569">扫描件 / 公式 / 表格</text>
+          <rect x="240" y="80" width="200" height="80" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="340" y="110" text-anchor="middle" font-size="14" font-weight="700">2. Layout 分析</text>
+          <text x="340" y="132" text-anchor="middle" font-size="11" fill="#475569">版面识别 · 块级元素</text>
+          <text x="340" y="150" text-anchor="middle" font-size="11" fill="#475569">OCR（DeepDoc）</text>
+          <line x1="220" y1="120" x2="240" y2="120" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-r)"/>
+          <rect x="460" y="80" width="200" height="80" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="560" y="110" text-anchor="middle" font-size="14" font-weight="700">3. 结构化切片</text>
+          <text x="560" y="132" text-anchor="middle" font-size="11" fill="#475569">按语义 / 表格 / 段落</text>
+          <text x="560" y="150" text-anchor="middle" font-size="11" fill="#475569">保留原文结构 + 引用</text>
+          <line x1="440" y1="120" x2="460" y2="120" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-r)"/>
+          <rect x="680" y="80" width="200" height="80" rx="14" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+          <text x="780" y="110" text-anchor="middle" font-size="14" font-weight="700">4. Embedding + 索引</text>
+          <text x="780" y="132" text-anchor="middle" font-size="11" fill="#475569">多 Embedding 支持</text>
+          <text x="780" y="150" text-anchor="middle" font-size="11" fill="#475569">Elasticsearch / Infinity</text>
+          <line x1="660" y1="120" x2="680" y2="120" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-r)"/>
+          <rect x="900" y="80" width="220" height="80" rx="14" fill="#cffafe" stroke="#0e7490" stroke-width="2"/>
+          <text x="1010" y="110" text-anchor="middle" font-size="14" font-weight="700">5. 检索 + 引用回答</text>
+          <text x="1010" y="132" text-anchor="middle" font-size="11" fill="#475569">Hybrid 检索 · Rerank</text>
+          <text x="1010" y="150" text-anchor="middle" font-size="11" fill="#475569">答案带原文引用</text>
+          <line x1="880" y1="120" x2="900" y2="120" stroke="#0e7490" stroke-width="2" marker-end="url(#arrow-r)"/>
+          <text x="590" y="200" text-anchor="middle" font-size="12" fill="#475569">RAGFlow 杀手锏：DeepDoc 文档解析（OCR + Layout + 表格识别业界领先）+ 答案带原文引用 + 完整溯源</text>
+          <text x="590" y="222" text-anchor="middle" font-size="12" fill="#475569">InfiniFlow 出品，国产开源，专攻"复杂文档（PDF 扫描件 / 表格 / 公式）"的高质量 RAG</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>六、私有化部署对比</h2>
+      <table>
+        <thead><tr><th>平台</th><th>私有化</th><th>难度</th><th>依赖</th><th>适合</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Dify</strong></td><td>支持（Docker Compose）</td><td>中</td><td>PostgreSQL + Redis + Weaviate</td><td>企业 / 中型团队</td></tr>
+          <tr><td><strong>FastGPT</strong></td><td>支持（Docker）</td><td>低</td><td>MongoDB + PostgreSQL</td><td>中小企业 / 政企</td></tr>
+          <tr><td><strong>RAGFlow</strong></td><td>支持（Docker）</td><td>中</td><td>Elasticsearch / Infinity + Redis + MySQL</td><td>文档密集型 RAG</td></tr>
+          <tr><td><strong>MaxKB</strong></td><td>支持（Docker）</td><td>低</td><td>PostgreSQL + Redis</td><td>企业内部知识库</td></tr>
+          <tr><td><strong>Flowise</strong></td><td>支持（npm/Docker）</td><td>低</td><td>SQLite / PostgreSQL</td><td>LangChain 拖拽低代码</td></tr>
+          <tr><td><strong>Langflow</strong></td><td>支持（Python）</td><td>低</td><td>Python 依赖</td><td>Python 团队</td></tr>
+          <tr><td><strong>Botpress</strong></td><td>支持（v12 老版本）</td><td>中</td><td>Node + MongoDB</td><td>对话平台</td></tr>
+          <tr><td><strong>Coze</strong></td><td>不支持（云端 SaaS）</td><td>—</td><td>—</td><td>个人 / 中小企业（云端）</td></tr>
+          <tr><td><strong>Voiceflow</strong></td><td>不支持</td><td>—</td><td>—</td><td>云端 / 海外团队</td></tr>
+          <tr><td><strong>Stack AI</strong></td><td>企业版可私有</td><td>—</td><td>—</td><td>海外企业</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">国产开源四件套 Dify / FastGPT / RAGFlow / MaxKB 是私有化主力：① Dify 最全（App + Agent + RAG + Workflow）；② FastGPT 最简单（知识库问答）；③ RAGFlow 文档解析最强；④ MaxKB 飞致云运维友好。Coze / Voiceflow 等海外闭源平台不支持私有化。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、选型决策（按角色）</h2>
+      <table>
+        <thead><tr><th>角色</th><th>推荐平台</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td><strong>PM / 业务方</strong>零代码</td><td>Coze / Dify 云</td><td>可视化最快 · 多端发布（Coze）· 模板丰富</td></tr>
+          <tr><td><strong>研发 / 工程</strong>要私有化</td><td>Dify / FastGPT / RAGFlow / MaxKB</td><td>国产开源，Docker 一键部署</td></tr>
+          <tr><td><strong>文档密集型 RAG</strong>（PDF / 表格）</td><td>RAGFlow</td><td>DeepDoc 文档解析业界领先，答案带原文引用</td></tr>
+          <tr><td><strong>简单知识库问答</strong></td><td>FastGPT / MaxKB</td><td>轻量、部署最快、运维最简</td></tr>
+          <tr><td><strong>LangChain 拖拽</strong></td><td>Flowise / Langflow</td><td>LangChain 生态拖拽，开源</td></tr>
+          <tr><td><strong>海外业务 / 英文市场</strong></td><td>Voiceflow / Botpress / Stack AI</td><td>海外生态成熟，闭源 SaaS</td></tr>
+          <tr><td><strong>客服 / 对话流</strong></td><td>Botpress / Coze</td><td>对话平台出身，Handoff 状态管理强</td></tr>
+          <tr><td><strong>字节生态集成</strong>（飞书 / 抖音）</td><td>Coze</td><td>字节系多端一键发布</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>八、与 LangChain / 代码框架的 Trade-off</h2>
+      <table>
+        <thead><tr><th>维度</th><th>低代码平台（Dify / Coze）</th><th>代码框架（LangChain / LlamaIndex）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>上手速度</strong></td><td>1 小时出 demo</td><td>1-3 天出 demo</td></tr>
+          <tr><td><strong>灵活度</strong></td><td>中（受平台限制）</td><td>极高（无限制）</td></tr>
+          <tr><td><strong>定制能力</strong></td><td>弱（复杂逻辑难）</td><td>强（任何定制）</td></tr>
+          <tr><td><strong>私有化</strong></td><td>国产开源支持</td><td>完全自部署</td></tr>
+          <tr><td><strong>性能</strong></td><td>中（平台 overhead）</td><td>高（直接调 LLM）</td></tr>
+          <tr><td><strong>扩展</strong></td><td>插件 / 自定义 API</td><td>任何库 / 模型</td></tr>
+          <tr><td><strong>运维</strong></td><td>平台内置监控 + 升级</td><td>自建监控 / 升级</td></tr>
+          <tr><td><strong>QPS 上限</strong></td><td>中等（百级）</td><td>高（千级，需自优化）</td></tr>
+          <tr><td><strong>团队要求</strong></td><td>1-2 人运营</td><td>3-5 人研发</td></tr>
+          <tr><td><strong>总成本（TCO）</strong></td><td>低（前期）</td><td>高（前期）/ 低（长期）</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战经验：① 业务方主导的客服 / 知识库 / 内部工具 → 低代码；② 核心产品 + 高并发 + 复杂逻辑 → 代码框架；③ 过渡方案：低代码出原型 → 流量大后迁移到代码框架 + 自研；④ 私有化选国产开源（Dify / FastGPT / RAGFlow / MaxKB）；⑤ 海外业务或要字节生态选 Coze。</div>
+    </article>
+
+    <article class="card full">
+      <h2>九、项目落地 / 业务场景 / 简历表达</h2>
+      <ul>
+        <li><strong>企业知识库问答（FastGPT / RAGFlow）</strong>：PDF / Word 导入 → 自动切片 → Embedding → 问答，1-2 天上线</li>
+        <li><strong>客服 Bot 平台（Dify / Coze）</strong>：工作流编排 + 知识库 + 工单系统对接，单服务 50+ QPS</li>
+        <li><strong>多模态文档 RAG（RAGFlow）</strong>：扫描件 / 表格 / 公式 OCR + 结构化切片 + 引用回答，金融/法律常用</li>
+        <li><strong>字节生态 Bot（Coze）</strong>：1 小时搭出飞书 / 抖音 / 微信客服 Bot，多端发布</li>
+        <li><strong>私有化 + 安全（Dify 自部署）</strong>：金融 / 政企本地化部署，数据不出网</li>
+        <li><strong>LangChain 拖拽原型（Flowise / Langflow）</strong>：研发快速出原型 → 确认后用代码重写</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（简历可写）</th></tr></thead>
+        <tbody>
+          <tr><td>多平台选型</td><td>按角色 / 场景选 Dify / Coze / RAGFlow</td><td>"完成 12 大低代码 LLM 平台对比与选型决策树，国产私有化 Dify/FastGPT/RAGFlow/MaxKB"</td></tr>
+          <tr><td>知识库上线</td><td>FastGPT 私有化部署 + 业务对接</td><td>"用 FastGPT 私有化部署企业知识库，2 周上线 5 个部门知识问答"</td></tr>
+          <tr><td>复杂文档 RAG</td><td>RAGFlow 深度文档解析</td><td>"用 RAGFlow DeepDoc 解析扫描件 PDF + 表格，答案带原文引用，准确率 92% → 96%"</td></tr>
+          <tr><td>字节生态 Bot</td><td>Coze 多端发布</td><td>"用 Coze 搭客服 Bot，1 小时上线飞书 + 抖音 + 微信多端，单日服务 5w+ 用户"</td></tr>
+          <tr><td>Dify 私有化</td><td>Docker Compose 自部署</td><td>"用 Dify 私有化部署金融智能问答，数据不出网、合规过审、3 业务部门复用"</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、面试 FAQ</h2>
+      <div class="qa">
+        <div><h3>Q1：Dify 和 Coze 怎么选？</h3>
+          <p>A：① 字节生态 + 多端发布（飞书 / 抖音 / 微信）→ Coze 一键；② 私有化 + 复杂 App + Agent + 工作流 + 完整监控 → Dify 开源自部署；③ 简单客服 / 个人 / 内部工具 → Coze 快；④ 数据敏感 / 政企 / 金融 → Dify 私有化；⑤ 两者可组合：Coze 做前端 Bot、Dify 做后端 API。</p>
+        </div>
+        <div><h3>Q2：FastGPT 和 RAGFlow 区别？</h3>
+          <p>A：① 简单知识库问答 → FastGPT 轻量、部署最快；② 复杂文档 RAG（PDF 扫描件 / 表格 / 公式）→ RAGFlow（DeepDoc 解析业界最强 + 答案带原文引用）；③ FastGPT 偏通用问答、RAGFlow 专攻高质量文档解析；④ 都开源国产可私有化。生产复杂文档选 RAGFlow，简单问答选 FastGPT。</p>
+        </div>
+        <div><h3>Q3：低代码平台能扛多大 QPS？</h3>
+          <p>A：参考：Dify 单实例 50-200 QPS（取决于 LLM 推理速度 + 向量库）；FastGPT 单实例 30-100 QPS；RAGFlow 30-80 QPS（文档检索重）。瓶颈在 LLM 推理（GPT-4 ~20 QPS / Claude ~30 QPS / 开源 7B ~50-100 QPS）。生产建议：① LLM 推理用 vLLM 部署 + 负载均衡；② 向量库用独立集群；③ 多实例水平扩展 + Redis 缓存 + 异步队列。</p>
+        </div>
+        <div><h3>Q4：低代码 vs LangChain 怎么选？</h3>
+          <p>A：① 业务方主导 / 内部工具 / 简单客服 → 低代码（Dify / Coze / FastGPT）；② 核心产品 + 高并发 + 复杂 Agent / 多跳 RAG / 自定义逻辑 → LangChain / LlamaIndex；③ 过渡方案：低代码出原型 + 验证 PMF → 流量大后用代码重写；④ 私有化选国产开源低代码（自部署可控）；⑤ 海外业务 Coze / Voiceflow（云端 SaaS）。</p>
+        </div>
+        <div><h3>Q5：Coze 为什么不能私有化？</h3>
+          <p>A：Coze 是字节跳动闭源 SaaS 平台，核心模型 + 插件生态 + 多端发布依赖字节基础设施（飞书 / 抖音 / 火山引擎）。架构上不支持独立部署。私有化需求 → Dify / FastGPT / RAGFlow / MaxKB 国产开源。如果非要用 Coze 生态 + 私有化，考虑企业版（部分支持）+ 独立模型部署。</p>
+        </div>
+        <div><h3>Q6：RAGFlow 的 DeepDoc 强在哪？</h3>
+          <p>A：DeepDoc 是 RAGFlow 自研的文档解析引擎：① OCR（支持扫描件 + 多语言）；② Layout 分析（识别标题 / 段落 / 表格 / 公式 / 图片）；③ 表格结构化（合并单元格、跨页表格）；④ 公式识别（LaTeX 输出）；⑤ 答案带原文引用（可点击溯源到 PDF 页码）。对金融研报 / 法律文书 / 学术论文等复杂文档效果业界领先。</p>
+        </div>
+        <div><h3>Q7：Dify 的 DSL 是什么？</h3>
+          <p>A：DSL（YAML）是 Dify 核心抽象：① 可视化编辑器生成的 App 可导出为标准 YAML；② YAML 可重新导入到 Dify 编辑器；③ 通过 API 直接基于 YAML 部署 App；④ 支持版本管理（Git）；⑤ 方便二次开发 / 模板复用 / 跨环境迁移。优势：可视化与代码一一对应，App 即代码可版本管理。</p>
+        </div>
+        <div><h3>Q8：Flowise 和 Langflow 区别？</h3>
+          <p>A：① Flowise（JavaScript/TypeScript）→ npm/Docker 部署、LangChain JS 生态；② Langflow（Python）→ Python 原生、LangChain Python 生态；③ 功能类似都是 LangChain 拖拽低代码；④ Flowise 部署更轻、Langflow 与 Python 工具链集成更顺。选型看团队栈：JS → Flowise，Python → Langflow。</p>
+        </div>
+        <div><h3>Q9：私有化低代码平台怎么选？</h3>
+          <p>A：① 国产 + 完整 App + Agent + Workflow → Dify（最全）；② 简单知识库问答 → FastGPT（最轻）；③ 复杂文档 RAG → RAGFlow（解析最强）；④ 企业内部知识库 → MaxKB（运维最简）；⑤ LangChain 拖拽 → Flowise / Langflow（生态绑）。生产中常组合：Dify 主平台 + RAGFlow 文档解析子模块。</p>
+        </div>
+        <div><h3>Q10：低代码平台有哪些坑？</h3>
+          <p>A：① 平台厂商绑定（Coze = 字节）；② 复杂逻辑难（深度定制要 fork 源码）；③ 高级 RAG 范式支持弱（多跳 / Agentic RAG / Hybrid Search 难）；④ 监控和可观测性受限（不如 LangSmith）；⑤ QPS 上限低（百级）；⑥ 数据迁移成本（导出格式非标）；⑦ 升级风险（平台 API 变）。生产核心产品建议代码框架 + 低代码辅助。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div><h3>30 秒电梯版</h3>
+          <p>低代码 / 无代码 LLM 平台是 LLM 应用层"业务方零代码搭建"的解决方案。核心有 4 类：① 国产开源可私有化（Dify / FastGPT / RAGFlow / MaxKB）——金融 / 政企首选；② 字节生态闭源（Coze）——飞书 / 抖音多端发布；③ LangChain 拖拽（Flowise / Langflow）——研发快速原型；④ 海外 SaaS（Voiceflow / Botpress / Stack AI）——海外市场。低代码 ≠ 取代代码框架，业务方用低代码、核心产品用 LangChain / LlamaIndex。</p>
+        </div>
+        <div><h3>5 分钟深入版</h3>
+          <p>从动机（为什么需要：业务方零代码 / 私有化 / 降低门槛 / 多端发布 / 运维一体化）→ 12 大平台横向对比表（开源/闭源/私有化/RAG/Agent/价格）→ Dify DSL 架构图（Studio + DSL + Workflow + 知识库 + Models）→ Coze 生态图（Bot + 插件 + 多端）→ RAGFlow 5 步文档解析（DeepDoc 业界领先）→ 私有化部署对比 → 按角色选型 → 与 LangChain 的 trade-off。能讲清"Dify DSL 是什么"、"RAGFlow DeepDoc 强在哪"，立刻显出实战深度。</p>
+        </div>
+        <div><h3>加分：知道平台局限</h3>
+          <p>① 灵活度低于代码框架；② 复杂 Agent 逻辑难；③ 平台厂商绑定（Coze = 字节）；④ 高级 RAG 范式支持弱；⑤ QPS 上限低（百级）；⑥ 数据迁移格式非标；⑦ 监控不如 LangSmith；⑧ 升级 API 风险；⑨ 私有化运维成本（需懂 K8s / Docker）；⑩ 自定义 LLM 训练 / 微调难集成。</p>
+        </div>
+        <div><h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：用 Coze 搭客服 Bot 出原型，2 周上线验证 PMF 后，发现 QPS 撑不住（峰值 500+ QPS）+ 复杂工单逻辑难定制 → 迁移到 LangGraph + LangSmith 重写，QPS 提升 5x、bad case 排查时间从 30 分钟降到 3 分钟。私有化版本同时用 Dify 自部署给内部团队用，避免外部 SaaS 风险。讲清"原型 → 验证 → 迁移 → 收益"四步，面试官会认定你真踩过坑。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>选型</td><td>Dify 和 Coze 怎么选？</td><td>答"按场景"：字节生态多端 → Coze；私有化复杂 App → Dify 自部署；Coze 闭源不可私有化、Dify 开源可定制。两者可组合：Coze 前端 + Dify 后端 API。</td></tr>
+          <tr><td>文档 RAG</td><td>FastGPT vs RAGFlow？</td><td>答"按文档复杂度"：简单问答 → FastGPT（轻量、部署最快）；复杂 PDF 扫描件 / 表格 / 公式 → RAGFlow（DeepDoc 解析业界领先 + 答案带原文引用）。</td></tr>
+          <tr><td>性能</td><td>低代码平台能扛多大 QPS？</td><td>答"看瓶颈"：单实例 50-200 QPS，瓶颈在 LLM 推理（GPT-4 ~20 QPS）。生产建议 vLLM 部署开源模型 + 水平扩展 + 异步队列 + Redis 缓存。</td></tr>
+          <tr><td>私有化</td><td>私有化选哪个？</td><td>答"按场景"：完整 App → Dify（最全）；简单知识库 → FastGPT（最轻）；复杂文档 RAG → RAGFlow（解析最强）；企业运维 → MaxKB（最简）。</td></tr>
+          <tr><td>Coze 限制</td><td>Coze 为什么不能私有化？</td><td>答"闭源 SaaS"：字节跳动闭源产品，依赖字节基础设施（飞书 / 抖音 / 火山引擎），架构上不支持独立部署。私有化需求 → Dify / FastGPT 等国产开源。</td></tr>
+          <tr><td>trade-off</td><td>低代码 vs LangChain 怎么选？</td><td>答"按角色 + 场景"：业务方 / 内部工具 / 简单客服 → 低代码（快）；核心产品 / 高并发 / 复杂逻辑 → LangChain（灵活）。过渡方案：低代码出原型 → 流量大后代码重写。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：面试允许说"我只深入用过 Dify + Coze + RAGFlow，未覆盖所有平台"，但要能讲清 12 大平台定位、Dify DSL 核心、Coze 字节生态、RAGFlow DeepDoc 文档解析、FastGPT/MaxKB 私有化差异、低代码 vs 代码框架 trade-off。诚实 + 思路清晰 &gt; 假装全栈。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Dify</td><td>国产开源 LLM 应用一站式平台（App + RAG + Agent + Workflow）</td></tr>
+          <tr><td>Coze（扣子）</td><td>字节跳动零代码 Bot 平台，多端发布（飞书/抖音/微信）</td></tr>
+          <tr><td>FastGPT</td><td>国产开源知识库问答平台，部署轻量</td></tr>
+          <tr><td>RAGFlow</td><td>InfiniFlow 出品，深度文档理解（DeepDoc 解析）</td></tr>
+          <tr><td>Flowise</td><td>LangChain 拖拽低代码（JS/TS）</td></tr>
+          <tr><td>Langflow</td><td>LangChain 拖拽低代码（Python）</td></tr>
+          <tr><td>Botpress</td><td>开源对话平台，LLM 集成</td></tr>
+          <tr><td>Voiceflow</td><td>语音/对话设计平台，闭源 SaaS</td></tr>
+          <tr><td>MaxKB</td><td>飞致云出品，企业知识库问答，私有化</td></tr>
+          <tr><td>DSL（YAML）</td><td>Dify 核心抽象，可视化编辑 + YAML 导出，App 即代码</td></tr>
+          <tr><td>Chatflow</td><td>Dify 对话流 App 类型，Multi-turn 对话</td></tr>
+          <tr><td>Workflow</td><td>Dify 自动化工作流 App 类型，单轮触发</td></tr>
+          <tr><td>DeepDoc</td><td>RAGFlow 自研文档解析引擎（OCR + Layout + 表格 + 公式）</td></tr>
+          <tr><td>插件市场</td><td>Coze 生态，100+ 官方 + 社区插件（搜索/API/数据库）</td></tr>
+          <tr><td>私有化部署</td><td>数据不出网，Docker / K8s 自部署，国产开源支持</td></tr>
+          <tr><td>知识库</td><td>低代码平台内置 RAG，文档导入 + 自动切片 + Embedding + 检索</td></tr>
+          <tr><td>Workflow 节点</td><td>Dify / Coze 工作流的可视化节点（LLM / 条件 / 代码 / HTTP）</td></tr>
+          <tr><td>多端发布</td><td>Coze 一键发布到飞书 / 抖音 / 微信 / Web</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

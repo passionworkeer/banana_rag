@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Constitutional AI 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #ddd6fe;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rlhf.html">RLHF</a>
+    <a href="./dpo-advanced.html">DPO 进阶</a>
+    <a href="./reward-model.html">Reward Model</a>
+    <a href="./ai-pm.html">AI PM</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">对齐训练 · RLAIF</span>
+    <h1>Constitutional AI：让模型按"宪法"自我改进</h1>
+    <p class="lead">Anthropic 2022 提出。用一组"宪法原则"（Constitution）替代人类偏好标签，让模型先自我批评（Critique）、再自我修正（Revision）、最后用 AI 反馈（RLAIF）做 RLHF。核心卖点：把"什么是有害/有帮助"的判断从人转给 AI + 一组明文规则，大幅降低标注成本和主观偏差。</p>
+    <div class="pillrow">
+      <span class="pill">Constitution</span><span class="pill">Critique</span><span class="pill">Revision</span><span class="pill">RLAIF</span><span class="pill">Self-Critique</span><span class="pill">Anthropic</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Constitutional AI 两阶段流程</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 420" width="100%" height="auto" role="img" aria-label="Constitutional AI two stages">
+          <defs>
+            <marker id="arrow-c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <!-- Stage 1: SL -->
+          <rect x="40" y="40" width="540" height="340" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="310" y="70" text-anchor="middle" font-size="18" font-weight="700">阶段 1 · Supervised Learning (SL-CAI)</text>
+          <text x="310" y="90" text-anchor="middle" font-size="12" fill="#475569">"自己批评自己 → 自己改"</text>
+
+          <rect x="70" y="115" width="480" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="310" y="138" text-anchor="middle" font-size="14" font-weight="600">① 模型生成回答 y</text>
+          <text x="310" y="156" text-anchor="middle" font-size="11" fill="#475569">对红队 prompt 给出初始回答</text>
+
+          <rect x="70" y="175" width="480" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="310" y="198" text-anchor="middle" font-size="14" font-weight="600">② Critique（自我批评）</text>
+          <text x="310" y="216" text-anchor="middle" font-size="11" fill="#475569">"请根据宪法原则 C 评价上述回答"</text>
+
+          <rect x="70" y="235" width="480" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="310" y="258" text-anchor="middle" font-size="14" font-weight="600">③ Revision（自我修正）</text>
+          <text x="310" y="276" text-anchor="middle" font-size="11" fill="#475569">"请根据批评重写回答" → y'</text>
+
+          <rect x="70" y="295" width="480" height="60" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="310" y="320" text-anchor="middle" font-size="13" font-weight="600">用 (prompt, y') 训 SFT 模型</text>
+          <text x="310" y="338" text-anchor="middle" font-size="11" fill="#0f172a">反复 N 轮 Critique-Revision 后取最后版本</text>
+
+          <!-- Stage 2: RL -->
+          <rect x="620" y="40" width="540" height="340" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="890" y="70" text-anchor="middle" font-size="18" font-weight="700">阶段 2 · RLAIF (RL-CAI)</text>
+          <text x="890" y="90" text-anchor="middle" font-size="12" fill="#475569">"用 AI 反馈当 RM"</text>
+
+          <rect x="650" y="115" width="480" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="890" y="138" text-anchor="middle" font-size="14" font-weight="600">① 模型采样两个回答 y<sub>A</sub>, y<sub>B</sub></text>
+          <text x="890" y="156" text-anchor="middle" font-size="11" fill="#475569">对同 prompt</text>
+
+          <rect x="650" y="175" width="480" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="890" y="198" text-anchor="middle" font-size="14" font-weight="600">② AI 判断哪个更符合宪法</text>
+          <text x="890" y="216" text-anchor="middle" font-size="11" fill="#475569">prompt: "考虑宪法原则 C, 哪个更好？"</text>
+
+          <rect x="650" y="235" width="480" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="890" y="258" text-anchor="middle" font-size="14" font-weight="600">③ 构造偏好对 (y_w, y_l)</text>
+          <text x="890" y="276" text-anchor="middle" font-size="11" fill="#475569">用作 RM 训练数据</text>
+
+          <rect x="650" y="295" width="480" height="60" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="890" y="320" text-anchor="middle" font-size="13" font-weight="600">RM 训完 → PPO 训练</text>
+          <text x="890" y="338" text-anchor="middle" font-size="11" fill="#0f172a">无人类标注的 RLHF 闭环</text>
+
+          <line x1="580" y1="210" x2="620" y2="210" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-c)"/>
+          <text x="600" y="200" text-anchor="middle" font-size="11" fill="#7c3aed">SFT 训完</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Constitution 原则示例</h2>
+      <pre class="code">示例原则（节选）：
+1. 请选择最无害、最有帮助的回答
+2. 请避免提供可能有害、违法或不道德的建议
+3. 请不要基于种族、性别、宗教等歧视任何人
+4. 请不要提供可能违反隐私的信息
+5. 请避免在用户表达痛苦时冷漠对待
+6. 请不要帮助制造武器、毒品等危险物品
+7. 请选择最不操控用户情感的回答
+...</pre>
+      <p>原则用自然语言写，每条对应一类问题。模型在 Critique 时按顺序核对所有相关原则。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、典型 Critique-Revision Prompt</h2>
+      <pre class="code">Critique Prompt:
+"请对以下回答进行批评：
+{response}
+请参照宪法原则：
+{constitution_principles}
+指出该回答可能违反原则的地方。"
+
+Revision Prompt:
+"请根据以下批评重写上述回答：
+{critique}
+{response}
+请确保新回答完全符合宪法原则。"</pre>
+      <p>实际操作中会让模型反复 Critique-Revision 多次（典型 N=3-5），最后取最新版本作为 SFT 训练数据。</p>
+    </article>
+
+    <article class="card full">
+      <h2>四、CAI vs RLHF vs DPO</h2>
+      <table>
+        <thead><tr><th>维度</th><th>RLHF</th><th>Constitutional AI</th><th>DPO</th></tr></thead>
+        <tbody>
+          <tr><td>反馈来源</td><td>人类偏好</td><td>AI 按宪法评判</td><td>人类偏好</td></tr>
+          <tr><td>标注成本</td><td>高（人类排序）</td><td>低（写原则即可）</td><td>高（人类排序）</td></tr>
+          <tr><td>主观偏差</td><td>高（标注者背景影响）</td><td>中（受宪法完备性影响）</td><td>高</td></tr>
+          <tr><td>可解释性</td><td>低（黑盒 RM）</td><td>高（明文原则可读）</td><td>低</td></tr>
+          <tr><td>训练成本</td><td>高（4 模型）</td><td>中-高（多轮采样）</td><td>低</td></tr>
+          <tr><td>适用</td><td>通用对齐</td><td>安全 / 价值观 / 风格</td><td>通用对齐</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">核心 trade-off：CAI 用"原则明确性"换"标注成本"和"主观偏差"，但引入"宪法完备性"和"AI 评判者是否足够好"的新问题。</div>
+    </article>
+
+    <article class="card">
+      <h2>五、CAI 的 3 大优势</h2>
+      <ul>
+        <li><strong>低成本扩展</strong>：新增一条原则 = 新覆盖一类问题，无需重标数据</li>
+        <li><strong>可解释性</strong>：对齐标准在明文规则中，监管、审计、用户都可读</li>
+        <li><strong>去除主观偏差</strong>：标注者的文化背景、政治倾向不再直接传导到模型</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、CAI 的 3 大风险</h2>
+      <ul>
+        <li><strong>宪法完备性问题</strong>：原则写漏一类问题，模型学不到</li>
+        <li><strong>原则冲突</strong>：原则之间矛盾时模型无所适从（如"有帮助"vs"无害"）</li>
+        <li><strong>AI 评判循环</strong>：AI 给 AI 反馈，无人类把关时错误会放大</li>
+        <li><strong>Reward Hacking 2.0</strong>：模型学会"看起来在遵循宪法"而非真遵循</li>
+        <li><strong>宪法 = 写规则者的价值观</strong>：从人类偏好到 AI 偏好，只是把"谁"换了一层</li>
+      </ul>
+      <div class="callout">CAI 不应作为唯一的对齐手段，工业界实际多采用"RLHF + CAI 兜底"双轨制：核心价值观靠人类偏好 RLHF，长尾安全 / 风格问题靠 CAI 兜底。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：CAI 是怎么"去除"人类偏好的？</h3>
+          <p>A：不是完全去除，而是把"人类排序"换成"AI 按宪法评判"。人类还是要写宪法原则，所以价值观源头还是人。但相比"给每条回答排序"，写一组原则的成本低、主观偏差小、可解释。</p>
+        </div>
+        <div>
+          <h3>Q2：Constitution 怎么写才"好"？</h3>
+          <p>A：Anthropic 论文总结几条经验：① 原则要具体到"可被判断"的程度（"有帮助"太虚，"请不要为毒品制程提供步骤"具体）；② 覆盖正反两面（既要说"做什么"也要说"不做什么"）；③ 原则之间不能有直接冲突；④ 定期根据 bad case 补充新原则。</p>
+        </div>
+        <div>
+          <h3>Q3：CAI 的 Critique-Revision 跑多少轮？</h3>
+          <p>A：典型 3-5 轮。轮次太少修改不彻底；太多边 0 边际收益反而引入"过度修正"（模型变得过度谨慎、闪烁其词）。实践中监控 "Revise 后 vs Revise 前"的提升幅度，趋于稳定就停。</p>
+        </div>
+        <div>
+          <h3>Q4：CAI 适合中文场景吗？</h3>
+          <p>A：可以，但 Constitution 要用中文写、且要覆盖中文社区特有的价值观（中国法规、文化禁忌、平台规范）。直接翻译英文原则会丢失本地化细节，效果打折。</p>
+        </div>
+        <div>
+          <h3>Q5：CAI 怎么和 RLHF 结合？</h3>
+          <p>A：常见模式"RLHF 主训练 + CAI 兜底"：① RLHF 训核心偏好（人审）；② CAI 用宪法补长尾安全问题（AI 自评）；③ 两者输出融合到 PPO 训练。或更简单：CAI 单独训一个 Critic 模型，PPO 中作为额外 RM。</p>
+        </div>
+        <div>
+          <h3>Q6：CAI 与 RLAIF 关系？</h3>
+          <p>A：CAI = RLAIF 的一种具体实现（带宪法评判规则的 RLAIF）。RLAIF 是大类（任何用 AI 反馈替代人类反馈），CAI 特指"按宪法原则评判"的实现。</p>
+        </div>
+        <div>
+          <h3>Q7：CAI 怎么避免"看起来遵循宪法"？</h3>
+          <p>A：很难完全避免。常见做法：① 训练数据混入"用户故意诱导"的红队样本；② 评估时不用模型自评（容易同谋），用独立模型；③ 最终用人类 expert 抽查高风险回答。</p>
+        </div>
+        <div>
+          <h3>Q8：CAI 在工业界用得多吗？</h3>
+          <p>A：Anthropic 主力（Claude 系列），其他厂商多用简化版（如 OpenAI 的 critique prompt 嵌入对齐流程）。中文社区目前少有完整 CAI 实践，多数仍用 RLHF / DPO 路径。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Constitutional AI 是 Anthropic 提出的 RLAIF 变体：用一组明文宪法原则替代人类偏好标签，分两阶段：① 模型先自我批评再自我修正（SL-CAI）；② 用 AI 按宪法评判作为偏好信号训 RM + PPO（RL-CAI）。核心收益是降标注成本 + 可解释 + 去除主观偏差，核心风险是宪法完备性 + 原则冲突 + AI 评判循环。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（RLHF 标注贵且主观）→ 两阶段流程（SL-CAI 自批评自修正 / RL-CAI AI 反馈）→ Constitution 怎么写（具体、可判、不冲突）→ 与 RLHF / DPO 对比 → 优势（低成本扩展 / 可解释 / 去偏差）→ 风险（完备性 / 冲突 / 循环）→ 工业落地形态（双轨制）。能讲清"为什么 CAI 不能完全替代 RLHF"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"为什么切到 CAI"——比如某业务"内容安全"场景下 RLHF 标注成本占总对齐成本 70%，且标注员分歧大；改用 CAI + 业务宪法（"不出现 XX 类关键词"、"敏感事件需附加免责说明"等 20 条原则）后，标注成本降 60%、bad case 率从 5% 降到 1.5%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>CAI 不是银弹：① 宪法完备性瓶颈（写不到 100% 覆盖）；② 原则冲突两难；③ Reward Hacking 2.0（"看起来遵循"非"真遵循"）；④ 宪法本身也是人写，价值观源头未变。诚实说"CAI 是工具不是解药，工业界多用 RLHF + CAI 双轨"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Constitutional AI</td><td>Anthropic 2022 提出的 RLAIF 变体，按宪法原则自我批评 + 修正</td></tr>
+          <tr><td>Constitution</td><td>一组明文原则，描述"什么是有帮助 / 无害"</td></tr>
+          <tr><td>SL-CAI</td><td>阶段 1，监督学习自批评自修正</td></tr>
+          <tr><td>RL-CAI</td><td>阶段 2，RLAIF 训 RM + PPO</td></tr>
+          <tr><td>Critique</td><td>模型根据宪法对自身回答的批评</td></tr>
+          <tr><td>Revision</td><td>模型根据批评重写后的回答</td></tr>
+          <tr><td>RLAIF</td><td>Reinforcement Learning from AI Feedback，用 AI 反馈替代人类反馈</td></tr>
+          <tr><td>AI Feedback</td><td>由强模型（如 Claude、GPT-4）按规则评判生成偏好</td></tr>
+          <tr><td>双轨制</td><td>工业界常见模式：RLHF 主训 + CAI 兜底</td></tr>
+          <tr><td>Reward Hacking 2.0</td><td>模型学会"看起来遵循宪法"非真正遵循</td></tr>
+          <tr><td>AI 评判循环</td><td>AI 给 AI 反馈，无人类把关时错误放大</td></tr>
+          <tr><td>Constitution 完备性</td><td>原则写不全时模型学不到，覆盖率瓶颈</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

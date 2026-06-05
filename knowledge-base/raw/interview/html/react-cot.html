@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReAct / CoT 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./mcp.html">MCP</a>
+    <a href="./react-cot.html">ReAct / CoT</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · Agent 思维范式</span>
+    <h1>ReAct / CoT</h1>
+    <p class="lead">推理与行动交织的 Agent 思维范式 — 边想边做（ReAct）vs 先想后答（CoT）。两者都是把推理过程显式化，让模型能"自我审视"并应对动态环境。</p>
+    <div class="pillrow">
+      <span class="pill">Thought</span><span class="pill">Action</span><span class="pill">Observation</span><span class="pill">Loop</span><span class="pill">Reflection</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、ReAct vs CoT</h2>
+      <ul>
+        <li><strong>CoT（Chain of Thought）</strong>：先想后答，把推理过程显式化
+          <ul>
+            <li>形式：模型一次输出完整推理链（"step 1: ... step 2: ... answer: ..."）</li>
+            <li>代表：Zero-Shot CoT（"Let's think step by step"）、Few-Shot CoT、Self-Consistency</li>
+            <li>适用：单步推理、数学题、逻辑题、代码生成（一次性完成）</li>
+            <li>优势：实现简单、token 成本低</li>
+            <li>局限：不能与环境交互，遇到错误无法修正</li>
+          </ul>
+        </li>
+        <li><strong>ReAct（Reason + Act）</strong>：推理 + 行动循环
+          <ul>
+            <li>形式：<code>Thought → Action → Observation → Thought → ...</code> 多轮循环</li>
+            <li>代表：Yao et al. 2022 论文、LangChain ReAct Agent、AutoGPT</li>
+            <li>适用：多步工具调用、动态环境、需要实时纠错的任务</li>
+            <li>优势：可调用工具、可感知环境、可自我纠正</li>
+            <li>局限：易陷入循环、token 消耗高、需设最大步数</li>
+          </ul>
+        </li>
+        <li><strong>与 Plan-and-Execute 区别</strong>：
+          <ul>
+            <li>ReAct：边想边调整，每步根据 observation 决定下一步</li>
+            <li>Plan-and-Execute：先全盘规划（生成完整 plan）→ 再逐步执行</li>
+            <li>ReAct 更灵活但不稳定，Plan-Execute 更稳但适应性差</li>
+          </ul>
+        </li>
+        <li><strong>何时用 ReAct</strong>：环境动态、需多步工具调用、错误需实时纠正、信息逐步揭示</li>
+        <li><strong>何时用 CoT 单次</strong>：单步推理、数学题、代码生成、文本分类</li>
+        <li><strong>反思（Reflection）</strong>：执行后自评（"这次回答对吗？"），决定是否重试
+          <ul>
+            <li>Self-Refine：模型对自己的输出做批评 + 改写</li>
+            <li>Reflexion：把反思存到 long-term memory，下次避免同样错误</li>
+          </ul>
+        </li>
+        <li><strong>失败模式</strong>：
+          <ul>
+            <li>循环卡住：反复执行相同 Action</li>
+            <li>Observation 不准：工具返回错误或噪声数据</li>
+            <li>Thought 发散：推理链偏离目标</li>
+            <li>Step 超限：超过最大步数仍未完成</li>
+          </ul>
+        </li>
+      </ul>
+      <table>
+        <thead><tr><th>范式</th><th>核心循环</th><th>工具调用</th><th>环境感知</th><th>典型场景</th><th>代表实现</th></tr></thead>
+        <tbody>
+          <tr><td><strong>CoT</strong></td><td>Reason → Answer</td><td>无</td><td>无</td><td>数学 / 推理 / 代码</td><td>Zero-Shot CoT</td></tr>
+          <tr><td><strong>ReAct</strong></td><td>Reason → Act → Observe → ...</td><td>有</td><td>有</td><td>工具调用 / 动态任务</td><td>LangChain Agent</td></tr>
+          <tr><td><strong>Plan-Execute</strong></td><td>Plan → Execute → Verify</td><td>有</td><td>有</td><td>复杂多步任务</td><td>BabyAGI / AutoGPT</td></tr>
+          <tr><td><strong>Reflexion</strong></td><td>Act → Reflect → Memory</td><td>有</td><td>有</td><td>需要长期学习的任务</td><td>Reflexion 论文</td></tr>
+          <tr><td><strong>Self-Refine</strong></td><td>Generate → Critique → Refine</td><td>无</td><td>无</td><td>文本生成 / 改写</td><td>Self-Refine 论文</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>ReAct vs Plan-and-Execute 选型</h2>
+      <table>
+        <thead><tr><th>维度</th><th>ReAct</th><th>Plan-and-Execute</th><th>Reflexion</th></tr></thead>
+        <tbody>
+          <tr><td>规划方式</td><td>逐步规划（每步决定）</td><td>一次性规划</td><td>执行后反思</td></tr>
+          <tr><td>适应性</td><td>高（实时调整）</td><td>低（计划后不再改）</td><td>高（带记忆）</td></tr>
+          <tr><td>稳定性</td><td>中（可能循环）</td><td>高（计划明确）</td><td>中（依赖反思质量）</td></tr>
+          <tr><td>Token 成本</td><td>高（每步重新生成）</td><td>中（计划一次 + 执行 N 次）</td><td>高（多轮反思）</td></tr>
+          <tr><td>适用任务</td><td>动态 / 不确定环境</td><td>结构化 / 可预测任务</td><td>需要长期学习</td></tr>
+          <tr><td>失败模式</td><td>循环 / 发散</td><td>计划错误导致全盘失败</td><td>反思误导</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型经验：不确定任务边界用 ReAct，结构化任务用 Plan-and-Execute，需要长期学习用 Reflexion。生产中常组合：ReAct 做单次决策 + Plan 做整体框架 + Reflection 做总结。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、ReAct 循环</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 520" width="100%" height="auto" role="img" aria-label="ReAct loop">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="350" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Step 1</text>
+          <text x="830" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Step 2</text>
+
+          <rect x="240" y="80" width="220" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="350" y="110" text-anchor="middle" font-size="18" font-weight="700">Thought 1</text>
+          <text x="350" y="132" text-anchor="middle" font-size="12" fill="#475569">Reason：用户想知道天气</text>
+          <text x="350" y="150" text-anchor="middle" font-size="12" fill="#475569">需要调用 weather API</text>
+
+          <rect x="500" y="80" width="220" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="610" y="110" text-anchor="middle" font-size="18" font-weight="700">Action 1</text>
+          <text x="610" y="132" text-anchor="middle" font-size="12" fill="#475569">调用工具：get_weather</text>
+          <text x="610" y="150" text-anchor="middle" font-size="12" fill="#475569">参数：{"city": "北京"}</text>
+
+          <rect x="760" y="80" width="220" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="870" y="110" text-anchor="middle" font-size="18" font-weight="700">Observation 1</text>
+          <text x="870" y="132" text-anchor="middle" font-size="12" fill="#475569">工具返回：{"temp": 22, ...}</text>
+          <text x="870" y="150" text-anchor="middle" font-size="12" fill="#475569">→ 22 度，晴</text>
+
+          <line x1="460" y1="115" x2="500" y2="115" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="720" y1="115" x2="760" y2="115" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+
+          <rect x="240" y="220" width="220" height="70" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="350" y="250" text-anchor="middle" font-size="18" font-weight="700">Thought 2</text>
+          <text x="350" y="272" text-anchor="middle" font-size="12" fill="#475569">已经知道天气，可以回答</text>
+
+          <rect x="500" y="220" width="220" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="610" y="250" text-anchor="middle" font-size="18" font-weight="700">Final Answer</text>
+          <text x="610" y="272" text-anchor="middle" font-size="12" fill="#475569">北京今天 22 度，晴</text>
+
+          <line x1="460" y1="255" x2="500" y2="255" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+
+          <path d="M 350 290 Q 350 360 350 380" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="6 4"/>
+          <path d="M 350 380 Q 350 400 240 400 L 100 400 L 100 115 L 240 115" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrow-m)"/>
+          <text x="120" y="395" text-anchor="middle" font-size="12" fill="#475569">回到 Thought 继续循环</text>
+
+          <rect x="60" y="420" width="1080" height="80" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+          <text x="600" y="446" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">ReAct = Reason + Act 循环</text>
+          <text x="600" y="468" text-anchor="middle" font-size="13" fill="#475569">每轮：模型思考（Thought）→ 决定动作（Action）→ 拿到结果（Observation）→ 继续思考</text>
+          <text x="600" y="488" text-anchor="middle" font-size="12" fill="#475569">终止条件：Final Answer / 最大步数 / 重复 Action 检测</text>
+        </svg>
+      </div>
+      <p class="muted">Thought 决定下一步动作，Action 调用工具，Observation 反馈结果，循环直到 Final Answer 或步数上限。每一步 LLM 都"看得见"自己的推理过程，便于调试和回溯。</p>
+    </article>
+
+    <article class="card">
+      <h2>ReAct vs Reflexion 时序</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="ReAct vs Reflexion">
+          <defs>
+            <marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" font-size="14" font-weight="700" fill="#0f172a">User</text>
+          <text x="320" y="30" font-size="14" font-weight="700" fill="#0f172a">Reasoner</text>
+          <text x="600" y="30" font-size="14" font-weight="700" fill="#0f172a">Tools</text>
+          <text x="880" y="30" font-size="14" font-weight="700" fill="#0f172a">Memory</text>
+
+          <line x1="80" y1="50" x2="80" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="320" y1="50" x2="320" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="600" y1="50" x2="600" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="880" y1="50" x2="880" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+
+          <line x1="80" y1="80" x2="320" y2="80" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="200" y="72" text-anchor="middle" font-size="12" fill="#0f172a">① 提问：北京天气？</text>
+
+          <line x1="320" y1="110" x2="600" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="102" text-anchor="middle" font-size="12" fill="#0f172a">② 调 get_weather(北京)</text>
+
+          <line x1="600" y1="140" x2="320" y2="140" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="132" text-anchor="middle" font-size="12" fill="#0f172a">③ Observation：22 度晴</text>
+
+          <line x1="320" y1="170" x2="80" y2="170" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="200" y="162" text-anchor="middle" font-size="12" fill="#0f172a">④ ReAct 给出 Final Answer</text>
+
+          <line x1="320" y1="200" x2="880" y2="200" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="600" y="192" text-anchor="middle" font-size="12" fill="#0f172a">⑤ Reflexion：自我评估（是否答对？）</text>
+
+          <line x1="880" y1="230" x2="320" y2="230" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="600" y="222" text-anchor="middle" font-size="12" fill="#0f172a">⑥ 写入反思：温度未指单位 → 修正</text>
+
+          <line x1="320" y1="260" x2="80" y2="260" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="200" y="252" text-anchor="middle" font-size="12" fill="#0f172a">⑦ 修正后回答：22°C，晴</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、ReAct Prompt 模板</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>System Prompt</strong></p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">You are an agent that solves problems via Thought/Action/Observation loops.
+Available tools:
+  - search(query): 搜索
+  - calc(expr): 计算
+  - lookup(key): 查表
+Format:
+  Thought: {reasoning}
+  Action: {tool_name}[{input}]
+  Observation: {result}  (system fills)
+  ... (repeat)
+  Thought: I now know the answer
+  Final Answer: {answer}</pre>
+        <p class="mathnote"><strong>完整 trace 示例</strong></p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">Question: 北京今天穿什么合适？
+Thought 1: 需要先知道今天北京天气
+Action 1: get_weather[{"city": "北京"}]
+Observation 1: {"temp": 22, "condition": "晴", "humidity": 45}
+Thought 2: 22 度晴朗，可以推荐薄外套 + T 恤
+Action 2: search[{"q": "22 度穿搭建议"}]
+Observation 2: [{"title": "22 度穿搭", "tip": "薄外套 + 长袖"}]
+Thought 3: 信息够了，可以给出穿搭建议
+Final Answer: 今天北京 22°C 晴朗，建议穿薄外套 + 长袖 T 恤</pre>
+        <p class="mathnote">模板要点：<code>工具描述要清晰</code>、<code>格式严格</code>（避免解析失败）、<code>终止条件明确</code>、<code>Few-shot 示例</code>（2-3 个 trace 提升稳定性）。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>CoT Prompt 模板</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>Zero-Shot CoT</strong>（最简形式）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">Q: 小明有 5 个苹果，吃了 2 个，又买了 3 个，现在有几个？
+Let's think step by step.
+A: 小明原来 5 个，吃了 2 个剩 3 个，又买了 3 个共 6 个。答案：6。</pre>
+        <p class="mathnote"><strong>Few-Shot CoT</strong>（带示例）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">Q: 一个工厂 3 天生产 60 个零件，10 天能生产多少？
+A: 每天生产 60/3 = 20 个，10 天 20×10 = 200 个。答案：200。
+
+Q: 小明有 5 个苹果，吃了 2 个，又买了 3 个，现在有几个？
+A: 小明原来 5 个，吃了 2 个剩 3 个，又买了 3 个共 6 个。答案：6。</pre>
+        <p class="mathnote">CoT 关键：<code>Let's think step by step</code> 是 Zero-Shot 的"咒语"；<code>Self-Consistency</code> 多次采样投票能再提升准确率 5-10%。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：Codex 任务规划（先分解任务再执行）、飞书 Aily 多步工具调用（先 Thought 决定 → Action 调工具 → Observation 反馈），用 ReAct 循环 + Reflection 反思避免无限循环</li>
+        <li><strong>假设场景</strong>：唯品会需求评估的多步推理 — 用户问"这款商品要不要下架？"，先查库存（get_inventory）→ 再判断销量（query_sales）→ 给出建议（Final Answer）</li>
+        <li><strong>简历表达</strong>：ReAct 思维链 / 多步推理 / 反思机制 / 循环终止策略</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>ReAct 主循环</td>
+            <td>实现 Thought/Action/Observation 标准循环</td>
+            <td>"实现 ReAct 推理循环，支持 5 类工具自动调度，单任务平均 3 步完成"</td>
+          </tr>
+          <tr>
+            <td>Prompt 工程</td>
+            <td>设计 Few-Shot Trace 模板 + 工具描述</td>
+            <td>"设计 ReAct Prompt 模板 + 3 个示例，工具调用准确率从 65% 提升到 89%"</td>
+          </tr>
+          <tr>
+            <td>循环终止</td>
+            <td>最大步数 + 重复 Action 检测 + Reflection</td>
+            <td>"加循环检测 + Reflection 反思机制，无效循环率从 18% 降至 2%"</td>
+          </tr>
+          <tr>
+            <td>反思记忆</td>
+            <td>把反思写入 Vector DB 长期记忆</td>
+            <td>"实现 Reflexion 长期记忆，下次同类型任务自动避开踩过的坑"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"CoT vs ReAct 区别 → ReAct 循环机制 → Prompt 模板 → 循环终止策略 → Reflection 反思"五段说清楚，立刻覆盖 90% 追问。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：ReAct 和 Function Call 区别？</h3>
+          <p>A：Function Call 是输出格式（模型怎么表达"我要调工具"），ReAct 是思维范式（边想边做）；ReAct 内部可以用 Function Call 实现。ReAct 是"为什么这么做"，Function Call 是"怎么告诉系统我要做"。</p>
+        </div>
+        <div>
+          <h3>Q2：什么时候用 ReAct？</h3>
+          <p>A：四个特征：<code>需要多步工具调用</code>（如先查后算）、<code>错误需实时纠正</code>（API 失败重试）、<code>信息逐步揭示</code>（一次回答需要分步探索）、<code>环境动态</code>（每次工具调用结果可能不同）。简单问答 / 单步推理用 CoT 即可。</p>
+        </div>
+        <div>
+          <h3>Q3：ReAct 会陷入循环吗？</h3>
+          <p>A：会。三种防御：<code>最大步数</code>（如 10 步强制终止）、<code>重复 Action 检测</code>（连续 N 步 Action 相同则触发反思换工具）、<code>Reflection 自评</code>（执行后让模型判断"我是否在绕圈"）。</p>
+        </div>
+        <div>
+          <h3>Q4：CoT 和 ReAct 可以组合吗？</h3>
+          <p>A：可以。ReAct 的 Thought 阶段内部用 CoT 做推理（"先想清楚再决定动作"），效果比单步 Thought 好。代表实现：<code>ReAct with CoT prompting</code>、<code>Chain-of-Thought Tool Use</code>。</p>
+        </div>
+        <div>
+          <h3>Q5：如何让 Agent 不重复尝试？</h3>
+          <p>A：四个层次：<code>状态记忆</code>（记录已尝试的 Action）、<code>相似度检测</code>（连续 N 步 Thought 相似度 &gt; 阈值则换工具）、<code>显式反思</code>（"我已经试过 X，结果是 Y，现在应该换思路"）、<code>外部监督</code>（人为设定"禁止调用 X"白名单）。</p>
+        </div>
+        <div>
+          <h3>Q6：ReAct 和 Plan-and-Execute 选哪个？</h3>
+          <p>A：<code>简单任务</code>（明确步骤）用 Plan-and-Execute（稳定）；<code>复杂 / 动态环境</code>用 ReAct（灵活）；生产中常 <strong>Plan + ReAct 组合</strong>：先 Plan 生成框架，再 ReAct 逐步执行并容错。</p>
+        </div>
+        <div>
+          <h3>Q7：Reflection 怎么避免"自欺欺人"？</h3>
+          <p>A：四个手段：<code>外部验证</code>（用工具或测试验证答案）、<code>多模型投票</code>（让不同 LLM 互相评）、<code>Ground Truth 比对</code>（有标准答案的场景）、<code>成本控制</code>（反思步数设上限避免过度）。反思不是万能，但能显著降低错误率。</p>
+        </div>
+        <div>
+          <h3>Q8：ReAct Agent 怎么调试？</h3>
+          <p>A：用 LangSmith / LangChain Tracing 工具记录每步 Thought / Action / Observation；存到 DB 便于回放；失败 case 单独标注；生产环境加 trace_id 全链路追踪。推荐用 LangGraph 可视化 Agent 状态机。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：CoT 是"先想后答"单次推理（适合数学 / 单步），ReAct 是"边想边做"循环（适合多步工具调用）；ReAct = Thought + Action + Observation 循环，每轮模型推理后决定调哪个工具，结果反馈后再思考。Reflection 是 ReAct 的增强，执行后自评决定是否重试。生产中常 Plan + ReAct 组合。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从 CoT 起点 → ReAct 循环 → Plan-and-Execute 对比 → Reflection 反思 → 失败模式与终止策略，逐层展开。最后落到你们项目的 prompt 模板、循环检测、记忆系统。有真实数据能立刻拉开差距。</p>
+        </div>
+        <div>
+          <h3>加分：知道 ReAct 的局限</h3>
+          <p>ReAct 不是银弹：易陷入循环、token 成本高、对 prompt 质量敏感、模型"幻觉式思考"（Thought 不准）。建议结合"最大步数 + 循环检测 + Reflection + 外部验证"四件套缓解。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次踩坑</h3>
+          <p>比如：模型反复调同一个工具（无循环检测）；Thought 发散到无关话题（无 system prompt 约束）；Reflection 把自己骗了（无外部验证）；Step 数爆了 token（无 max_step）。讲一次具体排查过程，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>范式区别</td><td>CoT 和 ReAct 怎么选？</td><td>答"任务特征"：单步推理用 CoT（数学 / 代码）、多步工具调用用 ReAct（客服 / Agent）、结构化任务用 Plan-and-Execute。生产中常组合：Plan 做整体框架、ReAct 做单步决策、Reflection 做总结。</td></tr>
+          <tr><td>循环终止</td><td>ReAct 怎么避免死循环？</td><td>答"三层防御"：① 最大步数（hard cap）；② 重复 Action 检测（连续 N 步相同则触发反思）；③ Reflection 自评（执行后判断是否在绕圈）。结合成本预算和超时控制。</td></tr>
+          <tr><td>Function Call</td><td>ReAct 内部怎么调工具？</td><td>答"两种实现"：① 文本解析（模型输出"Action: tool[args]"，正则解析）；② Function Call（OpenAI / Anthropic 原生支持结构化工具调用）。后者更稳定但耦合厂商。</td></tr>
+          <tr><td>反思质量</td><td>Reflection 怎么保证有效？</td><td>答"外部验证 + 多样化反馈"：让模型自评容易"自欺"，需用工具 / 测试 / 多模型投票交叉验证；反思要"具体可执行"（"我错在 X，应改 Y"），不要空泛"下次注意"。</td></tr>
+          <tr><td>性能优化</td><td>ReAct 太慢怎么办？</td><td>答"减少步数 + 并行工具"：① 合并多 Action 一次调（multi-tool）；② 不确定步骤让模型提前 plan（Plan + ReAct 组合）；③ 用更小模型做"工具选择 + 反思"、大模型做"Final Answer"。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：ReAct / CoT 是 Agent 思维范式的核心，面试允许说"这块我了解范式但生产经验有限"，但要能讲清楚循环机制、终止策略、反思 + 给出项目设计。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>CoT</td><td>Chain of Thought，模型先输出推理链再给答案</td></tr>
+          <tr><td>ReAct</td><td>Reason + Act 循环，Thought → Action → Observation → ...</td></tr>
+          <tr><td>Plan-and-Execute</td><td>先全盘规划再逐步执行，结构化任务</td></tr>
+          <tr><td>Reflection</td><td>执行后自评（Self-Refine / Reflexion），可写入长期记忆</td></tr>
+          <tr><td>Thought</td><td>ReAct 中的推理步骤，决定下一步 Action</td></tr>
+          <tr><td>Action</td><td>ReAct 中的工具调用（Function Call / 文本指令）</td></tr>
+          <tr><td>Observation</td><td>ReAct 中工具返回的结果，反馈给模型</td></tr>
+          <tr><td>Final Answer</td><td>ReAct 终止条件，模型给出最终答案</td></tr>
+          <tr><td>Zero-Shot CoT</td><td>用 "Let's think step by step" 触发推理</td></tr>
+          <tr><td>Few-Shot CoT</td><td>提供 2-3 个推理示例，提升稳定性</td></tr>
+          <tr><td>Self-Consistency</td><td>多次采样 + 投票，提升 CoT 准确率 5-10%</td></tr>
+          <tr><td>Reflexion</td><td>把反思结果写入 long-term memory，下次避免同错</td></tr>
+          <tr><td>循环检测</td><td>检测连续 N 步 Action 相同，强制换工具或终止</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A2A 协议 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #ddd6fe;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./mcp.html">MCP</a>
+    <a href="./multi-agent.html">Multi-Agent</a>
+    <a href="./tool-use.html">Tool Use</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Agent 协议 · 跨厂商互联</span>
+    <h1>A2A：让 Agent 之间像 HTTP 一样对话</h1>
+    <p class="lead">Agent-to-Agent Protocol，Google 2025 年开源的 Agent 互联协议。核心思想是：每个 Agent 暴露一份"名片"（Agent Card），其他 Agent 通过标准化信封（JSON-RPC over HTTP/SSE）发现并调用它。A2A 解决的是"Agent 之间的会话"问题，与 MCP（"Agent 怎么调工具"）正交互补。</p>
+    <div class="pillrow">
+      <span class="pill">Agent Card</span><span class="pill">JSON-RPC</span><span class="pill">SSE</span><span class="pill">Task 生命周期</span><span class="pill">多模态 Part</span><span class="pill">与 MCP 互补</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、A2A 三层架构</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 380" width="100%" height="auto" role="img" aria-label="A2A architecture">
+          <defs>
+            <marker id="arrow-a2a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <!-- Client Agent -->
+          <rect x="40" y="120" width="220" height="160" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="150" y="150" text-anchor="middle" font-size="18" font-weight="700">Client Agent</text>
+          <text x="150" y="172" text-anchor="middle" font-size="12" fill="#475569">发起方（"我需要查订单"）</text>
+          <rect x="60" y="190" width="180" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="150" y="213" text-anchor="middle" font-size="13">LLM + Planner</text>
+          <rect x="60" y="234" width="180" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="150" y="257" text-anchor="middle" font-size="13">A2A Client SDK</text>
+
+          <!-- A2A Protocol layer -->
+          <rect x="340" y="60" width="500" height="280" rx="16" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="590" y="90" text-anchor="middle" font-size="18" font-weight="700">A2A Protocol（HTTP + JSON-RPC）</text>
+
+          <rect x="360" y="110" width="460" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="590" y="132" text-anchor="middle" font-size="14" font-weight="600">① Discovery — /.well-known/agent.json 拿 Agent Card</text>
+          <text x="590" y="150" text-anchor="middle" font-size="11" fill="#475569">看对方能做什么、接受什么输入、怎么鉴权</text>
+
+          <rect x="360" y="170" width="460" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="590" y="192" text-anchor="middle" font-size="14" font-weight="600">② Submit — POST /tasks/send 发起任务（同步或流式）</text>
+          <text x="590" y="210" text-anchor="middle" font-size="11" fill="#475569">消息里含 Part[]（文本 / 文件 / 数据）</text>
+
+          <rect x="360" y="230" width="460" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="590" y="252" text-anchor="middle" font-size="14" font-weight="600">③ Stream — SSE 推送 Artifact 增量（流式场景）</text>
+          <text x="590" y="270" text-anchor="middle" font-size="11" fill="#475569">task → working → input-required → completed / failed</text>
+
+          <rect x="360" y="290" width="460" height="40" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="590" y="313" text-anchor="middle" font-size="13" font-weight="600">④ Auth — Bearer / OAuth2 / mTLS，按 Agent Card 配置</text>
+
+          <!-- Remote Agent -->
+          <rect x="920" y="120" width="220" height="160" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1030" y="150" text-anchor="middle" font-size="18" font-weight="700">Remote Agent</text>
+          <text x="1030" y="172" text-anchor="middle" font-size="12" fill="#475569">承接方（"我能查订单"）</text>
+          <rect x="940" y="190" width="180" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="1030" y="213" text-anchor="middle" font-size="13">A2A Server SDK</text>
+          <rect x="940" y="234" width="180" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="1030" y="257" text-anchor="middle" font-size="13">业务执行 + Memory</text>
+
+          <line x1="260" y1="200" x2="340" y2="200" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-a2a)"/>
+          <line x1="840" y1="200" x2="920" y2="200" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-a2a)"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Agent Card 示例</h2>
+      <pre class="code">{
+  "name": "order-agent",
+  "description": "查询与处理订单状态",
+  "url": "https://agents.example.com/order",
+  "version": "1.0.0",
+  "skills": [
+    { "id": "lookup", "name": "查订单" },
+    { "id": "refund", "name": "申请退款" }
+  ],
+  "authentication": {
+    "schemes": ["bearer"]
+  },
+  "defaultInputModes": ["text", "file"],
+  "defaultOutputModes": ["text", "data"]
+}</pre>
+      <p>Agent Card 是 Agent 的"招聘简历"——告诉其他 Agent 自己会什么、怎么对话、需要什么鉴权。其他 Agent 拿到后决定"是否要把任务发给你"。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、Task 状态机</h2>
+      <table>
+        <thead><tr><th>状态</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>submitted</code></td><td>任务已接收、待处理</td></tr>
+          <tr><td><code>working</code></td><td>正在执行（可能产生 Artifact 增量）</td></tr>
+          <tr><td><code>input-required</code></td><td>需要客户端补料（追问 / 文件）</td></tr>
+          <tr><td><code>completed</code></td><td>成功，Artifact 为最终结果</td></tr>
+          <tr><td><code>failed</code></td><td>出错，带错误码与说明</td></tr>
+          <tr><td><code>canceled</code></td><td>被主动取消</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">状态机的关键：客户端可以随时 <code>tasks/get</code> 拉取、也可以用 SSE 订阅。这是 A2A 与"一次性 HTTP 调用"最大的区别——它把 Agent 任务建模成"长事务"。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、消息与 Artifact 结构</h2>
+      <pre class="code">{
+  "id": "task-001",
+  "status": "working",
+  "messages": [
+    {
+      "role": "user",
+      "parts": [
+        { "type": "text", "text": "查一下订单 20240512001 的状态" },
+        { "type": "file", "file": { "mimeType": "image/png", "data": "<base64>" } }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "result",
+      "parts": [
+        { "type": "data", "data": { "status": "shipped", "eta": "2024-05-13" } }
+      ]
+    }
+  ]
+}</pre>
+      <p>Part 是 A2A 的"多模态原子"——一段文本、一个文件、一段结构化数据。客户端和远端 Agent 都用同样的 Part 数组组装消息，使"图片+文字"或"表格+追问"成为一等公民。</p>
+    </article>
+
+    <article class="card">
+      <h2>五、A2A vs MCP</h2>
+      <table>
+        <thead><tr><th>维度</th><th>A2A</th><th>MCP</th></tr></thead>
+        <tbody>
+          <tr><td>解决什么问题</td><td>Agent 之间的协作</td><td>Agent 怎么调工具 / 读数据</td></tr>
+          <tr><td>通信方</td><td>Agent ↔ Agent</td><td>Agent ↔ Tool / Resource</td></tr>
+          <tr><td>典型调用</td><td>"帮我把这份报告发给财务 Agent"</td><td>"调用数据库 MCP 拿 Q1 销售数据"</td></tr>
+          <tr><td>通信模式</td><td>长事务 / SSE 流式</td><td>同步函数调用 / 资源订阅</td></tr>
+          <tr><td>鉴权</td><td>按 Agent Card 配置</td><td>按 MCP Server 配置</td></tr>
+          <tr><td>关系</td><td colspan="2">正交互补 — 一次完整任务链路：Agent 调 MCP 拿数据 → 通过 A2A 把结果交给另一个 Agent</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>六、A2A 适用场景</h2>
+      <ul>
+        <li><strong>跨厂商协作</strong>：蕉内的客服 Agent 调顺丰的物流 Agent 拿实时轨迹</li>
+        <li><strong>企业内部门协同</strong>：HR Agent ↔ 财务 Agent ↔ IT Agent 串成审批流</li>
+        <li><strong>长任务外包</strong>：把"做一份竞品分析报告"委派给垂直 Agent，跨小时/天</li>
+        <li><strong>不确定的发现</strong>：开放 Agent 生态中先查 Agent Card 再决定要不要调用</li>
+      </ul>
+      <div class="callout">不适用：单 Agent 内部的工具调用（用 MCP）、实时流式数据消费（用 WebSocket / gRPC streaming）、跨公司数据合规敏感场景（要先解决数据出域问题）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：A2A 和 MCP 必须一起用吗？</h3>
+          <p>A：不必。A2A 解决 Agent ↔ Agent；MCP 解决 Agent ↔ Tool。两者正交。一个最小 A2A Agent 不需要任何 MCP；一个纯本地 Agent 也不需要 A2A。生产复杂系统一般两者都上。</p>
+        </div>
+        <div>
+          <h3>Q2：Agent Card 怎么防止伪造？</h3>
+          <p>A：三层防护：① HTTPS + mTLS 保护传输；② Agent Card URL 必须可控（公司域名下）；③ 鉴权 schemes 写在 Card 里，调用时必须通过对应身份验证。开放生态中还会引入"Agent 目录服务"做第三方背书。</p>
+        </div>
+        <div>
+          <h3>Q3：流式场景怎么处理大量 Artifact？</h3>
+          <p>A：A2A 把 Artifact 设计为"可分块 + 可索引"，SSE 事件中带 artifactId + chunkIndex，客户端按顺序组装。也可以让客户端先 GET artifact 看大小，决定是流式还是拉取。</p>
+        </div>
+        <div>
+          <h3>Q4：A2A 的 input-required 状态具体怎么用？</h3>
+          <p>A：远端 Agent 在执行中发现"需要更多信息"（比如用户没给订单号）时进入 input-required，附上 question part。客户端补料后通过 tasks/send 续传。适合"多轮反问"的复杂任务。</p>
+        </div>
+        <div>
+          <h3>Q5：A2A 和 HTTP API 区别在哪？</h3>
+          <p>A：技术上 A2A 是 HTTP+JSON-RPC+SSE；本质区别是"语义层"——A2A 把"任务"作为一等公民（带生命周期、状态机、长事务），并标准化了 Agent 之间的发现、协商、续传、流式语义。普通 HTTP API 仍可被 A2A Agent 调用（当 Tool 用）。</p>
+        </div>
+        <div>
+          <h3>Q6：怎么选 A2A、ACP、A2A-ANP？</h3>
+          <p>A：A2A（Google）— 主流、生态最广、JSON-RPC 风格；ACP（IBM 主导）— REST 风格，更接近 Web API；ANP（开源社区）— 点对点、去中心化。多数企业落地选 A2A，参考实现最多。</p>
+        </div>
+        <div>
+          <h3>Q7：A2A 调用如何计费和限流？</h3>
+          <p>A：A2A 协议本身没规定，但生产中常见做法：① Agent Card 里声明 rate limit + 计费策略；② 网关层做 token bucket 限流；③ 任务级 usage 埋点，结算按 task / token 颗粒。开放生态可结合"Agent 目录服务"做信用体系。</p>
+        </div>
+        <div>
+          <h3>Q8：A2A 的失败怎么传播？</h3>
+          <p>A：Task 进入 failed 状态，body 里含 error code（标准错误码集）+ message。客户端可以重试 / fallback / 升级人工。链路长时建议把上游 task_id 透传到下游，便于全链路追踪。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>A2A 是 Google 主导的 Agent 互联协议，让不同厂商的 Agent 像 HTTP 服务一样被发现和调用。核心是 Agent Card（能力描述）+ JSON-RPC 任务提交 + SSE 流式响应。Task 有完整生命周期（submitted → working → input-required → completed）。A2A 和 MCP 正交：MCP 让 Agent 调工具，A2A 让 Agent 调 Agent。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（"我的 Agent 怎么调别人的 Agent"）→ 协议分层（Discovery / Submit / Stream / Auth）→ Agent Card 设计 → Task 状态机 → 消息/Artifact 结构 → 与 MCP 的边界 → 生产级考量（鉴权 / 限流 / 失败传播）。能讲清楚"为什么 A2A 单独成协议而不直接用 HTTP API"是拉开差距的关键。</p>
+        </div>
+        <div>
+          <h3>加分：实战选型</h3>
+          <p>讲一次"为什么不用 HTTP API 而上 A2A"——比如需要长任务（订单处理跨多小时）、需要反问补料、需要流式 artifact、需要跨厂商统一鉴权，普通 REST 都要重造轮子，A2A 已经有现成规范。</p>
+        </div>
+        <div>
+          <h3>加分：知道 A2A 局限</h3>
+          <p>A2A 不是银弹：① 开放生态下 Agent Card 真实性需要信任链；② 流式 SSE 在企业 NAT/代理下经常断；③ 状态机对短任务反而是负担（同步 API 更直接）；④ 跨公司合规（GDPR / 数据出域）协议层解决不了。要诚实说"这些场景我了解但生产经验有限"。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>A2A</td><td>Agent-to-Agent Protocol，Google 2025 开源的 Agent 互联协议</td></tr>
+          <tr><td>Agent Card</td><td>Agent 的"招聘简历"，描述能力、输入输出、鉴权方式</td></tr>
+          <tr><td>Task</td><td>A2A 中"任务"的一等公民，带 id 和生命周期状态</td></tr>
+          <tr><td>Message</td><td>Client 与 Agent 通信的载体，由 Part[] 组成</td></tr>
+          <tr><td>Artifact</td><td>任务最终/中间产物，可分块流式返回</td></tr>
+          <tr><td>Part</td><td>多模态原子，text / file / data 三种类型</td></tr>
+          <tr><td>JSON-RPC</td><td>A2A 的请求格式，HTTP 之上承载 RPC 语义</td></tr>
+          <tr><td>SSE</td><td>Server-Sent Events，长任务流式响应通道</td></tr>
+          <tr><td>Task 状态机</td><td>submitted → working → input-required → completed/failed/canceled</td></tr>
+          <tr><td>Discovery</td><td>通过 <code>/.well-known/agent.json</code> 拉取 Agent Card 的过程</td></tr>
+          <tr><td>A2A vs MCP</td><td>正交互补 — A2A 管 Agent 间协作，MCP 管 Agent 调工具</td></tr>
+          <tr><td>ACP / ANP</td><td>A2A 的同类竞争协议，REST 风格 / 点对点</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

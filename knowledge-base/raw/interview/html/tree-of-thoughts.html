@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tree of Thoughts 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./react-cot.html">ReAct / CoT</a>
+    <a href="./reflexion.html">Reflexion</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./planner.html">Planner</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Agent 推理 · 思维树</span>
+    <h1>Tree of Thoughts：把推理从"链"扩成"树"</h1>
+    <p class="lead">Yao 等 2023 提出。把 Chain-of-Thought 的线性推理扩展成树：每一步生成多个候选 thought → 用评估函数打分 → 保留 top-k → 继续展开。配合 BFS / DFS 搜索，ToT 在 Game of 24、24 点、创意写作等需要"探索 + 回溯"的任务上比 CoT 提升 2-5x。代价是 token 成本指数级增长。</p>
+    <div class="pillrow">
+      <span class="pill">BFS / DFS</span><span class="pill">评估函数</span><span class="pill">回溯</span><span class="pill">Tree Search</span><span class="pill">Self-Eval</span><span class="pill">Pruning</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、ToT 算法 4 步循环</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 380" width="100%" height="auto" role="img" aria-label="ToT search tree">
+          <defs>
+            <marker id="arrow-tot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <!-- Tree structure -->
+          <text x="40" y="30" font-size="14" font-weight="700" fill="#0f172a">Step 1: 当前节点 s</text>
+
+          <ellipse cx="100" cy="100" rx="50" ry="28" fill="#ddd6fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="100" y="95" text-anchor="middle" font-size="12" font-weight="600">Input</text>
+          <text x="100" y="112" text-anchor="middle" font-size="10" fill="#475569">4 6 8 9</text>
+
+          <!-- Level 1: 3 thoughts -->
+          <ellipse cx="280" cy="60" rx="60" ry="26" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="280" y="56" text-anchor="middle" font-size="11" font-weight="600">6×4=24</text>
+          <text x="280" y="71" text-anchor="middle" font-size="9" fill="#059669">score=9</text>
+
+          <ellipse cx="280" cy="130" rx="60" ry="26" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="280" y="126" text-anchor="middle" font-size="11" font-weight="600">8×(9-6)=24</text>
+          <text x="280" y="141" text-anchor="middle" font-size="9" fill="#059669">score=10</text>
+
+          <ellipse cx="280" cy="200" rx="60" ry="26" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="280" y="196" text-anchor="middle" font-size="11" font-weight="600">9+8+6+1</text>
+          <text x="280" y="211" text-anchor="middle" font-size="9" fill="#dc2626">score=2</text>
+
+          <!-- Level 2: expand best 2 -->
+          <ellipse cx="500" cy="60" rx="60" ry="26" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="500" y="56" text-anchor="middle" font-size="11" font-weight="600">6×4=24 → 24?</text>
+          <text x="500" y="71" text-anchor="middle" font-size="9" fill="#dc2626">score=1</text>
+
+          <ellipse cx="500" cy="130" rx="60" ry="26" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="500" y="126" text-anchor="middle" font-size="11" font-weight="600">8×(9-6) → 24</text>
+          <text x="500" y="141" text-anchor="middle" font-size="9" fill="#059669">score=10</text>
+
+          <ellipse cx="500" cy="200" rx="60" ry="26" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="500" y="196" text-anchor="middle" font-size="11" font-weight="600">9+8+6+1 → 24</text>
+          <text x="500" y="211" text-anchor="middle" font-size="9" fill="#dc2626">score=3</text>
+
+          <!-- Level 3: final answer -->
+          <ellipse cx="740" cy="130" rx="80" ry="30" fill="#ddd6fe" stroke="#7c3aed" stroke-width="3"/>
+          <text x="740" y="125" text-anchor="middle" font-size="12" font-weight="700">OUTPUT</text>
+          <text x="740" y="142" text-anchor="middle" font-size="10" fill="#0f172a">8×(9-6)=24</text>
+
+          <!-- Right side: 4 steps -->
+          <rect x="900" y="40" width="260" height="60" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1030" y="62" text-anchor="middle" font-size="13" font-weight="700">① Thought Generation</text>
+          <text x="1030" y="82" text-anchor="middle" font-size="11" fill="#475569">从 s 生成 k 个候选下一步</text>
+
+          <rect x="900" y="115" width="260" height="60" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1030" y="137" text-anchor="middle" font-size="13" font-weight="700">② State Evaluation</text>
+          <text x="1030" y="157" text-anchor="middle" font-size="11" fill="#475569">V(s) 打分，剪枝低分</text>
+
+          <rect x="900" y="190" width="260" height="60" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1030" y="212" text-anchor="middle" font-size="13" font-weight="700">③ Search (BFS/DFS)</text>
+          <text x="1030" y="232" text-anchor="middle" font-size="11" fill="#475569">扩展 top-b 个状态</text>
+
+          <rect x="900" y="265" width="260" height="60" rx="12" fill="#ddd6fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1030" y="287" text-anchor="middle" font-size="13" font-weight="700">④ Backtrack / Terminate</text>
+          <text x="1030" y="307" text-anchor="middle" font-size="11" fill="#0f172a">达到目标 / 资源耗尽</text>
+
+          <!-- arrows -->
+          <line x1="150" y1="100" x2="220" y2="60" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-tot)"/>
+          <line x1="150" y1="100" x2="220" y2="130" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-tot)"/>
+          <line x1="150" y1="100" x2="220" y2="200" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-tot)"/>
+          <line x1="340" y1="130" x2="440" y2="130" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow-tot)"/>
+          <line x1="560" y1="130" x2="660" y2="130" stroke="#059669" stroke-width="3" marker-end="url(#arrow-tot)"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、BFS vs DFS</h2>
+      <table>
+        <thead><tr><th>维度</th><th>BFS（广度）</th><th>DFS（深度）</th></tr></thead>
+        <tbody>
+          <tr><td>扩展策略</td><td>每层展开 top-b 个</td><td>一条路走到底再回溯</td></tr>
+          <tr><td>适合</td><td>答案明确、深度浅</td><td>答案需要深推理、可回溯</td></tr>
+          <tr><td>代表</td><td>Game of 24、24 点</td><td>创意写作、数学证明</td></tr>
+          <tr><td>成本</td><td>广但浅</td><td>窄但深</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>三、评估函数 3 类</h2>
+      <ul>
+        <li><strong>规则评估</strong>：可验证任务（24 点、填字游戏、约束满足）</li>
+        <li><strong>Self-Eval</strong>：LLM 自己打分（"这个推理看起来对吗？1-10"）</li>
+        <li><strong>外部模型</strong>：用强模型当裁判（GPT-4 评 GPT-3.5 推理）</li>
+        <li><strong>投票/多数决</strong>：self-consistency 风格的多数投票</li>
+      </ul>
+      <div class="callout">Self-Eval 噪声大，但成本低；规则评估最稳但只能用于特定任务；外部模型最准但慢。ToT 论文中 Game of 24 用规则评估，创意写作用 self-eval。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、ToT vs CoT vs ReAct vs Reflexion</h2>
+      <table>
+        <thead><tr><th>维度</th><th>CoT</th><th>ReAct</th><th>Reflexion</th><th>ToT</th></tr></thead>
+        <tbody>
+          <tr><td>结构</td><td>线性链</td><td>推理 + 行动交替</td><td>反思 + 试错循环</td><td>思维树 + 搜索</td></tr>
+          <tr><td>分支</td><td>无</td><td>无</td><td>无（串行）</td><td>多分支并行</td></tr>
+          <tr><td>回溯</td><td>不支持</td><td>不支持</td><td>支持（重做）</td><td>支持（剪枝+回溯）</td></tr>
+          <tr><td>成本</td><td>1x</td><td>1-2x</td><td>2-5x</td><td>5-50x</td></tr>
+          <tr><td>适用</td><td>中等推理</td><td>工具使用</td><td>长任务试错</td><td>需要探索+回溯的难题</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、ToT 适用场景</h2>
+      <ul>
+        <li><strong>Game of 24</strong>：4 个数字凑 24，需要枚举和回溯</li>
+        <li><strong>数学证明</strong>：多步推导、尝试不同策略</li>
+        <li><strong>填字 / 数独</strong>：约束满足 + 探索</li>
+        <li><strong>代码生成</strong>：多方案尝试 + 测试驱动筛选</li>
+        <li><strong>创意写作</strong>：多主题探索、择优</li>
+        <li><strong>战略游戏</strong>：多步规划 + 评估位置</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、ToT 不适用场景</h2>
+      <ul>
+        <li><strong>简单 QA</strong>：直接答，搜索浪费</li>
+        <li><strong>长生成</strong>：token 成本爆炸</li>
+        <li><strong>实时场景</strong>：搜索耗时无法接受</li>
+        <li><strong>无评估函数的任务</strong>：没"对/错"信号时搜索失效</li>
+        <li><strong>主观创作</strong>：评估不稳定、剪枝靠运气</li>
+      </ul>
+      <div class="callout">判断口诀：能写出"对/错"规则 + 任务有清晰中间状态 + 答案搜索空间 ≤ 1000 → 可考虑 ToT。否则上 CoT + ReAct 更经济。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：ToT 相对 CoT 的本质提升在哪？</h3>
+          <p>A：CoT 是"一次性链"——错了就错到底。ToT 把"下一步"扩成"多个下一步"，配合评估函数剪枝，能"试错+回溯"。在需要探索的任务（24 点、规划）上效果提升 2-5x，但成本 5-50x。trade-off 要算清。</p>
+        </div>
+        <div>
+          <h3>Q2：ToT 评估函数怎么写？</h3>
+          <p>A：3 类：① 规则（"答案是 24 吗"），适用于可验证任务；② Self-Eval（LLM 1-10 打分），成本低但噪声大；③ 外部模型（GPT-4 评），最准但慢。实践中规则+self-eval 组合最常见。</p>
+        </div>
+        <div>
+          <h3>Q3：b 和 k 怎么选？</h3>
+          <p>A：b=每层扩展状态数（典型 3-5），k=每个状态生成的 thought 数（典型 3-10）。b×k 决定每层 LLM 调用数。b=1 退化为 CoT；b=5, k=5 是 ToT 论文常用配置。生产中 b=3, k=5 平衡效果和成本。</p>
+        </div>
+        <div>
+          <h3>Q4：ToT 怎么避免组合爆炸？</h3>
+          <p>A：3 个手段：① 评估函数强剪枝（剪掉 V(s) < 阈值的分支）；② 深度限制（max_depth 5-10）；③ 早停（达到目标即返回）。还可以用 beam search 把 b 限制在常数。</p>
+        </div>
+        <div>
+          <h3>Q5：ToT 与 MCTS 关系？</h3>
+          <p>A：MCTS（蒙特卡洛树搜索）用 UCB 选择 + 模拟评估，更精细但实现复杂。ToT 是简化版：直接用 LLM 评估 + 固定 b。可视为 MCTS 的"LLM 时代简化"。</p>
+        </div>
+        <div>
+          <h3>Q6：ToT 与 self-consistency 区别？</h3>
+          <p>A：self-consistency 多次独立采样后投票，无中间评估；ToT 有显式评估 + 剪枝 + 回溯。self-consistency 适合开放式生成，ToT 适合结构化推理。两者正交可叠加。</p>
+        </div>
+        <div>
+          <h3>Q7：ToT 的 token 成本怎么控？</h3>
+          <p>A：① 用小模型做 thought generation、大模型做 evaluation（双模型架构）；② b 和 k 按难度动态调（简单任务 b=1、复杂 b=5）；③ 评估函数前置剪枝（先生成 1 个 thought，评分低就直接放弃整条分支）；④ 缓存公共前缀。</p>
+        </div>
+        <div>
+          <h3>Q8：ToT 在生产中真用吗？</h3>
+          <p>A：直接用 ToT 的少，但"思维树思想"广为借鉴：DeepSeek-R1 的 self-revision、o1 的"internal CoT"、AlphaCode 的多方案生成都借鉴了 ToT 的"多分支 + 评估 + 剪枝"思想。纯 ToT 框架在 24 点、规划类 demo 中常见。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Tree of Thoughts 把 CoT 的线性推理扩成树：每步生成多个候选 thought，评估函数打分，剪枝低分，保留 top-b 继续。配合 BFS / DFS 搜索和回溯机制，在需要探索+回溯的难题（24 点、数学证明、代码生成）上比 CoT 提升 2-5x。代价是 token 成本 5-50x 增长，需要规则 / self-eval 评估函数支撑。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（CoT 不支持回溯）→ ToT 4 步循环（生成 / 评估 / 搜索 / 终止）→ BFS vs DFS 选择 → 评估函数 3 类（规则 / self-eval / 外部模型）→ 与 CoT/ReAct/Reflexion 对比 → 适用场景（24 点、规划、创意）→ 不适用（简单 QA、长生成、实时）→ token 成本控制（双模型 / 动态 b / 缓存）。能讲清"为什么 ToT 评估函数比 thought generation 更重要"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"为什么 CoT 失败而 ToT 成功"——比如推理规划场景下 CoT 一次走错就全错；上 ToT 后用规则评估函数（"是否满足约束"）剪枝，复杂规划任务完成率从 35% 升到 78%。再讲成本控制：b 从 5 降到 3 后成本 -40%，效果几乎不变。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>ToT 不是银弹：① 成本 5-50x 增长；② 需要可评估函数；③ 评估函数不准时剪枝失效；④ 复杂任务上 b 太小不够。诚实说"ToT 在 24 点、规划、代码多方案生成上效果显著，开放问答不值得"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>ToT</td><td>Tree of Thoughts，Yao 2023 提出的思维树推理</td></tr>
+          <tr><td>Thought</td><td>推理中的中间步骤/中间状态</td></tr>
+          <tr><td>b (beam width)</td><td>每层扩展保留的 thought 数</td></tr>
+          <tr><td>k</td><td>每状态生成的 thought 数</td></tr>
+          <tr><td>BFS</td><td>广度优先，逐层展开</td></tr>
+          <tr><td>DFS</td><td>深度优先，一条路走到底</td></tr>
+          <tr><td>评估函数 V(s)</td><td>对状态 s 打分，决定是否剪枝</td></tr>
+          <tr><td>剪枝 Pruning</td><td>砍掉低分分支，避免组合爆炸</td></tr>
+          <tr><td>回溯 Backtrack</td><td>走错时返回上一状态换分支</td></tr>
+          <tr><td>Self-Eval</td><td>LLM 自己给状态打分</td></tr>
+          <tr><td>ToT 适用</td><td>可验证 / 可回溯 / 搜索空间适中</td></tr>
+          <tr><td>ToT 不适用</td><td>简单 QA / 实时 / 无评估函数</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

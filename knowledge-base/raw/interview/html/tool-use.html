@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tool Use 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./skill.html">Skill</a>
+    <a href="./mcp.html">MCP</a>
+    <a href="./react-cot.html">ReAct/CoT</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">学习资源 · Agent 工具</span>
+    <h1>Tool Use 工具调用</h1>
+    <p class="lead">Function Calling 原理、JSON Schema、多轮调用状态管理。</p>
+    <div class="pillrow">
+      <span class="pill">Function Call</span><span class="pill">JSON Schema</span><span class="pill">Multi-turn</span><span class="pill">Error</span><span class="pill">Retry</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Function Calling 流程</h2>
+      <ul>
+        <li><strong>核心流程</strong>（6 步循环）：
+          <ol>
+            <li><strong>Tool 描述注入</strong>：把 tools（JSON Schema）作为 <code>tools</code> 字段传给模型</li>
+            <li><strong>模型选 Tool</strong>：模型判断是否需要调工具，需要则输出 <code>tool_calls</code>（name + arguments）</li>
+            <li><strong>客户端解析</strong>：解析 Function Call 输出，校验参数 schema</li>
+            <li><strong>执行 Tool</strong>：客户端调用真实函数（HTTP / DB / 内部 API）</li>
+            <li><strong>结果回灌</strong>：把 Tool 返回作为 <code>role: tool</code> 消息加入对话</li>
+            <li><strong>继续生成</strong>：模型基于 tool 结果继续生成回答，可再次触发 tool call（多轮）</li>
+          </ol>
+        </li>
+        <li><strong>JSON Schema 关键字段</strong>：
+          <ul>
+            <li><code>name</code>：工具名称（snake_case，全局唯一）</li>
+            <li><code>description</code>：工具用途，模型判断调用的核心依据（写好描述 = 准确率 +30%）</li>
+            <li><code>parameters.type</code>：固定 <code>"object"</code></li>
+            <li><code>parameters.properties</code>：参数列表 + 类型 + 描述</li>
+            <li><code>parameters.required</code>：必填参数数组</li>
+            <li><code>strict</code>（OpenAI）：是否严格模式（拒绝 schema 外字段）</li>
+          </ul>
+        </li>
+        <li><strong>多轮调用</strong>：一个 prompt 多次 tool call
+          <ul>
+            <li>并行多 Tool：模型一次输出多个 <code>tool_calls</code>，客户端并行执行</li>
+            <li>串行多 Tool：先查后算（先 <code>get_weather</code> 再 <code>send_msg</code>）</li>
+            <li>状态管理：<code>messages</code> 数组累积，每次 append <code>role: tool</code> 消息</li>
+          </ul>
+        </li>
+        <li><strong>错误处理</strong>：
+          <ul>
+            <li>参数校验失败：模型重新生成（带错误信息）</li>
+            <li>工具不存在：返回 <code>tool_call_id</code> 对应的 error 消息</li>
+            <li>超时：客户端设 timeout（默认 30s），失败时返回错误</li>
+            <li>不可重试错误（4xx）：直接报错，让模型换工具</li>
+            <li>可重试错误（5xx / 网络）：指数退避重试，最多 3 次</li>
+          </ul>
+        </li>
+        <li><strong>重试策略</strong>：指数退避（1s → 2s → 4s）+ 最大次数（3 次）+ fallback（换工具 / 人工）</li>
+        <li><strong>安全</strong>：参数注入防护（白名单 / 长度限制 / 字符过滤）+ 工具白名单（只允许调注册过的）+ 审计日志</li>
+      </ul>
+      <table>
+        <thead><tr><th>阶段</th><th>关键点</th><th>失败模式</th><th>应对</th></tr></thead>
+        <tbody>
+          <tr><td>Tool 注入</td><td>description 质量</td><td>模型不识别该用哪个工具</td><td>写好描述 + 限制数量</td></tr>
+          <tr><td>模型选 Tool</td><td>tool_call 准确性</td><td>选错 / 参数填错</td><td>Few-shot + 校验</td></tr>
+          <tr><td>执行 Tool</td><td>网络 / 业务异常</td><td>5xx / 超时 / 业务错误</td><td>重试 + 降级</td></tr>
+          <tr><td>结果回灌</td><td>格式正确性</td><td>JSON 解析失败 / 内容过长</td><td>截断 + 摘要</td></tr>
+          <tr><td>继续生成</td><td>上下文累积</td><td>超出 token 限制</td><td>滚动窗口 + 摘要</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>Function Call vs ReAct vs Skill 选型</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Function Call</th><th>ReAct</th><th>Skill</th></tr></thead>
+        <tbody>
+          <tr><td>粒度</td><td>单次调用</td><td>Thought + Action 循环</td><td>多 Tool 工作流</td></tr>
+          <tr><td>决策方式</td><td>模型一次性输出</td><td>每步模型决策</td><td>Skill Router 匹配</td></tr>
+          <tr><td>状态管理</td><td>messages 数组</td><td>messages + 反思</td><td>Skill 内部状态</td></tr>
+          <tr><td>循环检测</td><td>客户端责任</td><td>需显式最大步数</td><td>Skill 内部处理</td></tr>
+          <tr><td>适用</td><td>单 Tool 调用</td><td>动态多步决策</td><td>固定模式工作流</td></tr>
+          <tr><td>实现</td><td>OpenAI / Anthropic API</td><td>LangChain Agent</td><td>Anthropic Skills / Cursor</td></tr>
+          <tr><td>失败模式</td><td>Tool 选错</td><td>循环 / 发散</td><td>Skill 匹配错</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战经验：单 Tool 调用用 Function Call（简单可控），动态多步决策用 ReAct（灵活但需防御循环），固定工作流用 Skill（可复用、可测试）。生产中常组合：ReAct 单步调 Function Call，Skill 内部用 ReAct 决策。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、调用时序</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Tool use sequence">
+          <defs>
+            <marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" font-size="14" font-weight="700" fill="#0f172a">User</text>
+          <text x="290" y="30" font-size="14" font-weight="700" fill="#0f172a">LLM</text>
+          <text x="540" y="30" font-size="14" font-weight="700" fill="#0f172a">Client</text>
+          <text x="800" y="30" font-size="14" font-weight="700" fill="#0f172a">Tool</text>
+          <text x="1050" y="30" font-size="14" font-weight="700" fill="#0f172a">User</text>
+
+          <line x1="80" y1="50" x2="80" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="290" y1="50" x2="290" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="540" y1="50" x2="540" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="800" y1="50" x2="800" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="1050" y1="50" x2="1050" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+
+          <line x1="80" y1="80" x2="290" y2="80" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="185" y="72" text-anchor="middle" font-size="12" fill="#0f172a">① 用户问"查北京天气"</text>
+
+          <line x1="290" y1="110" x2="540" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="415" y="102" text-anchor="middle" font-size="12" fill="#0f172a">② LLM 输出 tool_call</text>
+
+          <line x1="540" y1="140" x2="800" y2="140" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="670" y="132" text-anchor="middle" font-size="12" fill="#0f172a">③ 客户端执行 get_weather(city="北京")</text>
+
+          <line x1="800" y1="170" x2="540" y2="170" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="670" y="162" text-anchor="middle" font-size="12" fill="#0f172a">④ 返回结构化结果 {temp:22, ...}</text>
+
+          <line x1="540" y1="200" x2="290" y2="200" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="415" y="192" text-anchor="middle" font-size="12" fill="#0f172a">⑤ result 回灌 messages</text>
+
+          <line x1="290" y1="230" x2="1050" y2="230" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="670" y="222" text-anchor="middle" font-size="12" fill="#0f172a">⑥ LLM 基于结果生成回答</text>
+
+          <line x1="290" y1="270" x2="540" y2="270" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="415" y="262" text-anchor="middle" font-size="12" fill="#0f172a">⑦ 多轮：再次调 send_msg</text>
+
+          <line x1="540" y1="300" x2="800" y2="300" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="670" y="292" text-anchor="middle" font-size="12" fill="#0f172a">⑧ 客户端调 send_msg(weather=22)</text>
+        </svg>
+      </div>
+      <p class="muted">Function Call 完整时序：用户问 → LLM 决定调工具 → 客户端执行 → 结果回灌 → LLM 生成回答。多轮调用时，重复 ②-⑤ 步骤，每次 append <code>role: tool</code> 消息。关键点：tool_call_id 关联（每个 call 对应一个 result）、消息累积（不能丢历史）、超时控制（防 hang 死）。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、Tool Schema 示例</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>OpenAI Function Calling JSON Schema</strong></p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "type": "function",
+  "function": {
+    "name": "search_products",
+    "description": "搜索蕉内商品，支持按关键词、品类、价格区间过滤",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "keyword": {
+          "type": "string",
+          "description": "搜索关键词，如"袜子"或"内衣""
+        },
+        "category": {
+          "type": "string",
+          "enum": ["袜子", "内衣", "家居服"],
+          "description": "商品品类"
+        },
+        "price_min": {
+          "type": "number",
+          "description": "最低价格（元）",
+          "minimum": 0
+        },
+        "price_max": {
+          "type": "number",
+          "description": "最高价格（元）",
+          "maximum": 9999
+        },
+        "limit": {
+          "type": "integer",
+          "default": 10,
+          "description": "返回商品数量",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["keyword"],
+      "additionalProperties": false
+    }
+  }
+}</pre>
+        <p class="mathnote"><strong>关键设计</strong>：<code>description</code> 写清楚"做什么"（模型判断调用的核心），<code>enum</code> 限制可选值（避免模型自由发挥），<code>required</code> 明确必填（避免漏参数），<code>additionalProperties: false</code>（OpenAI strict 模式，拒绝额外字段）。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、消息格式</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>Request</strong>（Client → Server）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_products",
+    "arguments": { "keyword": "袜子" }
+  }
+}</pre>
+        <p class="mathnote"><strong>Response</strong>（Server → Client）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": { "items": [...] }
+}</pre>
+        <p class="mathnote"><strong>Error</strong>（参数缺失 / 工具不存在）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": { "code": -32602, "message": "keyword is required" }
+}</pre>
+        <p class="mathnote"><strong>Notification</strong>（Server 主动推送，无需回复）</p>
+        <pre style="margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "method": "notifications/resources/updated",
+  "params": { "uri": "file:///orders/2026-06-03.json" }
+}</pre>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>消息字段速查</h2>
+      <table>
+        <thead><tr><th>字段</th><th>位置</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>tools</code></td><td>Request</td><td>工具定义数组（JSON Schema 列表）</td></tr>
+          <tr><td><code>tool_choice</code></td><td>Request</td><td>auto / required / specific tool / none</td></tr>
+          <tr><td><code>tool_calls</code></td><td>Response (assistant)</td><td>模型输出的调用请求（id + function）</td></tr>
+          <tr><td><code>role: tool</code></td><td>回灌消息</td><td>工具执行结果，<code>tool_call_id</code> 关联</td></tr>
+          <tr><td><code>content</code></td><td>tool 消息</td><td>工具返回的字符串（业务侧序列化）</td></tr>
+          <tr><td><code>parallel_tool_calls</code></td><td>Request</td><td>是否允许多个并行 call（OpenAI）</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：飞书 Aily 工具调用、Codex 工具集成（商品查询 / 订单查询 / 库存查询 / 客服转接 4 个 Tool，工具调用准确率 92%）</li>
+        <li><strong>假设场景</strong>：蕉内数字员工 RAG 检索工具 + 业务 API（用户问"我的订单到哪了"→ 查订单工具 → 查物流工具 → 总结回答）</li>
+        <li><strong>简历表达</strong>：Function Calling / 工具设计 / 错误处理 / 多轮状态管理</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Tool 设计</td>
+            <td>设计 4 个业务 Tool 的 JSON Schema + 描述</td>
+            <td>"主导 Tool 描述优化，调用准确率从 78% 提升到 92%"</td>
+          </tr>
+          <tr>
+            <td>多轮管理</td>
+            <td>messages 数组累积 + tool_call_id 关联 + 上下文压缩</td>
+            <td>"实现多轮 Tool Call 状态管理，支持 5 步以内复杂任务"</td>
+          </tr>
+          <tr>
+            <td>错误处理</td>
+            <td>分类错误码 + 指数退避重试 + 降级方案</td>
+            <td>"Tool 调用成功率从 88% 提升到 99.5%"</td>
+          </tr>
+          <tr>
+            <td>安全防护</td>
+            <td>Tool 白名单 + 参数注入过滤 + 审计日志</td>
+            <td>"建立 Tool 安全防护体系，拦截 100% 注入攻击"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"Function Call 流程 → JSON Schema 怎么写 → 多轮状态怎么管 → 错误怎么兜底"四段说清楚，再带具体数字（准确率 / 成功率 / 平均步数），立刻与只跑过 Demo 的人拉开差距。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Function Call 流程是怎样的？</h3>
+          <p>A：6 步循环：① 把 tool 描述（JSON Schema）作为 <code>tools</code> 字段传给模型；② 模型判断要不要调，需要则输出 <code>tool_calls</code>（含 id、name、arguments）；③ 客户端解析并校验参数；④ 调真实函数；⑤ 把结果作为 <code>role: tool</code> 消息回灌；⑥ 模型基于结果继续生成，可再次调。OpenAI / Anthropic / Google 都支持，格式略有不同但思路一致。</p>
+        </div>
+        <div>
+          <h3>Q2：JSON Schema 怎么写？</h3>
+          <p>A：用 JSON Schema Draft 7 / 2020-12，定义 <code>name</code>（snake_case）、<code>description</code>（模型判断调用的核心，写清楚"做什么"和"何时用"）、<code>parameters</code>（type: object + properties + required）。高级：<code>enum</code> 限制可选值、<code>minimum/maximum</code> 限数值范围、<code>pattern</code> 限字符串格式、<code>additionalProperties: false</code> 拒绝额外字段。OpenAI 还支持 <code>strict: true</code> 严格模式。</p>
+        </div>
+        <div>
+          <h3>Q3：多轮 Tool Call 怎么管理状态？</h3>
+          <p>A：用 <code>messages</code> 数组累积。每次模型返回 <code>tool_calls</code> 后，客户端执行完每个工具，按 <code>tool_call_id</code> 顺序 append <code>role: tool</code> 消息，重新发给模型。OpenAI 还要求 assistant 消息也带 <code>tool_calls</code> 字段（保留模型原始输出）。注意：消息数组不能丢历史，否则 <code>tool_call_id</code> 关联会断。</p>
+        </div>
+        <div>
+          <h3>Q4：Tool Call 错误怎么处理？</h3>
+          <p>A：四类错误分类：① 参数错误（4xx 等价，模型重新生成）；② 工具不存在（return error message 给模型）；③ 执行失败（5xx / 超时，指数退避重试 1-3 次）；④ 不可重试（鉴权失败，fail fast）。重试策略：1s → 2s → 4s 指数退避 + jitter + 最多 3 次。fallback：换工具 / 跳过此步 / 兜底文案。</p>
+        </div>
+        <div>
+          <h3>Q5：Tool Call 和 Prompt 注入风险？</h3>
+          <p>A：Tool 结果回灌到 prompt 是注入面，恶意用户可通过工具返回值影响模型行为。防护：① 工具结果沙箱化（标记为 <code>role: tool</code>，不与 system prompt 混）；② 内容审查（关键词 / 长度限制 / 异常字符过滤）；③ 工具白名单（只允许调注册过的）；④ 危险操作要求人工确认（删库 / 转账）。Anthropic / OpenAI 在 SDK 层做了部分防护。</p>
+        </div>
+        <div>
+          <h3>Q6：怎么调试 Tool Call？</h3>
+          <p>A：四步调试。① 全链路 trace（用 LangSmith / Phoenix / 自建 trace_id）；② 记录每次 tool_call 的入参 / 出参 / 时延 / 错误码到 DB；③ 失败 case 单独标注（用 trace_id 关联）；④ 回放工具（mock LLM，固定输入看 Tool 执行）。生产中再加：调用埋点 + 异常告警 + 慢调用看板。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>选型决策清单</h2>
+      <div class="qa">
+        <div>
+          <h3>选 Function Call 的场景</h3>
+          <p>单次或少量 Tool 调用（1-3 步）、确定性强（知道要调什么）、用 OpenAI / Anthropic / Google API。生产首选，简单可控。</p>
+        </div>
+        <div>
+          <h3>选 ReAct 的场景</h3>
+          <p>动态多步决策（5+ 步可能）、环境不确定（每步要观察结果再决定）、需反思和重试。LangChain / AutoGen Agent 框架。需加循环检测。</p>
+        </div>
+        <div>
+          <h3>选 Skill 的场景</h3>
+          <p>固定工作流（code-review / 数据 ETL / PRD 生成）、需跨人复用、需版本管理和测试。Anthropic Skills / Cursor Skills 规范。</p>
+        </div>
+        <div>
+          <h3>不引入工具调用的场景</h3>
+          <p>纯文本任务（问答 / 总结 / 翻译）、无外部数据需求、不需执行动作。直接用 LLM 即可，引入工具反而增加复杂度和成本。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>学习路径与资源</h2>
+      <table>
+        <thead><tr><th>阶段</th><th>内容</th><th>推荐资源</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td>入门</td><td>理解 Function Call 6 步流程</td><td>OpenAI Function Calling 官方文档、Anthropic Tool Use 文档</td><td>能写第一个 Tool 描述</td></tr>
+          <tr><td>进阶</td><td>JSON Schema 设计与校验</td><td>JSON Schema 官方文档、Pydantic 模型</td><td>能设计稳健 Tool schema</td></tr>
+          <tr><td>实战</td><td>多轮 Tool Call 状态管理</td><td>LangChain AgentExecutor、Anthropic Cookbook</td><td>能跑通多轮调用</td></tr>
+          <tr><td>错误处理</td><td>分类错误码 + 重试 + 降级</td><td>tenacity 库、SRE 重试模式</td><td>能写健壮调用链</td></tr>
+          <tr><td>安全</td><td>参数注入防护 + 工具白名单</td><td>OWASP LLM Top 10、Anthropic 安全指南</td><td>能防注入攻击</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">一句话总结：Function Call 是 LLM 与外部世界交互的"手"。原则：先简单（单 Tool），再复杂（多 Tool / 多轮），最后工程化（错误处理 / 安全 / 监控）。description 写好 = 准确率 +30%。</div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

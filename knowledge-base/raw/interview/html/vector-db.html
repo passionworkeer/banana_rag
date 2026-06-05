@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>向量数据库 知识页</title>
+  <style>
+    :root{
+      --bg:#f0fdfa;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#99f6e4;
+      --accent:#115e59;
+      --accent-soft:#ccfbf1;
+      --accent-soft-2:#f0fdfa;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f0fdfa);border:1px solid #99f6e4;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f0fdfa;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./embedding.html">Embedding</a>
+    <a href="./rerank.html">Rerank</a>
+    <a href="./llm-cache.html">LLM Cache</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">数据基础设施 · 向量检索</span>
+    <h1>向量数据库与数据服务：Pinecone / Weaviate / Milvus / Qdrant / pgvector</h1>
+    <p class="lead">2023 以来向量库成为 RAG / 推荐 / 语义搜索的事实标准。从托管 SaaS（Pinecone / Weaviate Cloud）到开源本地（Milvus / Qdrant / Weaviate / Chroma），再到"Postgres + 向量列"（pgvector）和"Redis 加模块"（Redis Stack），10+ 主流方案让"如何选型"成为 LLM 工程师必考点。本页把 10 大向量库、Index / Sharding / Replication 架构、HNSW/IVF/PQ 索引算法、混合检索（BM25+向量）、选型决策、面试 FAQ 一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Pinecone</span><span class="pill">Weaviate</span><span class="pill">Milvus</span><span class="pill">Qdrant</span><span class="pill">Chroma</span><span class="pill">pgvector</span><span class="pill">Redis Stack</span><span class="pill">Elasticsearch</span><span class="pill">FAISS</span><span class="pill">Vespa</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要专门的向量库（vs Postgres + 向量列）</h2>
+      <ul>
+        <li><strong>规模天花板</strong>：Postgres + pgvector 在 1M-10M 向量（1536 维）尚可，100M+ 性能急剧下降，QPS 从 1000 跌到 50</li>
+        <li><strong>ANN 索引缺失</strong>：Postgres 原生只有 IVFFlat（暴力），HNSW 要 pgvector 0.5+。专业向量库内置 HNSW / IVF / PQ / Annoy / ScaNN 等</li>
+        <li><strong>内存压力</strong>：Postgres 一次查询要 scan 大量 page，HNSW 全内存。Milvus / Qdrant 把整个索引常驻 RAM（10 亿向量 ≈ 600GB 内存）</li>
+        <li><strong>混合检索弱</strong>：Postgres 全文检索（tsvector）和向量列是两个查询计划，难以联合排序。Qdrant / Elasticsearch 8.x / Vespa 原生混合</li>
+        <li><strong>分布式能力</strong>：Postgres 主从 + Citus 复杂；Milvus / Weaviate 原生分片 / 多副本 / 租户隔离</li>
+        <li><strong>运维成本</strong>：专业向量库自带 backup / scale / monitor；Postgres + pgvector 要自己接 ELK / Prometheus / 备份脚本</li>
+        <li><strong>代价</strong>：① 引入新组件，运维复杂度↑；② 数据一致性（最终一致 vs 强一致）；③ 与业务库 join 不便；④ 收费版（Pinecone / Zilliz）单价高</li>
+      </ul>
+      <div class="callout">经验法则：① ≤10w 向量 / 单机 → pgvector 够用（架构简单）；② 10w-1M → Chroma / FAISS（Python 原生、轻量）；③ 1M-100M → Qdrant / Weaviate / Milvus 单机；④ ≥100M → Milvus 分布式 / Pinecone Serverless / Vespa。Postgres 业务表 + 小向量（≤1M）场景最省钱。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、10 大向量库全景对比</h2>
+      <table>
+        <thead><tr><th>工具</th><th>类型</th><th>部署</th><th>索引算法</th><th>性能</th><th>适用规模</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Pinecone</strong></td><td>托管 SaaS</td><td>Serverless / Pod</td><td>自家（proprietary）</td><td>极高</td><td>中大规模生产</td></tr>
+          <tr><td><strong>Weaviate</strong></td><td>开源 + 云</td><td>Docker / K8s / WCD</td><td>HNSW</td><td>高</td><td>中大规模</td></tr>
+          <tr><td><strong>Milvus / Zilliz</strong></td><td>开源 + 云</td><td>Standalone / Distributed</td><td>HNSW / IVF / PQ / Annoy / GPU</td><td>极高</td><td>百亿级</td></tr>
+          <tr><td><strong>Qdrant</strong></td><td>开源 + 云</td><td>Docker / K8s</td><td>HNSW</td><td>高（Rust）</td><td>中大规模</td></tr>
+          <tr><td><strong>Chroma</strong></td><td>开源嵌入式</td><td>Python lib / Server</td><td>HNSW（基于 DuckDB）</td><td>中</td><td>开发 / 小规模</td></tr>
+          <tr><td><strong>pgvector</strong></td><td>Postgres 扩展</td><td>Postgres 内部</td><td>IVFFlat / HNSW（0.5+）</td><td>中</td><td>≤10M 业务+向量</td></tr>
+          <tr><td><strong>Redis Stack</strong></td><td>Redis 模块</td><td>Redis 7+</td><td>HNSW（RediSearch）</td><td>高（内存）</td><td>低延迟 / 小规模</td></tr>
+          <tr><td><strong>Elasticsearch 8</strong></td><td>搜索引擎</td><td>ES 集群</td><td>HNSW（dense_vector）</td><td>中</td><td>全文+向量混合</td></tr>
+          <tr><td><strong>FAISS（Meta）</strong></td><td>C++/Python 库</td><td>嵌入式 / 本地</td><td>IVF / PQ / HNSW / ScaNN</td><td>极高</td><td>研究 / 离线</td></tr>
+          <tr><td><strong>Vespa（Yahoo）</strong></td><td>开源 + 云</td><td>Standalone / Cluster</td><td>HNSW + 自定义</td><td>极高</td><td>大规模生产（Yahoo 背书）</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">分层建议：① Python 原生 / 开发友好 → Chroma / FAISS；② 业务库 + 小向量 → pgvector；③ 中等规模 / 性能优先 → Qdrant（Rust）/ Weaviate；④ 超大规模 / 分布式 / 复杂查询 → Milvus / Vespa；⑤ 不想运维 → Pinecone / Zilliz Cloud。</div>
+    </article>
+
+    <article class="card full">
+      <h2>三、向量库架构：Index + Sharding + Replication</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="vector db architecture">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#115e59"></path>
+            </marker>
+          </defs>
+          <text x="590" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">向量库分布式架构</text>
+
+          <rect x="40"  y="60" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="140" y="85" text-anchor="middle" font-size="13" font-weight="700">Client SDK</text>
+          <text x="140" y="100" text-anchor="middle" font-size="10" fill="#475569">Python/Go/JS/REST</text>
+
+          <rect x="40"  y="130" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="140" y="155" text-anchor="middle" font-size="13" font-weight="700">Proxy / Router</text>
+          <text x="140" y="170" text-anchor="middle" font-size="10" fill="#475569">负载均衡 / 路由 / 鉴权</text>
+
+          <rect x="280" y="130" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="380" y="155" text-anchor="middle" font-size="13" font-weight="700">Query Coordinator</text>
+          <text x="380" y="170" text-anchor="middle" font-size="10" fill="#475569">混合检索 / 重排 / 归并</text>
+
+          <rect x="520" y="60" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="620" y="85" text-anchor="middle" font-size="13" font-weight="700">Shard 1</text>
+          <text x="620" y="100" text-anchor="middle" font-size="10" fill="#475569">HNSW + Data</text>
+
+          <rect x="520" y="120" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="620" y="145" text-anchor="middle" font-size="13" font-weight="700">Shard 2</text>
+          <text x="620" y="160" text-anchor="middle" font-size="10" fill="#475569">HNSW + Data</text>
+
+          <rect x="520" y="180" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="620" y="205" text-anchor="middle" font-size="13" font-weight="700">Shard 3</text>
+          <text x="620" y="220" text-anchor="middle" font-size="10" fill="#475569">HNSW + Data</text>
+
+          <rect x="760" y="60" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="860" y="85" text-anchor="middle" font-size="13" font-weight="700">Replica-1</text>
+          <text x="860" y="100" text-anchor="middle" font-size="10" fill="#475569">主备 / Raft</text>
+
+          <rect x="760" y="120" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="860" y="145" text-anchor="middle" font-size="13" font-weight="700">Replica-2</text>
+          <text x="860" y="160" text-anchor="middle" font-size="10" fill="#475569">只读副本</text>
+
+          <rect x="760" y="180" width="200" height="50" rx="10" fill="#ccfbf1" stroke="#115e59" stroke-width="2"/>
+          <text x="860" y="205" text-anchor="middle" font-size="13" font-weight="700">Object Storage</text>
+          <text x="860" y="220" text-anchor="middle" font-size="10" fill="#475569">S3 / MinIO 备份</text>
+
+          <line x1="140" y1="110" x2="140" y2="130" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="240" y1="155" x2="280" y2="155" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="480" y1="145" x2="520" y2="85" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="480" y1="155" x2="520" y2="145" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="480" y1="165" x2="520" y2="205" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="720" y1="85" x2="760" y2="85" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="720" y1="145" x2="760" y2="145" stroke="#115e59" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <text x="590" y="280" text-anchor="middle" font-size="12" fill="#475569">核心：Sharding（按 hash / 分区键切分）+ Replication（多副本 / Raft）+ Proxy 路由</text>
+          <text x="590" y="300" text-anchor="middle" font-size="12" fill="#475569">Milvus / Vespa / Weaviate 都遵循这套架构；pgvector / Chroma / FAISS 不分片</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、索引算法对比（HNSW / IVF / PQ / Annoy）</h2>
+      <table>
+        <thead><tr><th>算法</th><th>原理</th><th>召回率</th><th>速度</th><th>内存</th><th>适用</th></tr></thead>
+        <tbody>
+          <tr><td><strong>HNSW</strong></td><td>分层 Navigable Small World 图</td><td>极高（&gt;95%）</td><td>极快</td><td>高（10 亿 ≈ 50-100GB）</td><td>通用首选（生产默认）</td></tr>
+          <tr><td><strong>IVF（IVFFlat）</strong></td><td>K-means 聚类，搜索 nprobe 个桶</td><td>中（80-90%）</td><td>中</td><td>低</td><td>内存紧张 / 牺牲召回</td></tr>
+          <tr><td><strong>PQ（Product Quantization）</strong></td><td>向量分段量化压缩</td><td>中（80-95%）</td><td>中</td><td>极低（10x 压缩）</td><td>海量向量 / 内存受限</td></tr>
+          <tr><td><strong>IVF-PQ 组合</strong></td><td>聚类 + 量化</td><td>中（85-95%）</td><td>中</td><td>低</td><td>亿级以上 / 平衡选择</td></tr>
+          <tr><td><strong>Annoy（Spotify）</strong></td><td>随机投影树森林</td><td>中（85-95%）</td><td>快（只读）</td><td>中</td><td>静态数据集 / 只读场景</td></tr>
+          <tr><td><strong>ScaNN（Google）</strong></td><td>各向异性向量量化</td><td>极高（&gt;95%）</td><td>极快</td><td>中</td><td>Google 内部 / TF 生态</td></tr>
+        </tbody>
+      </table>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>核心思想：Recall@K vs QPS 权衡</strong></p>
+        <p class="mathline">QPS = f(M, ef_search, nprobe) ;  Recall = g(ef_construction, M, nprobe)</p>
+        <p class="mathnote">HNSW 调参：① M（每节点连接数，16-64，越大召回↑，内存↑）；② efConstruction（建图深度，100-200，越大建图慢但召回↑）；③ efSearch（搜索深度，50-200，越大 QPS↓但召回↑）。生产默认 M=16, efConstruction=200, efSearch=64。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>五、混合检索实现（BM25 + 向量）</h2>
+      <pre class="code"># 混合检索：BM25（全文）+ 向量 + Rerank
+from qdrant_client import QdrantClient, models
+from sentence_transformers import SentenceTransformer, CrossEncoder
+
+# 1. 客户端
+client = QdrantClient(url="http://localhost:6333")
+encoder = SentenceTransformer("BAAI/bge-m3")  # 1024 维
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3")
+
+# 2. 创建带稀疏向量（BM25）的 collection
+client.create_collection(
+    collection_name="hybrid_docs",
+    vectors_config={"dense": models.VectorParams(size=1024, distance=models.Distance.COSINE)},
+    sparse_vectors_config={"sparse": models.SparseVectorParams(modifier=models.Modifier.IDF)},
+)
+
+# 3. 写入（同时存 dense + sparse）
+client.upsert(
+    collection_name="hybrid_docs",
+    points=[
+        models.PointStruct(
+            id=i,
+            vector={
+                "dense": encoder.encode(doc).tolist(),
+                "sparse": models.SparseVector(indices=bm25_tokens, values=bm25_weights),
+            },
+            payload={"text": doc, "category": cat},
+        )
+        for i, (doc, cat) in enumerate(docs)
+    ],
+)
+
+# 4. 混合查询（Reciprocal Rank Fusion 融合）
+query = "什么是 RAG 检索增强生成？"
+query_dense = encoder.encode(query)
+query_sparse = bm25_encode(query)
+
+results = client.query_points(
+    collection_name="hybrid_docs",
+    prefetch=[
+        models.Prefetch(query=query_dense, using="dense", limit=20),
+        models.Prefetch(query=query_sparse, using="sparse", limit=20),
+    ],
+    query=models.FusionQuery(fusion=models.Fusion.RRF),  # RRF 自动融合
+    limit=10,
+)
+
+# 5. Rerank（可选，精度+10%，QPS-30%）
+candidates = [r.payload["text"] for r in results.points]
+pairs = [(query, c) for c in candidates]
+rerank_scores = reranker.predict(pairs)
+final = sorted(zip(candidates, rerank_scores), key=lambda x: -x[1])[:5]</pre>
+      <div class="callout">混合检索为何必要？① 纯向量擅长语义（"苹果公司" 找到 "iPhone"），不擅长精确关键词（"iPhone 15 Pro Max 256G"）；② 纯 BM25 擅长关键词，不擅长语义。RRF（Reciprocal Rank Fusion）把两者排名倒数相加融合，召回率 +5-15%。Qdrant / Weaviate / Elasticsearch 8.x / Vespa 原生支持。</div>
+    </article>
+
+    <article class="card full">
+      <h2>六、选型决策（个人 / 创业 / 中等 / 超大）</h2>
+      <table>
+        <thead><tr><th>角色</th><th>推荐</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>个人 / 原型</td><td>Chroma / FAISS</td><td>Python 一行起步，零运维，本地内存即跑</td></tr>
+          <tr><td>创业 MVP（&lt;1M 向量）</td><td>Qdrant / Weaviate</td><td>单 Docker 部署，混合检索开箱即用，文档全</td></tr>
+          <tr><td>业务库 + 小向量</td><td>pgvector</td><td>Postgres 事务一致，少组件，少数据同步</td></tr>
+          <tr><td>低延迟 / 已有 Redis</td><td>Redis Stack</td><td>RediSearch 亚毫秒延迟，内存驻留</td></tr>
+          <tr><td>全文+向量混合</td><td>Elasticsearch 8</td><td>ES 原生 dense_vector + BM25，企业级 ES 集群</td></tr>
+          <tr><td>中等规模生产（1M-100M）</td><td>Qdrant / Weaviate</td><td>Rust / Go 性能强，混合检索、过滤、副本</td></tr>
+          <tr><td>超大生产（&gt;100M）</td><td>Milvus / Vespa</td><td>原生分布式，亿级到百亿级</td></tr>
+          <tr><td>不想运维 / 全球化</td><td>Pinecone Serverless</td><td>AWS / GCP 多区，零运维，按量计费</td></tr>
+          <tr><td>Yahoo 级 / 复杂查询</td><td>Vespa</td><td>复杂 ranking / grouping / tensor 表达式</td></tr>
+          <tr><td>研究 / 离线评测</td><td>FAISS</td><td>Meta 出品，算法全，bench 标配</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">避坑：① 不要一上来就 Pinecone（贵 + 数据出境）；② pgvector 上 100M 会很痛（迁移代价大）；③ Chroma 不要上生产（持久化弱）；④ 选型先看 hybrid（BM25+向量），别只用向量；⑤ 注意 metadata 过滤（payload 索引是性能关键）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、与 LangChain / LlamaIndex 的集成</h2>
+      <pre class="code"># LangChain 集成 Qdrant
+from langchain_community.vectorstores import Qdrant
+from langchain_openai import OpenAIEmbeddings
+from langchain.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
+
+emb = OpenAIEmbeddings(model="text-embedding-3-small")
+docs = [Document(page_content=t, metadata={"src": i}) for i, t in enumerate(texts)]
+
+# 1. 向量检索
+vdb = Qdrant.from_documents(docs, emb, url="http://localhost:6333",
+                            collection_name="lc_demo")
+v_retriever = vdb.as_retriever(search_kwargs={"k": 10})
+
+# 2. BM25 检索
+bm25_retriever = BM25Retriever.from_documents(docs)
+bm25_retriever.k = 10
+
+# 3. 混合（EnsembleRetriever 自动 RRF）
+hybrid = EnsembleRetriever(
+    retrievers=[v_retriever, bm25_retriever],
+    weights=[0.6, 0.4],   # 向量 0.6 + BM25 0.4
+)
+
+# 4. 高级 retriever
+from langchain.retrievers import (
+    ContextualCompressionRetriever,
+    MultiQueryRetriever,
+    SelfQueryRetriever,
+)
+from langchain.retrievers.document_compressors import CrossEncoderReranker
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+
+ce = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
+compressor = CrossEncoderReranker(model=ce, top_n=5)
+rerank_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor, base_retriever=hybrid
+)
+
+# 5. 检索 + 调用
+result = rerank_retriever.invoke("什么是 ReAct Agent？")</pre>
+    </article>
+
+    <article class="card full">
+      <h2>八、性能 benchmark（ANN-Benchmarks 风格）</h2>
+      <table>
+        <thead><tr><th>向量库</th><th>1M @ 100QPS P99</th><th>10M @ 1000QPS P99</th><th>100M 可用</th><th>索引时间</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Qdrant</strong></td><td>5-15ms</td><td>10-30ms</td><td>是</td><td>中（Rust 优化）</td></tr>
+          <tr><td><strong>Milvus</strong></td><td>5-20ms</td><td>10-40ms</td><td>是（分布式）</td><td>中</td></tr>
+          <tr><td><strong>Weaviate</strong></td><td>10-30ms</td><td>20-50ms</td><td>是</td><td>中</td></tr>
+          <tr><td><strong>Pinecone p1.x</strong></td><td>10-30ms</td><td>20-50ms</td><td>是（Serverless）</td><td>快</td></tr>
+          <tr><td><strong>pgvector HNSW</strong></td><td>20-50ms（&lt;1M）</td><td>100ms+（10M 退化）</td><td>勉强</td><td>慢</td></tr>
+          <tr><td><strong>Chroma</strong></td><td>10-30ms</td><td>50ms+</td><td>否（&gt;10M 不推荐）</td><td>中</td></tr>
+          <tr><td><strong>FAISS（本地）</strong></td><td>1-5ms（IVF）</td><td>5-15ms（IVF-PQ）</td><td>是（本地）</td><td>中</td></tr>
+          <tr><td><strong>Redis Stack</strong></td><td>1-3ms（内存）</td><td>3-10ms</td><td>是（依赖内存）</td><td>快</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">数据为 Glove-100 / Cohere-768 / OpenAI-1536 维近似值（recall@10=0.95）。结论：① 单机 Qdrant / Milvus 性能接近 Pinecone 付费版 80%，价格 1/10；② pgvector 适合业务+向量一体；③ Redis 最快（亚毫秒）但吃内存；④ 千万级以上必上分片。</div>
+    </article>
+
+    <article class="card full">
+      <h2>九、项目落地 / 简历表达</h2>
+      <table>
+        <thead><tr><th>项目</th><th>技术栈</th><th>简历表达</th></tr></thead>
+        <tbody>
+          <tr><td>企业 RAG 知识库</td><td>Qdrant + bge-m3 + LangChain</td><td>"用 Qdrant + bge-m3 搭建企业 RAG，1M 文档 QPS 200，P99 30ms，业务问答准确率 88%"</td></tr>
+          <tr><td>亿级推荐检索</td><td>Milvus 分布式 + IVF-PQ</td><td>"用 Milvus 分布式 + IVF-PQ 索引支撑亿级商品向量检索，QPS 1w，召回率 95%"</td></tr>
+          <tr><td>pgvector 业务+向量</td><td>Postgres + pgvector HNSW</td><td>"Postgres + pgvector 存用户 embedding，HNSW 索引 100w 用户相似度 P99 &lt;50ms"</td></tr>
+          <tr><td>混合检索升级</td><td>Qdrant + BM25 + Rerank</td><td>"Qdrant 混合 BM25 + 向量 + bge-reranker 升级纯向量检索，召回率 +12%，badcase -35%"</td></tr>
+          <tr><td>向量库迁移</td><td>FAISS → Milvus</td><td>"将推荐系统从 FAISS 单机迁移 Milvus 分布式，QPS 100→5000，延迟稳定 P99 20ms"</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：pgvector 够用吗？</h3>
+          <p>A：场景而定。≤10M 向量 + 业务库强一致 + ≤100 QPS 够用。优势：① Postgres 事务一致、join 方便；② 少组件；③ 已有 Postgres 团队零成本。劣势：100M+ 性能急剧下降、混合检索弱、运维扩展难。生产前必压测。</p>
+        </div>
+        <div>
+          <h3>Q2：Pinecone 贵在哪？</h3>
+          <p>A：① 托管 SaaS 溢价（人 / 时间 / 数据出境成本）；② Serverless 按向量数+查询计费，10M 向量约 $200/月，100M 约 $2000/月；③ 数据锁死在 Pinecone；④ 不可定制。优势：零运维、SLA 99.9%、全球化、低延迟。适合：① 不愿运维；② 全球化业务；③ 项目期初验证。</p>
+        </div>
+        <div>
+          <h3>Q3：Milvus 和 Qdrant 选哪个？</h3>
+          <p>A：Milvus：① 分布式成熟（亿级+生产背书）；② 索引全（HNSW/IVF/PQ/Annoy/GPU）；③ 组件多（etcd + MinIO + Pulsar），运维重。Qdrant：① Rust 性能强（吞吐 +30%）；② 单二进制部署（运维轻）；③ Filter 强大（payload 过滤极快）；④ 文档清晰。中小规模（≤100M）选 Qdrant；超大规模选 Milvus。</p>
+        </div>
+        <div>
+          <h3>Q4：HNSW 和 IVF 区别？</h3>
+          <p>A：HNSW：图索引，全内存，召回率极高（&gt;95%），适合通用首选。IVF：K-means 聚类桶，内存少，速度快，但召回率 80-90%，需 nprobe 调优。生产默认 HNSW；内存紧张或召回要求不高选 IVF / IVF-PQ。ScaNN 是 Google 出的各向异性量化，比 HNSW 召回+速度都优。</p>
+        </div>
+        <div>
+          <h3>Q5：为什么需要混合检索？</h3>
+          <p>A：① 纯向量擅长语义（"苹果公司" → "iPhone"）但不擅长精确关键词（型号、价格）；② 纯 BM25 擅长关键词但不擅长语义。生产 RAG 90% 需要两者融合。RRF（倒数排名融合）或 weighted sum 合并。Qdrant / Weaviate / ES 8 / Vespa 原生支持。实测召回率 +5-15%。</p>
+        </div>
+        <div>
+          <h3>Q6：向量维度怎么选？</h3>
+          <p>A：① OpenAI text-embedding-3-small → 1536 维（默认）；② bge-m3 → 1024 维（中文推荐）；③ bge-large → 1024 维；④ M3E → 768 维；⑤ mxbai-embed-large → 1024 维。维度越大 → 语义越细 → 存储+计算越大。一般 1024 维是性价比最优点。降维：Matryoshka（截断到 256 维仍可用）。</p>
+        </div>
+        <div>
+          <h3>Q7：向量库如何选 metadata 过滤？</h3>
+          <p>A：① payload 索引（Qdrant / Milvus 都建在向量字段旁）；② 标量字段先 filter 再 search（pre-filter）；③ 复杂 query 走 query plan（Milvus 表达式 / Qdrant filter）。生产 90% 用 pre-filter（先按 category=tech 过滤再向量检索）。Qdrant filter 极快（payload 全内存）。</p>
+        </div>
+        <div>
+          <h3>Q8：怎么保证数据一致性？</h3>
+          <p>A：① 强一致（pgvector / Redis）→ 事务内写入；② 最终一致（Milvus / Pinecone）→ 写入后 1-5s 可查；③ 生产中常用方案：业务库事务 + 异步向量写入（消息队列） + 失败重试。Qdrant 支持 Write-Ahead-Log + Snapshot。Milvus 支持 Exactly-Once 语义。RAG 场景 90% 用最终一致即可。</p>
+        </div>
+        <div>
+          <h3>Q9：如何监控向量库？</h3>
+          <p>A：① Prometheus + Grafana（Qdrant / Milvus 原生 exporter）；② 关键指标：QPS / P50/P99 延迟 / 召回率（业务侧 A/B 测）/ 索引大小 / 内存使用 / 副本滞后；③ 日志：query latency 分布、错误率、Top K 命中率；④ 告警：P99 &gt; 100ms、QPS 跌 30%、副本切换、索引损坏。生产中每条查询要打 trace。</p>
+        </div>
+        <div>
+          <h3>Q10：Rerank 一定要吗？</h3>
+          <p>A：不一定。简单场景：向量 Top-5 即可，Rerank +10% 精度但 -30% QPS。复杂场景：① 多语种/长文档 → 必加；② 对召回率敏感（医疗/法律）→ 必加；③ 高 QPS（&gt;100）→ 慎用。常见组合：向量 Top-50 → Rerank → Top-5 给 LLM。bge-reranker / Cohere Rerank / Jina Rerank 是主流。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问 + 回答模板</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问 / 模板</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>30 秒电梯</td><td>自我介绍</td><td>"向量库是 RAG / 语义检索的基础设施。10 大主流：托管选 Pinecone / Zilliz；自建选 Qdrant / Milvus / Weaviate；轻量选 Chroma / FAISS；业务+向量选 pgvector。生产中 1M-100M 选 Qdrant，&gt;100M 选 Milvus 分布式。"</td></tr>
+          <tr><td>5 分钟深入</td><td>完整讲解</td><td>动机（Postgres+向量列规模天花板）→ 10 大对比 → 架构（Index+Sharding+Replication）→ HNSW/IVF/PQ 算法 → 混合检索（BM25+向量+RRF）→ 选型决策 → 性能 benchmark → 与 LangChain 集成。能讲清"pgvector 何时撑不住"、"HNSW 调参 M/efSearch"立刻显出真经验。</td></tr>
+          <tr><td>pgvector</td><td>够用吗？</td><td>答"看规模"：≤10M+业务强一致+≤100 QPS 够用；&gt;10M 推荐 Qdrant/Milvus。优势是事务一致+少组件；劣势是性能/混合检索/分布式弱。生产前必压测。</td></tr>
+          <tr><td>Pinecone</td><td>贵在哪？</td><td>答"托管溢价"：SaaS + 数据出境 + 锁死。Serverless 10M 向量约 $200/月。优势：零运维+全球化+低延迟。适合不愿运维 / 全球化 / 初期验证。</td></tr>
+          <tr><td>Milvus/Qdrant</td><td>选哪个？</td><td>答"按规模"：中小（≤100M）选 Qdrant（Rust 性能强+单二进制+filter 极快+运维轻）；超大规模（&gt;100M）选 Milvus（分布式成熟+索引全+亿级背书）。</td></tr>
+          <tr><td>HNSW</td><td>vs IVF？</td><td>答"召回 vs 内存"：HNSW 全内存+召回&gt;95%+通用首选；IVF 内存少+召回 80-90%+需 nprobe 调优。生产默认 HNSW（M=16, efC=200, efS=64）；内存紧张选 IVF / IVF-PQ。</td></tr>
+          <tr><td>混合检索</td><td>为何必要？</td><td>答"语义+关键词互补"：向量擅长语义（"苹果"→"iPhone"）不擅长型号；BM25 反之。RRF 融合，召回 +5-15%。Qdrant/Weaviate/ES 8/Vespa 原生。</td></tr>
+          <tr><td>维度</td><td>怎么选？</td><td>答"性价比"：1024 维最常用（bge-m3 / bge-large / OpenAI 1536 也可）。越大越细但存储贵。Matryoshka 可截断到 256 维仍可用。</td></tr>
+          <tr><td>过滤</td><td>metadata 怎么 filter？</td><td>答"pre-filter"：先按 payload 字段 filter 缩小候选，再向量检索（pre-filter 90% 场景）。Qdrant filter 极快（payload 全内存）。</td></tr>
+          <tr><td>一致性</td><td>强一致还是最终？</td><td>答"按场景"：RAG 90% 用最终一致（业务库事务 + 异步向量写入 + 重试）。Qdrant/Milvus 都支持 Snapshot+Replication。pgvector 是强一致。</td></tr>
+          <tr><td>Rerank</td><td>一定要吗？</td><td>答"按场景"：简单场景可不用（+10% 精度但 -30% QPS）。医疗/法律/长文档 必加。常见组合：向量 Top-50 → Rerank → Top-5 给 LLM。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：向量库是 RAG 工程师必考点。面试允许说"我只用过 Qdrant / pgvector，没深入 Milvus 分布式"，但要能讲清 HNSW 原理、混合检索、过滤、一致性、监控、选型决策。诚实+思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Pinecone</td><td>托管 SaaS 向量库，零运维，Serverless 模式</td></tr>
+          <tr><td>Weaviate</td><td>开源 Go 向量库，模块化 + 混合检索 + 云服务</td></tr>
+          <tr><td>Milvus</td><td>C++ 核心分布式向量库，亿级生产背书（Zilliz 云）</td></tr>
+          <tr><td>Qdrant</td><td>Rust 编写高性能向量库，单二进制+filter 极强</td></tr>
+          <tr><td>Chroma</td><td>Python 原生嵌入式向量库，轻量开发友好</td></tr>
+          <tr><td>pgvector</td><td>Postgres 扩展，事务一致，业务+向量首选</td></tr>
+          <tr><td>Redis Stack</td><td>RediSearch + 向量模块，亚毫秒内存低延迟</td></tr>
+          <tr><td>Elasticsearch 8</td><td>ES 原生 dense_vector + BM25，全文+向量混合</td></tr>
+          <tr><td>FAISS</td><td>Meta C++/Python 库，IVF/PQ/HNSW 算法全</td></tr>
+          <tr><td>Vespa</td><td>Yahoo 开源，亿级 + 复杂 ranking + 表达式</td></tr>
+          <tr><td>HNSW</td><td>分层 Navigable Small World 图，召回 &gt;95%</td></tr>
+          <tr><td>IVF / IVFFlat</td><td>K-means 聚类桶，nprobe 调优召回</td></tr>
+          <tr><td>PQ</td><td>Product Quantization 向量分段量化压缩</td></tr>
+          <tr><td>Annoy</td><td>Spotify 随机投影树，只读场景</td></tr>
+          <tr><td>ScaNN</td><td>Google 各向异性量化，比 HNSW 召回+速度都优</td></tr>
+          <tr><td>混合检索</td><td>BM25（全文）+ 向量（语义）双路召回融合</td></tr>
+          <tr><td>RRF</td><td>Reciprocal Rank Fusion，倒数排名融合</td></tr>
+          <tr><td>pre-filter</td><td>先按 metadata 过滤再向量检索，90% 生产场景</td></tr>
+          <tr><td>payload</td><td>向量附带 metadata（Qdrant 术语）</td></tr>
+          <tr><td>Sharding</td><td>数据按 hash/分区键切分到多节点</td></tr>
+          <tr><td>Replication</td><td>多副本容错 + Raft 一致性</td></tr>
+          <tr><td>Matryoshka</td><td>截断高维向量到低维（256 维）仍可用</td></tr>
+          <tr><td>Cosine / L2 / IP</td><td>三种距离：余弦 / 欧氏 / 内积</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

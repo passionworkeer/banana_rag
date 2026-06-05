@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DPO 进阶 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #ddd6fe;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./dpo.html">DPO 基础</a>
+    <a href="./rlhf.html">RLHF</a>
+    <a href="./reward-model.html">Reward Model</a>
+    <a href="./sft.html">SFT</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">对齐训练 · DPO 变体</span>
+    <h1>DPO 进阶：从推导到 IPO / KTO / SimPO 家族</h1>
+    <p class="lead">DPO 把 RLHF 的"训 RM + PPO"两步折成单阶段监督学习，工程上砍掉 critic、砍掉 RM、训得稳。但 DPO 不是银弹：它对离线数据质量敏感、易"过拟合偏好"、难做 online。本页从推导讲起，串起 IPO / KTO / SimPO / ORPO 等变体的设计动机与适用边界。</p>
+    <div class="pillrow">
+      <span class="pill">Bradley-Terry</span><span class="pill">Implicit Reward</span><span class="pill">Reference Model</span><span class="pill">IPO</span><span class="pill">KTO</span><span class="pill">SimPO</span><span class="pill">ORPO</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、DPO 损失推导（核心 4 步）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 420" width="100%" height="auto" role="img" aria-label="DPO derivation">
+          <defs>
+            <marker id="arrow-d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="1080" height="80" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="580" y="68" text-anchor="middle" font-size="16" font-weight="700">起点：RLHF 的 PPO 目标</text>
+          <text x="580" y="92" text-anchor="middle" font-size="14" fill="#0f172a">max_π E[r(x,y)] − β·KL(π(·|x) ∥ π_ref(·|x))</text>
+
+          <rect x="40" y="140" width="520" height="100" rx="14" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="300" y="168" text-anchor="middle" font-size="15" font-weight="700">② KL 约束的闭式解</text>
+          <text x="300" y="192" text-anchor="middle" font-size="13" fill="#0f172a">π*(y|x) ∝ π_ref(y|x)·exp(r(x,y)/β)</text>
+          <text x="300" y="218" text-anchor="middle" font-size="12" fill="#475569">最优策略 = SFT × exp(奖励) 归一化</text>
+
+          <rect x="620" y="140" width="500" height="100" rx="14" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="870" y="168" text-anchor="middle" font-size="15" font-weight="700">③ 反解出 Implicit Reward</text>
+          <text x="870" y="192" text-anchor="middle" font-size="13" fill="#0f172a">r(x,y) = β·log(π_θ(y|x) / π_ref(y|x)) + β·log Z(x)</text>
+          <text x="870" y="218" text-anchor="middle" font-size="12" fill="#475569">奖励 = 当前 vs 参考的 log 差 + 常数</text>
+
+          <rect x="40" y="260" width="1080" height="120" rx="14" fill="#ddd6fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="580" y="288" text-anchor="middle" font-size="15" font-weight="700">④ 代入 Bradley-Terry 偏好模型</text>
+          <text x="580" y="316" text-anchor="middle" font-size="14" fill="#0f172a">L_DPO = −E[ log σ( β·log(π_θ(y_w|x)/π_ref(y_w|x)) − β·log(π_θ(y_l|x)/π_ref(y_l|x)) ) ]</text>
+          <text x="580" y="342" text-anchor="middle" font-size="12" fill="#475569">参考模型 Z(x) 项在差分中抵消 → 不需要训 RM，只需要偏好对</text>
+          <text x="580" y="360" text-anchor="middle" font-size="12" fill="#475569">本质：让 chosen 的 log-ratio 比 rejected 大</text>
+        </svg>
+      </div>
+      <div class="callout">面试金句：DPO 不是"用 SFT 直接拟合偏好"，而是"在 RLHF 最优策略的闭式解下，把奖励用策略自身表达出来"。这一步消除了显式 RM。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、DPO 核心超参</h2>
+      <table>
+        <thead><tr><th>超参</th><th>作用</th><th>经验值</th></tr></thead>
+        <tbody>
+          <tr><td><code>beta</code> (β)</td><td>KL 强度，DPO 中等效 RM 温度</td><td>0.1 - 0.5</td></tr>
+          <tr><td><code>lr</code></td><td>学习率（比 SFT 小 1-2 个量级）</td><td>1e-6 ~ 5e-6</td></tr>
+          <tr><td><code>epochs</code></td><td>训练轮数（多了过拟合偏好）</td><td>1-3 epoch</td></tr>
+          <tr><td><code>label_smoothing</code></td><td>防 chosen 概率逼近 1</td><td>0.1</td></tr>
+          <tr><td><code>reference_free</code></td><td>ORPO/SimPO 风格不要 ref</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>三、DPO 的局限性</h2>
+      <ul>
+        <li><strong>过拟合偏好</strong>：chosen 概率趋向 1，rejected 趋向 0，多样性崩塌</li>
+        <li><strong>离线数据依赖</strong>：数据质量差、覆盖窄 → 学到偏置</li>
+        <li><strong>难做 online</strong>：每次新增偏好都要重训或离线近似</li>
+        <li><strong>Reference 内存贵</strong>：同时加载 π_θ 和 π_ref，2 张模型显存</li>
+        <li><strong>对极端偏好敏感</strong>：一条极端数据可能让模型"被带偏"</li>
+      </ul>
+      <div class="callout">解决方向正是后面所有变体的动机：去 reference（SimPO / ORPO）、换损失（IPO / KTO）、加约束（DPOP / Iterative DPO）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、DPO 家族变体对比</h2>
+      <table>
+        <thead><tr><th>变体</th><th>关键改动</th><th>目标函数核心</th><th>是否要 ref</th><th>优势</th></tr></thead>
+        <tbody>
+          <tr><td><strong>DPO</strong></td><td>基础</td><td>log-sigmoid loss + reference</td><td>是</td><td>实现简单、稳定</td></tr>
+          <tr><td><strong>IPO</strong></td><td>用 MSE 替代 log-sigmoid 防过拟合</td><td>(log-ratio_diff − 1/(2β))<sup>2</sup></td><td>是</td><td>防过拟合，偏好噪声鲁棒</td></tr>
+          <tr><td><strong>KTO</strong></td><td>不需成对偏好，单条 (desirable/undesirable) 即可</td><td>不均衡 KL 散度（Kahneman 前景理论）</td><td>是</td><td>数据利用更高效</td></tr>
+          <tr><td><strong>SimPO</strong></td><td>去掉 reference，用长度归一化 log-prob 当奖励</td><td>−log σ(β/|y_w|·log π − β/|y_l|·log π − γ)</td><td>否</td><td>省 1 张模型显存</td></tr>
+          <tr><td><strong>ORPO</strong></td><td>SFT 损失 + 几率比（odds ratio）惩罚</td><td>L_SFT − λ·log σ(log odds)</td><td>否</td><td>单阶段，训得稳</td></tr>
+          <tr><td><strong>DPOP</strong></td><td>DPO + 正则化防 β 飘</td><td>β-aware 惩罚</td><td>是</td><td>训练更稳</td></tr>
+          <tr><td><strong>Iterative DPO</strong></td><td>多轮 DPO，每轮用最新模型采样 + 重标</td><td>同 DPO</td><td>是</td><td>接近 online 效果</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、SimPO 详解</h2>
+      <div class="mathbox">
+        <p class="mathline">$$L_{\text{SimPO}} = -\log \sigma\!\left(\, \tfrac{\beta}{|y_{w}|} \log \pi_{\theta}(y_{w} \mid x) - \tfrac{\beta}{|y_{l}|} \log \pi_{\theta}(y_{l} \mid x) - \gamma \,\right)$$</p>
+        <p class="mathnote">两个关键改动：① 用 |y| 归一化 log-prob，抵消"长回答 = 高分"的偏差；② γ 是 margin，让 chosen 和 rejected 之间至少差 γ 才认为对齐。完全不要 reference，显存砍半。</p>
+        <p class="mathnote">缺点：归一化在长生成任务上有时不稳，需要配合长度 cap。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>六、KTO 详解</h2>
+      <div class="mathbox">
+        <p class="mathline">$$L_{\text{KTO}} = \left(1 - \sigma(z_{\text{ref}})\right) \cdot V_{\text{desirable}} - \sigma(z_{\text{ref}}) \cdot V_{\text{undesirable}}$$</p>
+        <p class="mathline">$$z_{\text{ref}} = \beta \cdot \mathrm{KL}\!\left(\pi_{\theta} \,\|\, \pi_{\text{ref}}\right)$$</p>
+        <p class="mathline">$$V(\cdot) = \begin{cases} \lambda_{d} \cdot \sigma(\beta \cdot \Delta) & \text{if good} \\ \lambda_{u} \cdot \sigma(-\beta \cdot \Delta) & \text{if bad} \end{cases}$$</p>
+        <p class="mathnote">灵感来自 Kahneman 前景理论：人对"损失"比"收益"更敏感，所以坏样本权重可以更大。</p>
+        <p class="mathnote">最大卖点：不需要成对偏好！直接标"这条回答好不好"就行（与 DPO 的 y_w/y_l 对相比）。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：DPO 为什么不需要显式 RM？</h3>
+          <p>A：推导上，PPO 最优策略有闭式解 π* ∝ π_ref·exp(r/β)，反解出 r 可以用 π_θ/π_ref 的 log 差表达。代入 Bradley-Terry 偏好模型后，Z(x) 项在差分中抵消，训练目标只需要偏好对和 reference。</p>
+        </div>
+        <div>
+          <h3>Q2：DPO 训练时为什么 reference 模型也加载？</h3>
+          <p>A：因为 log-ratio 项 π_θ(y_w)/π_ref(y_w) 需要 reference 的 log-prob 参与计算。一般加载 fp16/bf16 的 reference 不优化器状态，显存约等于 π_θ。SimPO/ORPO 把这层去掉。</p>
+        </div>
+        <div>
+          <h3>Q3：DPO 与 RLHF(PPO) 哪个效果上限高？</h3>
+          <p>A：理论 PPO 更高——它能持续从新数据学习（online），DPO 主要是 offline。但实际中 DPO 因训练稳定、实现简单、显存友好，效果常优于不稳定的 PPO。生产折中：Iterative DPO（多轮 offline）逼近 PPO 上限。</p>
+        </div>
+        <div>
+          <h3>Q4：为什么 SimPO 要做长度归一化？</h3>
+          <p>A：传统 log-prob 随长度累加，模型会学"生成越长越好"的偏差（和 RM 长度偏差同源）。除以 |y| 后，per-token 平均概率成为真正信号。配合 margin γ 进一步拉开 chosen/rejected。</p>
+        </div>
+        <div>
+          <h3>Q5：KTO 什么时候优于 DPO？</h3>
+          <p>A：数据量少、偏好标注稀缺时——KTO 不需成对，可以用单条标注数据。也能利用"好/不好"显式标签之外的隐式信号（如用户采纳 = 喜欢，跳过 = 不喜欢）。代价是对极端样本敏感，需要调 λ_d/λ_u 平衡。</p>
+        </div>
+        <div>
+          <h3>Q6：Iterative DPO 怎么做？</h3>
+          <p>A：每轮用当前 π_θ 对 prompt 采样多个回答，外部 RM 或 GPT-4 打分排序，构造新偏好对，再训 DPO。重复 2-4 轮，效果逼近 PPO 但工程简单。是 Llama-3 / Qwen-2 的官方路径之一。</p>
+        </div>
+        <div>
+          <h3>Q7：β 在 DPO 训练中怎么调？</h3>
+          <p>A：β 大 → 保守（不让 π_θ 离 ref 太远），效果上限低；β 小 → 激进（允许大改动），易过拟合偏好。经验从 0.1 起步，0.3 是常用值，0.5+ 偏保守。也可以做 β schedule（先小后大）。</p>
+        </div>
+        <div>
+          <h3>Q8：DPO 训练多久合适？</h3>
+          <p>A：1-3 epoch 是常见区间。多了模型会"被偏好吸住"，chosen 概率 → 1，rejected → 0，多样性 / 创造力下降。监控 chosen-rejected 的 reward margin，达到阈值后早停。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>DPO 把 RLHF 的 RM+PPO 折成单阶段监督学习：推导上，PPO 最优策略有闭式解，反解出奖励用 π_θ/π_ref 的 log 差表达，代入 Bradley-Terry 偏好模型后不需要显式 RM。优点是实现简单、训得稳、显存友好；缺点是 offline、过拟合偏好、需要 reference。变体有 IPO / KTO / SimPO / ORPO 解决不同痛点。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（PPO 难训）→ 推导 4 步（PPO 目标 → KL 闭式解 → 反解 implicit reward → 代入 BT 偏好模型）→ 局限（过拟合 / offline / ref 贵）→ 变体家族（IPO 防过拟合、KTO 单条、SimPO 去 ref、ORPO 单阶段、Iterative DPO 逼近 online）→ 选型决策。能讲清"为什么不需要 RM"和"为什么还需要 reference"，立刻拉开差距。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"为什么从 RLHF 切到 DPO"——比如显存不够训 4 模型（policy/ref/RM/value）、训练抖动严重、改 DPO 后一周就出对齐模型；再讲一次"为什么又加 Iterative"——DPO 离线天花板低，加 2 轮迭代后用户满意度 +15%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>DPO 不是银弹：① 偏好数据质量差会学坏；② 过拟合偏好让多样性下降（"被偏好吸住"）；③ 难做 online RL；④ reference 加载显存仍贵（2 张模型）。诚实说局限比假装完美得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>DPO</td><td>Direct Preference Optimization，把 RLHF 折成单阶段监督学习</td></tr>
+          <tr><td>Bradley-Terry</td><td>pairwise 偏好的概率模型：P(y_w ≻ y_l) = σ(r(y_w) − r(y_l))</td></tr>
+          <tr><td>Implicit Reward</td><td>DPO 反解出的 r = β·log(π_θ(y|x) / π_ref(y|x)) + β·log Z(x)</td></tr>
+          <tr><td>Reference Model</td><td>DPO 训练时的锚点，π_ref 不更新</td></tr>
+          <tr><td>β (beta)</td><td>DPO 的 KL 强度，0.1-0.5 常见</td></tr>
+          <tr><td>IPO</td><td>Identity Preference Optimization，MSE 替代 log-sigmoid 防过拟合</td></tr>
+          <tr><td>KTO</td><td>Kahneman-Tversky Optimization，单条标注即可</td></tr>
+          <tr><td>SimPO</td><td>Simple Preference Optimization，去 ref + 长度归一化</td></tr>
+          <tr><td>ORPO</td><td>Odds Ratio Preference Optimization，SFT + 几率比单阶段</td></tr>
+          <tr><td>DPOP</td><td>DPO with Positive regularization</td></tr>
+          <tr><td>Iterative DPO</td><td>多轮 DPO，每轮用最新模型采样 + 重标，逼近 online</td></tr>
+          <tr><td>Reward Margin γ</td><td>SimPO 中的 margin，强制 chosen 和 rejected 拉开差距</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

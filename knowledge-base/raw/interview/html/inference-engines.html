@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>推理引擎对比 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./paged-attention.html">PagedAttention</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./speculative-decoding.html">Speculative Decoding</a>
+    <a href="./quantization.html">量化</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">推理部署 · 引擎选型</span>
+    <h1>5 大推理引擎对比：vLLM / SGLang / TensorRT-LLM / LMDeploy / TGI</h1>
+    <p class="lead">2025 年 LLM 推理服务化的事实标准：vLLM（SGLang 师出同门）、TensorRT-LLM（NVIDIA 极致优化）、LMDeploy（商汤 TurboMind）、TGI（HuggingFace 工业级）、加上老牌的 HuggingFace Transformers。本页讲清各引擎核心特性、性能取舍、部署决策树、典型选型案例。</p>
+    <div class="pillrow">
+      <span class="pill">vLLM</span><span class="pill">SGLang</span><span class="pill">TensorRT-LLM</span><span class="pill">LMDeploy</span><span class="pill">TGI</span><span class="pill">Continuous Batching</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、推理引擎核心优化技术堆叠</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Inference engine stack">
+          <defs>
+            <marker id="arrow-ie" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="40" y="30" font-size="14" font-weight="700" fill="#0f172a">推理引擎 = 模型 + 内存优化 + 计算优化 + 调度优化 + 部署集成</text>
+
+          <rect x="40" y="50" width="1080" height="50" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="580" y="80" text-anchor="middle" font-size="13" font-weight="600">① 模型支持（GPT / LLaMA / Qwen / Mistral / MoE）</text>
+
+          <rect x="40" y="110" width="540" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="310" y="140" text-anchor="middle" font-size="13" font-weight="600">② 内存优化</text>
+          <text x="310" y="160" text-anchor="middle" font-size="11" fill="#475569">PagedAttention / KV Cache 量化 / Prefix Share</text>
+
+          <rect x="600" y="110" width="520" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="860" y="140" text-anchor="middle" font-size="13" font-weight="600">③ 计算优化</text>
+          <text x="860" y="160" text-anchor="middle" font-size="11" fill="#475569">FlashAttention / FP8 / Speculative Decoding</text>
+
+          <rect x="40" y="170" width="540" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="310" y="200" text-anchor="middle" font-size="13" font-weight="600">④ 调度优化</text>
+          <text x="310" y="220" text-anchor="middle" font-size="11" fill="#475569">Continuous Batching / RadixAttention / 抢占</text>
+
+          <rect x="600" y="170" width="520" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="860" y="200" text-anchor="middle" font-size="13" font-weight="600">⑤ 部署集成</text>
+          <text x="860" y="220" text-anchor="middle" font-size="11" fill="#475569">HTTP/gRPC API / 监控 / 弹性扩缩</text>
+
+          <rect x="40" y="230" width="1080" height="100" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="580" y="255" text-anchor="middle" font-size="13" font-weight="700">实战选型</text>
+          <text x="580" y="280" text-anchor="middle" font-size="12" fill="#0f172a">· NVIDIA GPU + 高吞吐生产 → vLLM / TensorRT-LLM</text>
+          <text x="580" y="300" text-anchor="middle" font-size="12" fill="#0f172a">· 中文 + 复杂 prompt 模板 → SGLang（RadixAttention 强）</text>
+          <text x="580" y="320" text-anchor="middle" font-size="12" fill="#0f172a">· 极致低延迟 + 长 context → TensorRT-LLM</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、5 大引擎定位</h2>
+      <ul>
+        <li><strong>vLLM</strong>：开源王者，PagedAttention 论文实现，吞吐量 / 易用性平衡好，社区最广</li>
+        <li><strong>SGLang</strong>：RadixAttention（更细的 prefix cache）、结构化输出、复杂 prompt 模板</li>
+        <li><strong>TensorRT-LLM</strong>：NVIDIA 官方，kernel 级优化最极致，长 context / FP8 强</li>
+        <li><strong>LMDeploy</strong>：商汤 TurboMind，针对 LLaMA / InternLM 优化，中文社区常见</li>
+        <li><strong>TGI</strong>：HuggingFace 出品，Rust 实现，多模态支持好，工业级稳定性</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>三、5 大引擎性能对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>vLLM</th><th>SGLang</th><th>TensorRT-LLM</th><th>LMDeploy</th><th>TGI</th></tr></thead>
+        <tbody>
+          <tr><td>吞吐（相对）</td><td>★★★★</td><td>★★★★</td><td>★★★★★</td><td>★★★★</td><td>★★★</td></tr>
+          <tr><td>延迟</td><td>★★★★</td><td>★★★★</td><td>★★★★★</td><td>★★★★</td><td>★★★</td></tr>
+          <tr><td>易用性</td><td>★★★★★</td><td>★★★★</td><td>★★</td><td>★★★★</td><td>★★★★</td></tr>
+          <tr><td>中文支持</td><td>★★★★</td><td>★★★</td><td>★★★</td><td>★★★★★</td><td>★★★</td></tr>
+          <tr><td>编译成本</td><td>无</td><td>低</td><td>高（需 engine 编译）</td><td>低</td><td>无</td></tr>
+          <tr><td>云原生</td><td>★★★★</td><td>★★★★</td><td>★★★</td><td>★★★</td><td>★★★★</td></tr>
+          <tr><td>MoE 支持</td><td>★★★★</td><td>★★★★</td><td>★★★★</td><td>★★★</td><td>★★★</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、各引擎"杀手锏"</h2>
+      <table>
+        <thead><tr><th>引擎</th><th>独门技术</th><th>何时选它</th></tr></thead>
+        <tbody>
+          <tr><td>vLLM</td><td>PagedAttention（虚拟内存分页）</td><td>默认起点 / 通用场景 / 社区生态</td></tr>
+          <tr><td>SGLang</td><td>RadixAttention（更细 prefix cache 树）+ 结构化输出</td><td>多轮对话 / Agent 复杂 prompt / JSON 输出</td></tr>
+          <tr><td>TensorRT-LLM</td><td>Kernel 级优化 + FP8 + Inflight Batching</td><td>NVIDIA H100 极致性能 / 长 context</td></tr>
+          <tr><td>LMDeploy</td><td>TurboMind 内核 / 量化生态 / 中文友好</td><td>InternLM / Qwen 中文 / 部署简单</td></tr>
+          <tr><td>TGI</td><td>Rust 实现 / 工业级稳定 / 多模态原生</td><td>HuggingFace 生态 / 多模态 / K8s 集成</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、vLLM 实战要点</h2>
+      <ul>
+        <li><strong>起步</strong>：<code>pip install vllm</code> → <code>vllm serve model_path</code></li>
+        <li><strong>Continuous Batching</strong>：默认开启</li>
+        <li><strong>Prefix Caching</strong>：<code>--enable-prefix-caching</code>（多轮对话省 token）</li>
+        <li><strong>量化</strong>：<code>--quantization awq/gptq</code></li>
+        <li><strong>Speculative Decoding</strong>：<code>--speculative-model</code>（需 draft 模型）</li>
+        <li><strong>LoRA 热加载</strong>：<code>--enable-lora --lora-modules</code></li>
+        <li><strong>MoE</strong>：原生支持 Mixtral / Qwen-MoE / DeepSeek-MoE</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、SGLang 实战要点</h2>
+      <ul>
+        <li><strong>RadixAttention</strong>：比 vLLM prefix cache 更细，自动复用任意 prefix 树</li>
+        <li><strong>结构化输出</strong>：原生 JSON / regex 约束</li>
+        <li><strong>复杂 prompt 模板</strong>：SGLang DSL 描述控制流（分支 / 循环）</li>
+        <li><strong>启动</strong>：<code>python -m sglang.launch_server --model-path model_path</code></li>
+        <li><strong>何时选</strong>：Agent 复杂控制 / JSON 输出 / 多轮对话 prefix 复用要求高</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：vLLM 和 SGLang 怎么选？</h3>
+          <p>A：默认 vLLM（生态广、易用、通用）。SGLang 适合 ① 多轮对话 prefix 复用多 / ② Agent 复杂 prompt 模板 / ③ JSON 结构化输出频繁。两者都基于 PagedAttention 系，性能接近，差异在调度和 API 设计。</p>
+        </div>
+        <div>
+          <h3>Q2：TensorRT-LLM 性能最强但为什么不是默认？</h3>
+          <p>A：① 需要 engine 编译（模型 + 硬件绑定，更新成本高）；② 学习曲线陡；③ 调试难（内核问题不好查）；④ 不支持所有模型（部分新模型要等支持）。生产上"通用首选 vLLM、性能极限选 TensorRT-LLM"。</p>
+        </div>
+        <div>
+          <h3>Q3：推理引擎量化选哪个？</h3>
+          <p>A：默认 AWQ（精度好、速度快）；GPTQ 是经典但被 AWQ 超过；SmoothQuant 适合 W8A8；BitsAndBytes NF4 适合 LoRA 训练。生产中 vLLM 配合 AWQ 是甜点组合。</p>
+        </div>
+        <div>
+          <h3>Q4：Continuous Batching 是什么？为什么重要？</h3>
+          <p>A：传统 static batching 等最慢的请求结束才换新批，GPU 严重空转。Continuous Batching 让每个 slot 独立调度：完成的请求立即让位给新请求。vLLM 论文报告提升 14-24x 吞吐。</p>
+        </div>
+        <div>
+          <h3>Q5：推理引擎怎么选 H100 vs A100？</h3>
+          <p>A：H100（Hopper）支持 FP8 / WGMMA / TMA → TensorRT-LLM 极限性能。A100（Ada）FP16 为主 → vLLM 成熟生态。预算紧用 A100 + vLLM；要极致吞吐用 H100 + TensorRT-LLM / SGLang + FP8。</p>
+        </div>
+        <div>
+          <h3>Q6：LMDeploy 适合什么场景？</h3>
+          <p>A：中文 LLM（InternLM / Qwen）部署首选；TurboMind 内核对中文长 prompt 模板优化好；量化生态完善（AWQ / GPTQ / SmoothQuant）。学术 / 国产模型部署常见。</p>
+        </div>
+        <div>
+          <h3>Q7：TGI 在什么时候优于 vLLM？</h3>
+          <p>A：① 多模态场景（TGI 原生支持 VLM）；② HuggingFace 生态集成（Spaces / Inference Endpoints）；③ K8s / 生产稳定性要求高（Rust 内存安全）。吞吐性能 vLLM 通常更优。</p>
+        </div>
+        <div>
+          <h3>Q8：推理引擎 + Agent 框架怎么搭配？</h3>
+          <p>A：LangChain / LlamaIndex 都能接 vLLM / SGLang / TGI 的 OpenAI-compatible API。AutoGen / CrewAI 同理。生产中 vLLM + OpenAI API 兼容层 + Agent 框架是主流组合。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>5 大引擎：vLLM（开源王者 / 通用）/ SGLang（RadixAttention / Agent 复杂 prompt）/ TensorRT-LLM（NVIDIA 极致 / 长 context）/ LMDeploy（中文 / InternLM）/ TGI（HuggingFace / 多模态）。选型口诀：默认 vLLM，复杂 Agent 用 SGLang，极致性能用 TensorRT-LLM，中文 LLM 用 LMDeploy，多模态用 TGI。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（生产部署要"快 + 省 + 稳"）→ 5 层技术堆叠（模型 / 内存 / 计算 / 调度 / 部署）→ 5 引擎定位 + 性能对比 → 各自杀手锏（PagedAttention / RadixAttention / TensorRT kernel / TurboMind / Rust 多模态）→ 实战要点（启动命令 / 量化 / Prefix Cache / Speculative）→ 选型决策树。能讲清"为什么 SGLang 适合 Agent"、"为什么 TensorRT-LLM 不是默认"，立刻显得懂生产部署。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"推理引擎选型"——比如某业务日均 1M 请求，从 HF Transformers 切 vLLM + AWQ INT4 + Prefix Caching + Continuous Batching 后，GPU 数量减半、单 QPS 涨 4x、成本省 60%。再讲为什么没选 TensorRT-LLM：编译成本 + 团队不熟。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>推理引擎不是银弹：① 切换成本（不同 API / 部署方式）；② 模型支持有时滞（新模型出来要等引擎适配）；③ 性能调优需要专业知识；④ 不是所有优化都开（量化 + SpD 一起开可能反效果）。诚实说"默认 vLLM，按业务需求局部优化"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>vLLM</td><td>开源王者，PagedAttention 论文实现</td></tr>
+          <tr><td>SGLang</td><td>RadixAttention + 结构化输出 + 复杂 prompt DSL</td></tr>
+          <tr><td>TensorRT-LLM</td><td>NVIDIA 官方，kernel 级极致优化</td></tr>
+          <tr><td>LMDeploy</td><td>商汤 TurboMind，中文 / InternLM 优化</td></tr>
+          <tr><td>TGI</td><td>HuggingFace Rust 实现，工业级稳定</td></tr>
+          <tr><td>PagedAttention</td><td>vLLM 论文，KV Cache 虚拟内存分页</td></tr>
+          <tr><td>RadixAttention</td><td>SGLang 论文，更细 prefix cache 树</td></tr>
+          <tr><td>TurboMind</td><td>LMDeploy 推理内核</td></tr>
+          <tr><td>Continuous Batching</td><td>请求独立调度，完成即换新</td></tr>
+          <tr><td>Inflight Batching</td><td>TensorRT-LLM 进一步：边推理边调度</td></tr>
+          <tr><td>Prefix Caching</td><td>系统 prompt / 多轮对话复用 KV</td></tr>
+          <tr><td>LoRA 热加载</td><td>vLLM 运行时动态加载 LoRA adapter</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

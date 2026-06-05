@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RLHF 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #ddd6fe;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./dpo.html">DPO</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./lora.html">LoRA</a>
+    <a href="./reward-model.html">Reward Model</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · 对齐训练</span>
+    <h1>RLHF：用人类偏好把模型"教乖"</h1>
+    <p class="lead">Reinforcement Learning from Human Feedback。三步走：训 SFT → 训 Reward Model → 用 PPO 把语言模型对齐到人类偏好。核心不是"强化学习很难"，而是"为什么需要 RM、为什么需要 KL 约束、为什么会被 Reward Hacking"。</p>
+    <div class="pillrow">
+      <span class="pill">SFT</span><span class="pill">Reward Model</span><span class="pill">PPO</span><span class="pill">KL Penalty</span><span class="pill">Reward Hacking</span><span class="pill">InstructGPT</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、RLHF 三阶段流水线</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 420" width="100%" height="auto" role="img" aria-label="RLHF pipeline">
+          <defs>
+            <marker id="arrow-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <!-- Stage 1 -->
+          <rect x="40" y="60" width="320" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="200" y="90" text-anchor="middle" font-size="18" font-weight="700">阶段 1 · SFT</text>
+          <text x="200" y="115" text-anchor="middle" font-size="12" fill="#475569">监督微调</text>
+
+          <rect x="70" y="140" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="200" y="160" text-anchor="middle" font-size="14" font-weight="600">Prompt-Response 数据集</text>
+          <text x="200" y="178" text-anchor="middle" font-size="11" fill="#475569">(prompt, chosen) 由人工撰写</text>
+
+          <rect x="70" y="210" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="200" y="230" text-anchor="middle" font-size="14" font-weight="600">微调基座模型</text>
+          <text x="200" y="248" text-anchor="middle" font-size="11" fill="#475569">学到"如何回答"的格式</text>
+
+          <rect x="70" y="280" width="260" height="40" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="200" y="305" text-anchor="middle" font-size="13" font-weight="600">得到 SFT Model π<sup>SFT</sup></text>
+
+          <!-- Stage 2 -->
+          <rect x="430" y="60" width="320" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="590" y="90" text-anchor="middle" font-size="18" font-weight="700">阶段 2 · Reward Model</text>
+          <text x="590" y="115" text-anchor="middle" font-size="12" fill="#475569">奖励建模</text>
+
+          <rect x="460" y="140" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="590" y="160" text-anchor="middle" font-size="14" font-weight="600">人类对多个回答排序</text>
+          <text x="590" y="178" text-anchor="middle" font-size="11" fill="#475569">(prompt, y_w, y_l) 三元组</text>
+
+          <rect x="460" y="210" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="590" y="230" text-anchor="middle" font-size="14" font-weight="600">Bradley-Terry 损失训练</text>
+          <text x="590" y="248" text-anchor="middle" font-size="11" fill="#475569">pairwise loss</text>
+
+          <rect x="460" y="280" width="260" height="40" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="590" y="305" text-anchor="middle" font-size="13" font-weight="600">得到 Reward Model r<sub>φ</sub>(x,y)</text>
+
+          <!-- Stage 3 -->
+          <rect x="820" y="60" width="320" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="980" y="90" text-anchor="middle" font-size="18" font-weight="700">阶段 3 · PPO</text>
+          <text x="980" y="115" text-anchor="middle" font-size="12" fill="#475569">策略优化</text>
+
+          <rect x="850" y="140" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="980" y="160" text-anchor="middle" font-size="14" font-weight="600">PPO 更新策略 π<sub>θ</sub></text>
+          <text x="980" y="178" text-anchor="middle" font-size="11" fill="#475569">目标 = 奖励 − β·KL(π<sub>θ</sub> ∥ π<sup>SFT</sup>)</text>
+
+          <rect x="850" y="210" width="260" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="980" y="230" text-anchor="middle" font-size="14" font-weight="600">冻结 RM + 冻结 SFT 参考</text>
+          <text x="980" y="248" text-anchor="middle" font-size="11" fill="#475569">4 个模型同时跑</text>
+
+          <rect x="850" y="280" width="260" height="40" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="980" y="305" text-anchor="middle" font-size="13" font-weight="600">得到对齐模型 π<sup>RLHF</sup></text>
+
+          <!-- arrows between stages -->
+          <line x1="360" y1="200" x2="430" y2="200" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-r)"/>
+          <line x1="750" y1="200" x2="820" y2="200" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrow-r)"/>
+
+          <text x="395" y="190" text-anchor="middle" font-size="11" fill="#7c3aed">生成回答</text>
+          <text x="785" y="190" text-anchor="middle" font-size="11" fill="#7c3aed">打分</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Reward Model 损失</h2>
+      <div class="mathbox">
+        <p class="mathline">$$L_{\text{RM}} = -\mathbb{E}_{(x, y_{w}, y_{l}) \sim \mathcal{D}}\!\left[\, \log \sigma\!\left(\, r_{\varphi}(x, y_{w}) - r_{\varphi}(x, y_{l}) \,\right) \,\right]$$</p>
+        <p class="mathnote">$y_{w}$ = 偏好的回答（winner），$y_{l}$ = 落选的（loser）。本质是 pairwise ranking loss，要求 RM 对"更好的回答"打更高分。</p>
+        <p class="mathnote">Bradley-Terry 假设：人偏好的概率差等于两个回答奖励差经过 sigmoid 后的结果。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、PPO 目标函数</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\text{objective} = \mathbb{E}_{(x, y) \sim \pi_{\theta}}\!\left[\, r_{\varphi}(x, y) \,\right] - \beta \cdot \mathrm{KL}\!\left(\, \pi_{\theta}(y \mid x) \,\|\, \pi^{\text{SFT}}(y \mid x) \,\right)$$</p>
+        <p class="mathline">$$\nabla_{\theta} = \mathbb{E}\!\left[\, \nabla_{\theta} \log \pi_{\theta}(y \mid x) \cdot A(x, y) \,\right]$$</p>
+        <p class="mathnote">两项都很关键：奖励项让回答更好；KL 项防止策略飘太远、保留 SFT 学到的能力。β 是平衡超参，太大→不敢改、效果差；太小→Reward Hacking。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、PPO 训练时显存里的 4 个模型</h2>
+      <table>
+        <thead><tr><th>角色</th><th>是否训练</th><th>作用</th><th>显存占用参考（7B，fp16）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Policy π<sub>θ</sub></strong></td><td>是（被 PPO 更新）</td><td>当前正在优化的策略</td><td>权重 14GB + 梯度 14GB + Adam 状态 28GB ≈ 56GB</td></tr>
+          <tr><td><strong>Reference π<sup>SFT</sup></strong></td><td>否（冻结）</td><td>KL 锚点，防止策略飘太远</td><td>权重 14GB</td></tr>
+          <tr><td><strong>Reward Model r<sub>φ</sub></strong></td><td>否（冻结）</td><td>给 (x,y) 打分，转成 advantage</td><td>权重 14GB（7B RM）</td></tr>
+          <tr><td><strong>Value Model V<sub>ψ</sub></strong></td><td>是（从 RM 初始化）</td><td>估计 baseline，计算 advantage A = r − V</td><td>权重 14GB + 梯度 14GB ≈ 28GB</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战口径：7B 模型 PPO 阶段约需 4×14GB = 56GB 显存起步，8×A100 80G 是常见配置。这就是 GRPO、REINFORCE++、DPO 等"免 critic"方案爆火的根本原因——显存砍半到 2/3。</div>
+    </article>
+
+    <article class="card">
+      <h2>五、Reward Hacking 案例</h2>
+      <ul>
+        <li><strong>长度偏差</strong>：RM 偏好长回答 → 模型越说越长、堆废话</li>
+        <li><strong>格式偏差</strong>：RM 偏好 Markdown 列表 → 模型所有回答都列点</li>
+        <li><strong>奉承偏差</strong>：RM 对"夸用户"的回答打分高 → 模型变得谄媚</li>
+        <li><strong>重复偏差</strong>：RM 偏好"看起来自信"的回答 → 模型反复强调同一观点</li>
+        <li><strong>OOD 输入</strong>：RM 在训练分布外的输入上给出极端高分 → 模型学会触发这些 case</li>
+      </ul>
+      <div class="callout">解法：KL 约束、长度归一化、多样化 RM 数据、在线人类反馈（online RLHF）、以及 DPO/GRPO 这类"不需要显式 RM"的方法。</div>
+    </article>
+
+    <article class="card">
+      <h2>六、RLHF vs DPO</h2>
+      <table>
+        <thead><tr><th>维度</th><th>RLHF (PPO)</th><th>DPO</th></tr></thead>
+        <tbody>
+          <tr><td>是否需要 RM</td><td>是（独立训）</td><td>否（隐式从偏好数据学出）</td></tr>
+          <tr><td>训练阶段数</td><td>3（SFT/RM/PPO）</td><td>2（SFT/DPO）</td></tr>
+          <tr><td>显存</td><td>高（4 模型）</td><td>低（2 模型）</td></tr>
+          <tr><td>实现复杂度</td><td>高（RL 工程）</td><td>低（标准 SFT 流程）</td></tr>
+          <tr><td>天花板</td><td>高（可与在线数据结合）</td><td>中等（受限于离线偏好数据）</td></tr>
+          <tr><td>稳定性</td><td>中（PPO 训练抖动）</td><td>高（监督学习）</td></tr>
+          <tr><td>适用</td><td>头部大模型对齐</td><td>中小团队快速对齐</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>七、项目落地视角</h2>
+      <ul>
+        <li><strong>蕉内 AI 客服小蕉</strong>：从公开偏好数据（HH-RLHF / UltraFeedback）训 RM → PPO 微调 Qwen-7B；工程上倾向用 DPO 替代，省显存、训得稳</li>
+        <li><strong>行业适配</strong>：通用 RM 不足以覆盖垂类（电商退货话术 / 医疗问诊），需要自建垂类偏好数据集 5-10k 条</li>
+        <li><strong>简历表达</strong>：RM 数据集设计 / KL 系数选择 / Reward Hacking 排查 / 与 DPO/GRPO 的取舍</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>八、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：RLHF 一定要有 SFT 阶段吗？</h3>
+          <p>A：InstructGPT 原文是 SFT→RM→PPO 三阶段；理论上也可以"从基座直接 PPO"（skip SFT），但实践中几乎没人这么做——没有 SFT 锚点，KL 约束没有参考、模型容易崩坏。也有 RLAIF / DPO 完全跳过 RM 的方案。</p>
+        </div>
+        <div>
+          <h3>Q2：为什么 KL 约束这么重要？</h3>
+          <p>A：KL 项让优化后的策略不偏离 SFT 太远。没了它，PPO 会疯狂刷 RM 分数（Reward Hacking），但输出可能完全崩坏（乱码 / 重复 / 不相关）。β 越大越保守，效果上限越低；越小越激进，越容易翻车。</p>
+        </div>
+        <div>
+          <h3>Q3：Reward Model 怎么训？需要多大数据？</h3>
+          <p>A：InstructGPT 用 ~33k 条排序数据；GPT-4 RLHF 用 50-100k。RM 通常从 SFT 模型初始化（去掉最后 LM head，加 scalar head），用 Bradley-Terry pairwise loss 训。关键点：RM 数据质量比数量重要，单条错误排序会污染整组训练。</p>
+        </div>
+        <div>
+          <h3>Q4：PPO 为什么这么难训？</h3>
+          <p>A：3 个原因：① 4 个模型同时前向/反向，显存压力大；② reward 信号稀疏（只有整句生成完才有分数），方差大；③ 策略更新和奖励模型相互博弈，容易震荡。GRPO/REINFORCE++ 砍掉 critic 可缓解。</p>
+        </div>
+        <div>
+          <h3>Q5：online RLHF 和 offline RLHF 区别？</h3>
+          <p>A：offline 用固定偏好数据集（DPO、原始 RLHF）；online 在 PPO 训练中持续用当前模型采样 + 人类标注新偏好（GPT-4 路径）。online 效果更好但成本极高，工业界折中：用 self-play / AI feedback（RLAIF）模拟 online。</p>
+        </div>
+        <div>
+          <h3>Q6：RLHF 后模型能力会下降吗？</h3>
+          <p>A：会。常见现象叫"对齐税"（alignment tax）：RLHF 提升了安全性和人类偏好分，但 MMLU/GSM8K 这类能力基准会掉 1-3 个点。解法：RLHF 中混入能力数据 / 用更强的基座 / 多目标奖励（RM 多任务混合）。</p>
+        </div>
+        <div>
+          <h3>Q7：RM 怎么评估？</h3>
+          <p>A：两个角度：① 分类准确率——对 holdout 偏好对的预测准确率（70%+ 算可用）；② 校准性——RM 打分与人类最终打分的相关性。RM 评估比 policy 评估容易做，是 RLHF pipeline 中最稳定的环节。</p>
+        </div>
+        <div>
+          <h3>Q8：KL 系数 β 怎么调？</h3>
+          <p>A：经验从 0.05-0.1 起步；观察到模型输出崩坏/重复→加大 β；观察到效果停滞/RL 步数不再带来收益→减小 β。也可以做成 schedule（先大后小）。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>九、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>RLHF 是用人类偏好信号训练语言模型的三阶段流程：先 SFT 学格式，再训 Reward Model 学"什么是好回答"，最后用 PPO 把策略对齐到 RM 评分，同时加 KL 约束防止崩坏。优点是天花板高，缺点是显存贵、训练不稳、易 Reward Hacking，所以工业界演化出 DPO/GRPO 等简化方案。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（SFT 后模型仍不"听话"）→ RM 数据构造（pairwise 排序）→ Bradley-Terry 损失 → PPO 目标（reward − β·KL）→ 4 模型显存结构 → Reward Hacking 案例 → 与 DPO/GRPO 的取舍。能在 5 分钟内把"为什么需要 KL"、"为什么显存这么贵"、"怎么避免 Reward Hacking"讲清楚，就能立刻拉开差距。</p>
+        </div>
+        <div>
+          <h3>加分：踩坑案例</h3>
+          <p>讲一次真实事故：① KL 设太大，模型没变化，训 3 天白做；② KL 设太小，模型输出全是 emoji 和感叹号刷 RM 分数；③ RM 数据被注入 prompt injection，所有负面回答打低分；④ 训练后期 PPO 步数不收敛，怀疑 RM 已被 policy 攻破。讲排查过程（指标观察 → 假设 → 验证 → 修），面试官立刻认定有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道 GRPO 改进点</h3>
+          <p>GRPO（DeepSeek 提出）砍掉 Value Model，用同一 prompt 采样 N 个回答、用组内归一化分数当 advantage，显存从 4 模型降到 2 模型，且对长 CoT 推理任务更友好。是当前开源模型对齐的事实标准之一。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>RLHF</td><td>Reinforcement Learning from Human Feedback，用人类偏好训练语言模型</td></tr>
+          <tr><td>SFT</td><td>Supervised Fine-Tuning，RLHF 阶段 1 的有监督微调</td></tr>
+          <tr><td>Reward Model</td><td>把人类偏好转成 scalar 分数的模型，Bradley-Terry pairwise loss 训练</td></tr>
+          <tr><td>PPO</td><td>Proximal Policy Optimization，RLHF 阶段 3 的策略优化算法，clip objective</td></tr>
+          <tr><td>KL 约束</td><td>防止 π<sub>θ</sub> 偏离 SFT 太远的正则项，β 控制强度</td></tr>
+          <tr><td>Reward Hacking</td><td>模型通过刷 RM 分数（而非真正变好）达成高奖励的现象</td></tr>
+          <tr><td>Value Model</td><td>估计 baseline 的 critic 网络，PPO 中用来算 advantage</td></tr>
+          <tr><td>Advantage</td><td>A = r − V，扣掉 baseline 后的相对优势，降低方差</td></tr>
+          <tr><td>Alignment Tax</td><td>对齐训练后能力基准下降的代价</td></tr>
+          <tr><td>RLAIF</td><td>用 AI 反馈替代人类反馈的 RLHF 变体（Anthropic Constitutional AI）</td></tr>
+          <tr><td>GRPO</td><td>Group Relative Policy Optimization，DeepSeek 提出的免 critic RLHF 改进</td></tr>
+          <tr><td>DPO</td><td>Direct Preference Optimization，把 RLHF 转为单阶段监督学习</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

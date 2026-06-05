@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reasoning 模型 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f5f3ff);border:1px solid #ddd6fe;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./grpo.html">GRPO</a>
+    <a href="./rlhf.html">RLHF</a>
+    <a href="./tree-of-thoughts.html">ToT</a>
+    <a href="./long-context.html">长上下文</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">2025 范式 · Test-Time Compute</span>
+    <h1>Reasoning 模型：让 LLM 在"想"上花更多算力</h1>
+    <p class="lead">OpenAI o1 / o3、DeepSeek-R1、Claude 3.7 Sonnet Thinking 共同开启的范式：模型先生成"内部思维链"（internal CoT）、再给最终答案。关键洞察是"test-time compute scaling"——推理时给更多算力，模型可以"涌现"出更强推理。本页讲清 internal CoT 机制、test-time scaling 原理、蒸馏、与 RLHF 关系。</p>
+    <div class="pillrow">
+      <span class="pill">Internal CoT</span><span class="pill">Test-Time Scaling</span><span class="pill">o1 / R1</span><span class="pill">Self-Consistency</span><span class="pill">Verifier</span><span class="pill">Distillation</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Reasoning 模型 vs 普通 LLM</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="Reasoning vs normal LLM">
+          <defs>
+            <marker id="arrow-rz" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="540" height="240" rx="16" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="310" y="70" text-anchor="middle" font-size="18" font-weight="700">普通 LLM（GPT-4 / Claude Sonnet）</text>
+
+          <rect x="80" y="100" width="460" height="50" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+          <text x="310" y="122" text-anchor="middle" font-size="13" font-weight="600">输入：question</text>
+
+          <rect x="80" y="160" width="220" height="40" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="190" y="184" text-anchor="middle" font-size="12">一次前向</text>
+
+          <rect x="80" y="210" width="460" height="50" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="310" y="232" text-anchor="middle" font-size="13" font-weight="600">输出：answer</text>
+          <text x="310" y="250" text-anchor="middle" font-size="11" fill="#475569">单步 / 无中间思考</text>
+
+          <rect x="600" y="40" width="540" height="240" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="870" y="70" text-anchor="middle" font-size="18" font-weight="700">Reasoning 模型（o1 / R1）</text>
+
+          <rect x="640" y="100" width="460" height="40" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="870" y="118" text-anchor="middle" font-size="13" font-weight="600">输入：question</text>
+
+          <rect x="640" y="150" width="200" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="740" y="172" text-anchor="middle" font-size="11">思考 1</text>
+
+          <rect x="850" y="150" width="200" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="950" y="172" text-anchor="middle" font-size="11">思考 2</text>
+
+          <rect x="640" y="195" width="200" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="740" y="217" text-anchor="middle" font-size="11">思考 3</text>
+
+          <rect x="850" y="195" width="200" height="36" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="950" y="217" text-anchor="middle" font-size="11">...</text>
+
+          <rect x="640" y="240" width="460" height="30" rx="8" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="870" y="260" text-anchor="middle" font-size="12" font-weight="600">输出：answer（基于内部思考）</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Internal CoT 是什么</h2>
+      <div class="callout">用户看不到、但模型"在内部"生成了长思维链——思考、试错、回溯、验证。o1 系列的 CoT 平均 5K-50K token，是普通回答的 5-50x。</div>
+      <ul>
+        <li><strong>Hidden</strong>：API 不返回中间 CoT，只返回最终答案（商业壁垒 + 避免污染）</li>
+        <li><strong>Native</strong>：不是"先想后答"的 prompt 技巧，是 RL 训练出来的内在能力</li>
+        <li><strong>Self-Correction</strong>：CoT 中包含自我质疑、回滚路径</li>
+        <li><strong>Verification</strong>：CoT 中包含对中间步骤的验证</li>
+        <li><strong>Strategy Switch</strong>：复杂问题用 explore、简单问题用 direct</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>三、Test-Time Compute Scaling</h2>
+      <div class="mathbox">
+        <p class="mathline">传统 scaling：训练时堆参数</p>
+        <p class="mathline">Test-time scaling：推理时堆算力</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">4 种 trade-off：</p>
+        <p class="mathline">① Best-of-N：采样 N 个回答，Verifier 选最佳</p>
+        <p class="mathline">② Beam Search：思维树搜索 + 评估</p>
+        <p class="mathline">③ Self-Refine：生成 → 反思 → 改进循环</p>
+        <p class="mathline">④ Process Reward：每步 reward（PRM）</p>
+        <p class="mathnote">Snell et al. 2024 论文证明：在数学 / 代码任务上，test-time compute 提升 4x 等价于模型大 2-3x。o1 / R1 走的是 PRM 路径。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、3 个代表模型对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>OpenAI o1 / o3</th><th>DeepSeek-R1</th><th>Claude 3.7 Sonnet (Thinking)</th></tr></thead>
+        <tbody>
+          <tr><td>发布时间</td><td>2024-09 / 2024-12</td><td>2025-01</td><td>2025-02</td></tr>
+          <tr><td>CoT 是否可见</td><td>不可见（API 隐藏）</td><td>不可见（但 R1 蒸馏版可学）</td><td>可切"extended thinking"开关</td></tr>
+          <tr><td>训练方法</td><td>RL + PRM（过程奖励）</td><td>GRPO + 规则 RM</td><td>RL + Constitutional</td></tr>
+          <tr><td>基准表现</td><td>AIME 2024: 13 → 83</td><td>AIME 2024: 70+</td><td>接近 o1</td></tr>
+          <tr><td>推理成本</td><td>高（CoT 5K-50K）</td><td>高（开源）</td><td>中-高</td></tr>
+          <tr><td>开源</td><td>否</td><td>是（MIT）</td><td>否</td></tr>
+          <tr><td>蒸馏</td><td>o1-mini</td><td>R1-Distill-Qwen / Llama 系列</td><td>无</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、PRM vs ORM</h2>
+      <ul>
+        <li><strong>ORM（Outcome Reward Model）</strong>：只对最终答案打分（DeepSeek-R1 用规则 RM 算 ORM）</li>
+        <li><strong>PRM（Process Reward Model）</strong>：对每一步中间思考打分（o1 路线）</li>
+        <li><strong>PRM 优势</strong>：信号密集、训练更稳、避免"结果对但过程错"的奖励黑客</li>
+        <li><strong>PRM 难点</strong>：需要标注每步正误（数据成本高）、PRM 自身也容易被 hack</li>
+        <li><strong>R1 路径</strong>：纯规则 RM（数学 / 代码）也能训出 reasoning，证明 ORM 在可验证任务上够用</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、Reasoning 模型适用场景</h2>
+      <ul>
+        <li><strong>数学 / 竞赛题</strong>：AIME / MATH / Olympiad 显著提升</li>
+        <li><strong>代码 / 调试</strong>：复杂算法、长链调用</li>
+        <li><strong>科学推理</strong>：物理 / 化学 / 生物推断</li>
+        <li><strong>多步规划</strong>：Agent 任务规划、决策</li>
+        <li><strong>难题拆解</strong>：复杂查询分解、子问题链</li>
+      </ul>
+      <div class="callout">不适用：闲聊、简单抽取、情感对话。Reasoning 模型在简单任务上既慢又贵（CoT 浪费 token）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Reasoning 模型和 CoT prompt 区别？</h3>
+          <p>A：CoT prompt 是"用 prompt 技巧让模型在回答前思考"，是表面引导。Reasoning 模型是"通过 RL 训练让模型在内部 CoT 上花算力"，是内在能力。R1 / o1 即使没有 CoT prompt 也会"自然地"内部思考。CoT prompt 可叠加（让 R1 效果更好），但本质不同。</p>
+        </div>
+        <div>
+          <h3>Q2：Test-time compute scaling 为什么有效？</h3>
+          <p>A：模型在面对难题时，简单的"一步推理"不够——需要"探索-验证-回溯"。test-time compute 让模型可以采样多路径、比较、自我纠错。数学 / 代码任务尤其受益，因为有客观对错可以验证。</p>
+        </div>
+        <div>
+          <h3>Q3：R1-zero 和 R1 区别？</h3>
+          <p>A：R1-zero：纯 GRPO 训，无 SFT 冷启动——模型自己"涌现"推理但有可读性差 / 语言混杂问题。R1：先 SFT 冷启动（用 R1-zero 生成的样本）再 GRPO——可读性恢复 + 推理能力保留。R1 才是发布版。</p>
+        </div>
+        <div>
+          <h3>Q4：Reasoning 模型怎么蒸馏？</h3>
+          <p>A：用大 Reasoning 模型生成（question, internal CoT, answer）三元组，作为 SFT 数据训小模型。DeepSeek 蒸馏 1.5B-70B 系列，号称 32B 蒸馏版超过 o1-mini。关键：蒸馏学的是"思维模式"而非只学"答案"。</p>
+        </div>
+        <div>
+          <h3>Q5：为什么 Reasoning 模型成本高？</h3>
+          <p>A：内部 CoT 平均 5K-50K token，是普通回答 5-50x；长 CoT 占大量 GPU 时间；API 按 token 收费时成本爆炸。但对难题"贵"换"准"的 trade-off 是值得的。</p>
+        </div>
+        <div>
+          <h3>Q6：Reasoning 模型与传统 GRPO 训出来的模型区别？</h3>
+          <p>A：传统 GRPO 训的模型（如 Qwen2.5-Math）有"能思考"的能力但没有"习惯思考"——需要 prompt 触发。Reasoning 模型是"默认思考"——不需 prompt 就内部 CoT。差别在 RL 训练强度 / 数据量 / 推理阶段。</p>
+        </div>
+        <div>
+          <h3>Q7：How to evaluate Reasoning 模型？</h3>
+          <p>A：① 推理基准（AIME / MATH / GPQA / Codeforces）；② token 效率（每题用多少 CoT token）；③ 简单任务不掉点（不能"过度思考"）；④ CoT 质量（人评 CoT 逻辑 vs 仅看答案）。只看最终答案分数会低估 PRM 路线模型。</p>
+        </div>
+        <div>
+          <h3>Q8：Reasoning 模型和 self-consistency 关系？</h3>
+          <p>A：self-consistency 是"test-time compute scaling"的简单版（采样 N 投多数票），不改变模型本身。Reasoning 模型是"模型自身在生成时就做 test-time compute"，对每个 query 内部采样 + 探索 + 验证。Reasoning 模型是"内化"的 test-time scaling。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Reasoning 模型是 2024-2025 的新范式（o1 / R1 / Claude 3.7 Thinking）：模型在内部生成长 CoT、test-time compute scaling。核心原理：推理时堆算力（PRM / self-correction / verifier）= 训练时堆参数。代表路径：OpenAI PRM、DeepSeek 纯 GRPO + 规则 RM。适合数学 / 代码 / 复杂规划，不适合简单对话。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（GPT-4 在 AIME 上只 13% 提升困难）→ internal CoT 机制 → test-time compute scaling 4 种 trade-off → PRM vs ORM 对比 → o1 / R1 / Claude 3.7 三大代表 → R1-zero vs R1 演进 → 蒸馏路径（DeepSeek R1-Distill）→ 适用边界。能讲清"为什么 PRM 路线和 ORM 路线都成功"、"为什么蒸馏 32B 超过 o1-mini"，立刻显得跟得上时代。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"用 R1 替代 GPT-4 的成本/效果 trade-off"——比如某业务难题 GPT-4 准确率 60%、R1 用 30K CoT 准确率 80% 但成本 +15x，最终混合方案：简单题 GPT-4、难题 R1，单题成本 +2x、准确率 +20%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>Reasoning 模型不是银弹：① 简单任务上"过度思考"既慢又贵；② 内部 CoT 不可见导致可解释性差；③ 训练成本极高（大量 RL 计算）；④ 不适合实时场景（CoT 太长）。诚实说"Reasoning 模型在'需要验证 + 客观对错'的任务上一枝独秀"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Reasoning Model</td><td>在内部 CoT 上花 test-time compute 的 LLM 范式</td></tr>
+          <tr><td>Internal CoT</td><td>模型内部生成的不可见思维链（5K-50K token）</td></tr>
+          <tr><td>Test-Time Compute</td><td>推理时堆算力的 scaling 方式，与训练 scaling 对偶</td></tr>
+          <tr><td>PRM</td><td>Process Reward Model，对中间步骤打分（o1 路线）</td></tr>
+          <tr><td>ORM</td><td>Outcome Reward Model，只对最终答案打分（R1 规则 RM）</td></tr>
+          <tr><td>R1-zero</td><td>DeepSeek 纯 GRPO 训、无 SFT 冷启动的中间版本</td></tr>
+          <tr><td>R1</td><td>R1-zero + SFT 冷启动的可读性修复版</td></tr>
+          <tr><td>R1-Distill</td><td>用 R1 生成数据训 1.5B-70B 小模型系列</td></tr>
+          <tr><td>o1 / o3</td><td>OpenAI 2024-2025 的 Reasoning 模型系列</td></tr>
+          <tr><td>Claude 3.7 Thinking</td><td>Anthropic 2025-02 发布的可开关扩展思考</td></tr>
+          <tr><td>Best-of-N</td><td>test-time scaling 的简单版：N 个采样 + Verifier</td></tr>
+          <tr><td>Self-Correction</td><td>CoT 中模型自我质疑、回滚的能力</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

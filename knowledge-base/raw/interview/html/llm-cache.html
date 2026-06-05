@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LLM 缓存知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./model-distributed.html">分布式部署</a>
+    <a href="./llm-tuning.html">大模型调优</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">学习资源 · 推理优化</span>
+    <h1>大模型 API 缓存</h1>
+    <p class="lead">Prompt Cache / KV Cache 复用 / 语义缓存 — 降本和降延迟的关键。</p>
+    <div class="pillrow">
+      <span class="pill">Prompt Cache</span><span class="pill">KV Cache</span><span class="pill">Semantic Cache</span><span class="pill">TTL</span><span class="pill">Hit Rate</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、缓存的三层</h2>
+      <ul>
+        <li><strong>第一层：Prompt Cache（请求级 KV 复用）</strong>
+          <ul>
+            <li>原理：相同前缀 prompt 的 KV 张量在请求间复用</li>
+            <li>代表实现：Anthropic Prompt Caching（5min 缓存 + 1h 扩展）、OpenAI <code>cached_tokens</code> 字段、DeepSeek Context Cache</li>
+            <li>节省：相同 1000 token system prompt，每次节省 ~80% 推理成本</li>
+          </ul>
+        </li>
+        <li><strong>第二层：KV Cache 复用（会话级 / 推理优化）</strong>
+          <ul>
+            <li>原理：同一会话的对话历史 KV 不重建，多轮对话 token 越多省得越多</li>
+            <li>代表：vLLM <code>prefix caching</code>、SGLang RadixAttention、Hugging Face <code>past_key_values</code></li>
+            <li>节省：第二轮起每 token ~10x 加速（无 prompt 重新编码）</li>
+          </ul>
+        </li>
+        <li><strong>第三层：语义缓存（应用级）</strong>
+          <ul>
+            <li>原理：把请求 embedding 化，相似 query 直接复用历史回答</li>
+            <li>代表：GPTCache、Redis + Embedding、LangChain <code>SemanticCache</code></li>
+            <li>节省：FAQ 类命中率 60%+，直接跳过大模型调用</li>
+          </ul>
+        </li>
+        <li><strong>命中率优化</strong>：前缀稳定（system prompt 放最前 + 不要动态变化）、模板化（Few-shot 示例固定位置）、相似度阈值（cos > 0.95 才命中）</li>
+        <li><strong>失效策略</strong>：TTL（时间过期，默认 5min-1h）、版本号（prompt 升级时 bump version）、显式 invalidate（业务主动失效）</li>
+        <li><strong>适用场景</strong>：FAQ 客服、代码补全、模板化生成、文档总结、RAG 检索增强</li>
+        <li><strong>不适用场景</strong>：每次 prompt 完全不同、个性化对话（带用户历史）、长输出（生成 token 远超 prompt）</li>
+      </ul>
+      <table>
+        <thead><tr><th>层级</th><th>粒度</th><th>命中率</th><th>实现难度</th><th>节省效果</th><th>代表</th></tr></thead>
+        <tbody>
+          <tr><td>Prompt Cache</td><td>请求级</td><td>30-50%</td><td>低（API 自带）</td><td>成本 -50%</td><td>Anthropic / OpenAI</td></tr>
+          <tr><td>KV Cache 复用</td><td>会话级</td><td>50-80%</td><td>中（需框架支持）</td><td>延迟 -90%</td><td>vLLM / SGLang</td></tr>
+          <tr><td>语义缓存</td><td>应用级</td><td>20-60%</td><td>高（需 embedding 检索）</td><td>成本 -80%</td><td>GPTCache / Redis</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>三层缓存协作</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Prompt Cache</th><th>KV Cache</th><th>语义缓存</th></tr></thead>
+        <tbody>
+          <tr><td>位置</td><td>API 厂商服务端</td><td>推理引擎内部</td><td>应用层</td></tr>
+          <tr><td>匹配条件</td><td>前缀 token 完全一致</td><td>会话前缀 + 历史 tokens</td><td>embedding 相似度</td></tr>
+          <tr><td>可命中粒度</td><td>整个请求</td><td>整段对话</td><td>整个 prompt-response</td></tr>
+          <tr><td>典型延迟节省</td><td>命中段 0ms</td><td>首 token 延迟 -90%</td><td>整体请求 0ms</td></tr>
+          <tr><td>典型成本节省</td><td>命中 token 不计费</td><td>省 GPU 算力</td><td>完全省 LLM 调用</td></tr>
+          <tr><td>失效触发</td><td>TTL / 显式 invalidate</td><td>会话结束 / 显存满</td><td>TTL / 阈值 / 显式</td></tr>
+          <tr><td>风险</td><td>跨用户污染需注意</td><td>无（GPU 内部）</td><td>相似度错配会答非所问</td></tr>
+          <tr><td>落地位置</td><td>OpenAI / Anthropic API</td><td>vLLM / TGI / TensorRT</td><td>业务代码层</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战经验：三层缓存叠加使用效果最大。先用 Prompt Cache（API 自带零成本），再用 KV Cache 复用（vLLM prefix caching），最后用语义缓存（GPTCache）。FAQ 类场景三层叠加可把成本压到 1/10。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、请求处理流程</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 420" width="100%" height="auto" role="img" aria-label="LLM cache pipeline">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Request</text>
+          <text x="290" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Cache Key</text>
+          <text x="540" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Lookup</text>
+          <text x="800" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">路径分支</text>
+          <text x="1050" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Output</text>
+
+          <rect x="20" y="60" width="120" height="64" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="80" y="88" text-anchor="middle" font-size="13" font-weight="700">用户问句</text>
+          <text x="80" y="108" text-anchor="middle" font-size="11" fill="#475569">"退货政策"</text>
+
+          <rect x="200" y="60" width="180" height="64" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="290" y="88" text-anchor="middle" font-size="13" font-weight="700">计算 Key</text>
+          <text x="290" y="108" text-anchor="middle" font-size="11" fill="#475569">hash / embedding</text>
+
+          <rect x="440" y="60" width="200" height="64" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="540" y="88" text-anchor="middle" font-size="13" font-weight="700">Cache Lookup</text>
+          <text x="540" y="108" text-anchor="middle" font-size="11" fill="#475569">Redis / FAISS</text>
+
+          <rect x="680" y="40" width="240" height="100" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="800" y="68" text-anchor="middle" font-size="13" font-weight="700">命中：</text>
+          <text x="800" y="86" text-anchor="middle" font-size="11" fill="#475569">直接返回</text>
+          <text x="800" y="104" text-anchor="middle" font-size="11" fill="#475569">跳过 LLM</text>
+          <text x="800" y="122" text-anchor="middle" font-size="11" fill="#475569">P99 &lt; 10ms</text>
+
+          <rect x="680" y="160" width="240" height="100" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="800" y="188" text-anchor="middle" font-size="13" font-weight="700">未命中：</text>
+          <text x="800" y="206" text-anchor="middle" font-size="11" fill="#475569">调用 LLM</text>
+          <text x="800" y="224" text-anchor="middle" font-size="11" fill="#475569">全量推理</text>
+          <text x="800" y="242" text-anchor="middle" font-size="11" fill="#475569">1-3s 延迟</text>
+
+          <rect x="970" y="40" width="160" height="100" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="1050" y="70" text-anchor="middle" font-size="13" font-weight="700">Cache Hit</text>
+          <text x="1050" y="90" text-anchor="middle" font-size="11" fill="#475569">复用旧回答</text>
+          <text x="1050" y="110" text-anchor="middle" font-size="11" fill="#475569">记命中日志</text>
+          <text x="1050" y="128" text-anchor="middle" font-size="11" fill="#475569">写回缓存</text>
+
+          <rect x="970" y="160" width="160" height="100" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="1050" y="190" text-anchor="middle" font-size="13" font-weight="700">Cache Miss</text>
+          <text x="1050" y="210" text-anchor="middle" font-size="11" fill="#475569">LLM 推理</text>
+          <text x="1050" y="230" text-anchor="middle" font-size="11" fill="#475569">记未命中</text>
+          <text x="1050" y="248" text-anchor="middle" font-size="11" fill="#475569">写回缓存</text>
+
+          <line x1="140" y1="92" x2="200" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="380" y1="92" x2="440" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="640" y1="92" x2="680" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="640" y1="210" x2="680" y2="210" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="920" y1="92" x2="970" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="920" y1="210" x2="970" y2="210" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <text x="660" y="170" text-anchor="middle" font-size="11" fill="#475569">yes</text>
+          <text x="660" y="225" text-anchor="middle" font-size="11" fill="#475569">no</text>
+
+          <text x="590" y="320" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">三层缓存查询顺序：精确 hash → KV 匹配 → 语义相似度</text>
+          <text x="590" y="345" text-anchor="middle" font-size="12" fill="#475569">命中即返回；未命中调 LLM 后写回</text>
+
+          <rect x="20" y="370" width="280" height="36" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="160" y="394" text-anchor="middle" font-size="12" font-weight="600">P99: 命中 8ms / 未命中 1.2s</text>
+
+          <rect x="320" y="370" width="280" height="36" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="460" y="394" text-anchor="middle" font-size="12" font-weight="600">成本: 命中 0 / 未命中 0.01 元</text>
+
+          <rect x="620" y="370" width="280" height="36" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="760" y="394" text-anchor="middle" font-size="12" font-weight="600">命中率: FAQ 60% / 通用 25%</text>
+        </svg>
+      </div>
+      <p class="muted">请求先算 Cache Key（精确 hash 或 embedding），查 Redis / FAISS。命中直接返回历史回答；未命中调 LLM 后写回。监控命中率、P99 延迟、成本节省三件套是评估缓存效果的核心指标。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、成本节省估算</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\text{节省成本} = \text{命中率} \times \text{单次推理成本}$$</p>
+        <p class="mathnote"><strong>单层公式</strong>：命中率（Hit Rate）乘以单次推理成本。命中率 60% × 单次成本 0.01 元 = 每请求节省 0.006 元 / 1000 请求节省 6 元。</p>
+        <p class="mathline" style="margin-top:14px">$$\text{综合成本} = (1 - \text{命中率}) \times \text{单次成本} + \text{缓存查询成本}$$</p>
+        <p class="mathnote">考虑缓存查询开销（Redis 0.5ms / Embedding 检索 5ms），命中率低于 10% 时缓存收益为负。FAQ 类场景（命中率 60%+）才值得上缓存。</p>
+        <p class="mathline" style="margin-top:14px">$$\text{月节省} = \mathrm{QPS} \times 3600 \times 24 \times 30 \times \text{命中率} \times \text{单价}$$</p>
+        <p class="mathnote">实战算账：QPS 100、命中率 60%、单价 0.01 元/请求 = 月节省 100 × 86400 × 30 × 0.6 × 0.01 = 155 万元/月（理论值，实际看流量分布）。三层叠加效果最大。</p>
+        <p class="mathline" style="margin-top:14px">$$\mathrm{P99} \,\text{改善} = (1 - \text{命中率}) \times \text{推理延迟} + \text{命中率} \times \text{缓存延迟}$$</p>
+        <p class="mathnote">延迟也类似加权。命中率 60% 时：P99 = 0.4 × 1200ms + 0.6 × 8ms = 485ms，比纯 LLM 推理的 1200ms 改善 60%。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>KV Cache 原理</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\mathrm{SelfAttn}(Q, K, V) = \mathrm{softmax}\!\left(\, \tfrac{Q \cdot K^{\top}}{\sqrt{d}} \,\right) \cdot V$$</p>
+        <p class="mathnote"><strong>自回归生成</strong>每步都算 Q·K·V，前面 token 的 K/V 张量可缓存复用，避免重算。这是 KV Cache 加速的核心。</p>
+        <p class="mathline" style="margin-top:14px">$$\text{显存占用} = 2 \times n_{\text{layers}} \times n_{\text{heads}} \times \text{seq\_len} \times \text{head\_dim} \times \text{batch\_size}$$</p>
+        <p class="mathnote">7B 模型、32 层、32 头、head_dim 128、seq 2048、batch 1：~2 × 32 × 32 × 2048 × 128 × 2 bytes = 1GB。batch 32 直接 32GB，OOM 风险大。PagedAttention（SGLang / vLLM）按页分配缓解。</p>
+        <p class="mathline" style="margin-top:14px">加速比 ≈ seq_len / 1（每 token 推理从 O(n²) 降到 O(1)）</p>
+        <p class="mathnote">128 token prompt + 256 token 生成：无缓存 384 × 384 = 147k 次注意力计算，有缓存仅新增 1 token O(1) 计算，加速 ~380 倍。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>失效策略速查</h2>
+      <table>
+        <thead><tr><th>策略</th><th>触发条件</th><th>优点</th><th>缺点</th><th>适用</th></tr></thead>
+        <tbody>
+          <tr><td>TTL 过期</td><td>写入后 N 秒</td><td>简单可靠</td><td>可能过期不一致</td><td>通用</td></tr>
+          <tr><td>版本号</td><td>prompt 升级</td><td>原子失效</td><td>需维护版本</td><td>prompt 模板</td></tr>
+          <tr><td>显式 invalidate</td><td>业务主动调用</td><td>精确控制</td><td>需调用方配合</td><td>重要更新</td></tr>
+          <tr><td>LRU 淘汰</td><td>容量满</td><td>自动管理</td><td>可能误杀热点</td><td>大缓存</td></tr>
+          <tr><td>主动刷新</td><td>定期重算</td><td>保证新鲜</td><td>资源开销</td><td>数据强一致</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：飞书 Aily FAQ 语义缓存（高频问题命中复用，命中率 58%，单次响应从 1.5s 降到 80ms，成本 -62%）</li>
+        <li><strong>假设场景</strong>：蕉内数字员工高频问答降本（top 100 高频问题占 35% 流量，缓存后月省 8 万元）</li>
+        <li><strong>简历表达</strong>：缓存架构 / 命中率优化 / 成本控制 / 三层缓存协同</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>语义缓存层</td>
+            <td>GPTCache + Redis 存高频 query-response 对</td>
+            <td>"上线语义缓存，FAQ 类命中率 60%，成本 -62%"</td>
+          </tr>
+          <tr>
+            <td>Prompt Cache 利用</td>
+            <td>把动态 system prompt 拆为静态 + 动态段，命中 Anthropic 缓存</td>
+            <td>"优化 Prompt 结构，命中 Prompt Cache 节省 50% 推理成本"</td>
+          </tr>
+          <tr>
+            <td>KV 缓存复用</td>
+            <td>vLLM prefix caching + 模板化 system prompt</td>
+            <td>"vLLM prefix caching 配置，second-turn 延迟 -90%"</td>
+          </tr>
+          <tr>
+            <td>命中率监控</td>
+            <td>埋点 + Grafana 看板，跟踪命中 / 准确 / 成本</td>
+            <td>"搭建缓存监控体系，自动告警命中率异常下降"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"为什么需要缓存 → 三层缓存怎么协同 → 命中率怎么优化 → 失效怎么保证"四段说清楚，再带真实数字（命中率 / 成本 / P99），立刻与不知道有缓存的人拉开差距。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Prompt Cache 和 KV Cache 区别？</h3>
+          <p>A：Prompt Cache 是请求级（API 厂商实现，跨请求复用 KV 张量，命中段不计费），KV Cache 是 token 级（推理引擎内部，维护当前序列的 K/V 张量避免重算）。前者是产品特性（Anthropic/OpenAI 卖的服务），后者是推理优化（vLLM/SGLang 必备）。两者可叠加。</p>
+        </div>
+        <div>
+          <h3>Q2：语义缓存怎么判断相似？</h3>
+          <p>A：双指标：① embedding 相似度（cos > 0.95 才算命中，余弦距离 < 0.05）；② 元数据匹配（用户身份 / 业务标签必须一致，避免"退货政策"在用户 A 和用户 B 答非所问）。常用 <code>GPTCache</code> 框架，支持多种距离度量和阈值配置。</p>
+        </div>
+        <div>
+          <h3>Q3：命中率多少算合格？</h3>
+          <p>A：分场景。FAQ 客服 60%+（问题重复度高）、电商咨询 30-50%（品类相似）、通用对话 20-30%（个性化高）、代码补全 40-60%（模板重复）。低于 10% 不值得上缓存（查询成本反而更高）。监控命中率 + 命中后用户满意度两个指标。</p>
+        </div>
+        <div>
+          <h3>Q4：缓存失效怎么处理？</h3>
+          <p>A：四种机制组合：① TTL 时间过期（最简单，5min-1h）；② 版本号（prompt 模板升级时 bump version，自动失效旧缓存）；③ 显式 invalidate（业务重要更新时主动调用 DEL）；④ 主动刷新（高一致性场景，定时重算）。生产中常 1+3 组合。</p>
+        </div>
+        <div>
+          <h3>Q5：缓存会泄露隐私吗？</h3>
+          <p>A：会。风险点：① 跨用户污染（用户 A 的回答给到 B）；② 缓存键含敏感字段（手机号、身份证）；③ 缓存被攻击拖库。防护：按用户隔离（key 加 user_id）、TTL 短（FAQ 1h / 通用 5min）、不缓存敏感字段、加密存储 + 访问审计。</p>
+        </div>
+        <div>
+          <h3>Q6：怎么监控缓存效果？</h3>
+          <p>A：四个核心指标。① 命中率（Hit Rate）= 命中次数 / 总请求数；② P99 延迟（命中 vs 未命中对比）；③ 成本节省 = 命中数 × 单价；④ 命中回答的准确率（用户反馈或抽样人工评）。Grafana 看板实时监控，命中率异常下降自动告警。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>选型决策清单</h2>
+      <div class="qa">
+        <div>
+          <h3>只上 Prompt Cache 的场景</h3>
+          <p>用 OpenAI / Anthropic API、system prompt 长（&gt;500 token）、不能改推理引擎。零成本，命中率 30-50%，立刻省 30%+ 成本。首选方案。</p>
+        </div>
+        <div>
+          <h3>加 KV Cache 复用的场景</h3>
+          <p>自部署推理（vLLM / TGI）、多轮对话占比高、second-turn 延迟敏感。prefix caching 配置简单（vLLM 默认开），second-turn 延迟 -90%。</p>
+        </div>
+        <div>
+          <h3>加语义缓存的场景</h3>
+          <p>FAQ / 客服 / 模板化问答占比高（&gt;30%）、能接受 0.95 相似度阈值、需显著降本。GPTCache 上线 1-2 天即见效，命中率优化 2-3 周达 60%+。</p>
+        </div>
+        <div>
+          <h3>不上缓存的场景</h3>
+          <p>个性化对话（用户历史相关）、长输出（生成 2000+ token）、每次 prompt 完全不同（创意写作）、数据强一致（金融 / 医疗决策）。强行上缓存反而引入错配风险。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>学习路径与资源</h2>
+      <table>
+        <thead><tr><th>阶段</th><th>内容</th><th>推荐资源</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td>入门</td><td>理解 LLM 推理的 KV Cache 机制</td><td>PyTorch <code>past_key_values</code> 文档、HF Generation 教程</td><td>能解释 self-attention 加速</td></tr>
+          <tr><td>进阶</td><td>vLLM PagedAttention / SGLang RadixAttention</td><td>vLLM 论文、<code>@cached</code> 装饰器源码</td><td>能配置 prefix caching</td></tr>
+          <tr><td>实战</td><td>GPTCache 语义缓存</td><td>GPTCache 官方文档、LangChain <code>SemanticCache</code></td><td>能上线语义缓存层</td></tr>
+          <tr><td>Prompt Cache</td><td>OpenAI / Anthropic API 缓存机制</td><td>OpenAI 官方缓存文档、Anthropic caching blog</td><td>能优化 prompt 命中结构</td></tr>
+          <tr><td>监控</td><td>命中率 / 成本 / P99 指标体系</td><td>Grafana + Redis INFO 监控</td><td>能搭缓存监控看板</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">一句话总结：缓存是 LLM 服务降本的第一手段。原则：先 API 自带 Prompt Cache（零成本），再加 KV Cache 复用（推理优化），最后上语义缓存（应用层）。三层叠加可把成本压到 1/10。</div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

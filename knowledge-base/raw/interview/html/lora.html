@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LoRA 微调 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./dpo.html">DPO</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./lora.html">LoRA</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · 模型训练</span>
+    <h1>LoRA 微调</h1>
+    <p class="lead">Low-Rank Adaptation — 用极小参数量（&lt;1%）微调大模型，避免全量训练的高成本。冻结原权重 W，引入低秩旁路 ΔW = A·B，推理时可合并到 W 零额外成本。</p>
+    <div class="pillrow">
+      <span class="pill">Low-Rank</span><span class="pill">Adapter</span><span class="pill">Frozen</span><span class="pill">Rank r</span><span class="pill">A·B</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、LoRA 核心思想</h2>
+      <ul>
+        <li><strong>问题</strong>：全量微调 7B 模型要更新 70 亿参数，显存 ≈ 280GB（权重 + 梯度 + Adam 优化器状态），单机多卡都难跑</li>
+        <li><strong>核心思路</strong>：冻结原权重 <code>W ∈ R^(d×k)</code>，引入低秩旁路 <code>ΔW = A·B</code>，只训练 A 和 B</li>
+        <li><strong>形状约定</strong>：
+          <ul>
+            <li><code>A ∈ R^(d×r)</code>（输入侧降维）</li>
+            <li><code>B ∈ R^(r×k)</code>（输出侧升维）</li>
+            <li><code>r ≪ min(d, k)</code>，r 通常 4-64</li>
+          </ul>
+        </li>
+        <li><strong>为什么低秩就够</strong>：实证观察 — 预训练模型微调时权重变化矩阵的秩远低于原始秩（多数 &lt; 100），即 ΔW 近似落在低秩子空间里</li>
+        <li><strong>训练参数对比</strong>（以 d=k=4096 为例）：
+          <ul>
+            <li>全量微调：d × k = 1670 万参数</li>
+            <li>LoRA（r=8）：d × r + r × k = 6.5 万参数（占全量 0.4%）</li>
+            <li>LoRA（r=64）：d × r + r × k = 52 万参数（占全量 3.1%）</li>
+          </ul>
+        </li>
+        <li><strong>推理合并</strong>：训练完成后 <code>W_new = W + α/r · A·B</code>（α 是缩放系数），合并到 W 后零额外推理成本</li>
+        <li><strong>常见变体</strong>：
+          <ul>
+            <li><strong>QLoRA</strong>：基础模型 4-bit 量化（NF4），更省显存</li>
+            <li><strong>AdaLoRA</strong>：自适应调整每层秩，重要层高 r、不重要层低 r</li>
+            <li><strong>LoRA+</strong>：A 和 B 用不同学习率（A 大 B 小）</li>
+            <li><strong>DoRA</strong>：方向 + 幅度分解，提升效果</li>
+          </ul>
+        </li>
+      </ul>
+      <table>
+        <thead><tr><th>方案</th><th>可训参数</th><th>显存占用（7B 模型）</th><th>推理成本</th><th>效果</th></tr></thead>
+        <tbody>
+          <tr><td>全量微调（Full FT）</td><td>100%</td><td>~280GB</td><td>基准</td><td>基准</td></tr>
+          <tr><td>LoRA（r=8）</td><td>~0.4%</td><td>~16GB</td><td>合并后 0</td><td>~90-95%</td></tr>
+          <tr><td>LoRA（r=64）</td><td>~3%</td><td>~24GB</td><td>合并后 0</td><td>~95-99%</td></tr>
+          <tr><td>QLoRA（4-bit base）</td><td>~0.4%</td><td>~6GB</td><td>需反量化</td><td>~85-90%</td></tr>
+          <tr><td>Adapter</td><td>~2-5%</td><td>~20GB</td><td>有额外层</td><td>~85-90%</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>LoRA 变体对比</h2>
+      <table>
+        <thead><tr><th>变体</th><th>核心改进</th><th>显存节省</th><th>训练稳定性</th><th>适用场景</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LoRA</strong></td><td>基线方法，固定低秩 r</td><td>中等</td><td>高</td><td>通用微调、首选</td></tr>
+          <tr><td><strong>QLoRA</strong></td><td>基础模型 NF4 量化 + Double Quant</td><td>极高（~3x）</td><td>中（量化噪声）</td><td>消费级 GPU 跑大模型</td></tr>
+          <tr><td><strong>AdaLoRA</strong></td><td>每层自适应分配秩预算</td><td>中等</td><td>高</td><td>多层多任务</td></tr>
+          <tr><td><strong>LoRA+</strong></td><td>A 和 B 用不同学习率</td><td>同 LoRA</td><td>更高</td><td>收敛慢 / 易震荡</td></tr>
+          <tr><td><strong>DoRA</strong></td><td>权重分解为方向 + 幅度</td><td>同 LoRA</td><td>高</td><td>效果逼近全量</td></tr>
+          <tr><td><strong>LongLoRA</strong></td><td>稀疏注意力 + LoRA 支持长上下文</td><td>低</td><td>中</td><td>长上下文扩展</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型经验：默认从标准 LoRA（r=8-16）入手，效果不够再调 r 或换 QLoRA 救显存；多任务且层差异大用 AdaLoRA；要求逼近全量用 DoRA。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、LoRA 旁路结构</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 480" width="100%" height="auto" role="img" aria-label="LoRA architecture">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="60" y="200" width="120" height="80" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="120" y="232" text-anchor="middle" font-size="18" font-weight="700">输入 x</text>
+          <text x="120" y="256" text-anchor="middle" font-size="12" fill="#475569">d 维向量</text>
+
+          <rect x="260" y="100" width="180" height="80" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="350" y="132" text-anchor="middle" font-size="18" font-weight="700">W（冻结）</text>
+          <text x="350" y="156" text-anchor="middle" font-size="12" fill="#475569">d × k 原始权重</text>
+          <text x="350" y="174" text-anchor="middle" font-size="12" fill="#475569">requires_grad=False</text>
+
+          <rect x="260" y="300" width="180" height="80" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="350" y="332" text-anchor="middle" font-size="18" font-weight="700">B（可训）</text>
+          <text x="350" y="356" text-anchor="middle" font-size="12" fill="#475569">r × k 矩阵</text>
+          <text x="350" y="374" text-anchor="middle" font-size="12" fill="#475569">初始化为 0</text>
+
+          <rect x="500" y="300" width="180" height="80" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="332" text-anchor="middle" font-size="18" font-weight="700">A（可训）</text>
+          <text x="590" y="356" text-anchor="middle" font-size="12" fill="#475569">d × r 矩阵</text>
+          <text x="590" y="374" text-anchor="middle" font-size="12" fill="#475569">Kaiming 初始化</text>
+
+          <ellipse cx="800" cy="240" rx="80" ry="40" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="800" y="237" text-anchor="middle" font-size="16" font-weight="700">+ 合并</text>
+          <text x="800" y="258" text-anchor="middle" font-size="12" fill="#475569">xW + xAB</text>
+
+          <rect x="950" y="200" width="160" height="80" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="1030" y="232" text-anchor="middle" font-size="18" font-weight="700">输出</text>
+          <text x="1030" y="256" text-anchor="middle" font-size="12" fill="#475569">k 维向量</text>
+
+          <line x1="180" y1="220" x2="260" y2="140" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="180" y1="260" x2="260" y2="340" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="440" y1="340" x2="500" y2="340" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="680" y1="320" x2="800" y2="240" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="440" y1="140" x2="800" y2="220" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="880" y1="240" x2="950" y2="240" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+
+          <rect x="60" y="420" width="1080" height="40" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="600" y="445" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">推理时合并：W_new = W + (α/r) · A·B，单矩阵前向，零额外成本</text>
+        </svg>
+      </div>
+      <p class="muted">输入 x 同时流过冻结的 W（主路）和可训的 B·A（旁路），输出相加。训练时只更新 A 和 B，W 冻结；推理时合并为单矩阵 W_new，前向计算量不变。</p>
+    </article>
+
+    <article class="card">
+      <h2>训练流程时序</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="LoRA training flow">
+          <defs>
+            <marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" font-size="14" font-weight="700" fill="#0f172a">Data</text>
+          <text x="320" y="30" font-size="14" font-weight="700" fill="#0f172a">Base Model</text>
+          <text x="600" y="30" font-size="14" font-weight="700" fill="#0f172a">LoRA Module</text>
+          <text x="880" y="30" font-size="14" font-weight="700" fill="#0f172a">Optimizer</text>
+
+          <line x1="80" y1="50" x2="80" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="320" y1="50" x2="320" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="600" y1="50" x2="600" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="880" y1="50" x2="880" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+
+          <line x1="80" y1="80" x2="320" y2="80" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="200" y="72" text-anchor="middle" font-size="12" fill="#0f172a">① 喂入训练样本</text>
+
+          <line x1="320" y1="110" x2="600" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="102" text-anchor="middle" font-size="12" fill="#0f172a">② 注入 A·B 旁路</text>
+
+          <line x1="600" y1="140" x2="320" y2="140" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="132" text-anchor="middle" font-size="12" fill="#0f172a">③ 前向 + 计算 Loss</text>
+
+          <line x1="320" y1="170" x2="600" y2="170" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="162" text-anchor="middle" font-size="12" fill="#0f172a">④ 反向传播（仅 A·B）</text>
+
+          <line x1="600" y1="200" x2="880" y2="200" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="740" y="192" text-anchor="middle" font-size="12" fill="#0f172a">⑤ 计算 A·B 梯度</text>
+
+          <line x1="880" y1="230" x2="600" y2="230" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="740" y="222" text-anchor="middle" font-size="12" fill="#0f172a">⑥ Adam 更新 A·B 参数</text>
+
+          <line x1="80" y1="260" x2="80" y2="280" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="80" y="300" font-size="12" fill="#475569" text-anchor="middle">重复 epoch</text>
+
+          <line x1="320" y1="320" x2="600" y2="320" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="312" text-anchor="middle" font-size="12" fill="#0f172a">⑦ 训练完成：导出 A·B 权重</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、LoRA 公式</h2>
+      <div class="mathbox">
+        <p class="mathline"><strong>前向计算：</strong>$$h = W x + \Delta W\, x = W x + (B A)\, x$$</p>
+        <p class="mathline"><strong>低秩约束：</strong>$$\Delta W = B A,\quad A \in \mathbb{R}^{d \times r},\; B \in \mathbb{R}^{r \times k},\; r \ll \min(d, k)$$</p>
+        <p class="mathline"><strong>缩放：</strong>$$h = W x + \frac{\alpha}{r}\, B A\, x$$</p>
+        <p class="mathline"><strong>可训参数量：</strong>$$|A| + |B| = d \cdot r + r \cdot k$$</p>
+        <p class="mathline"><strong>参数量比：</strong>$$\frac{d \cdot r + r \cdot k}{d \cdot k} = \frac{r}{k} + \frac{r}{d}$$</p>
+        <p class="mathnote">例：d=k=4096, r=8，比值 = 8/4096 + 8/4096 ≈ 0.4%。α 通常取 16-32，让初始训练不破坏原模型（因为 B 初始化为 0）。</p>
+        <p class="mathnote">直观理解：ΔW 的"信息量"集中在少数方向上，低秩假设是"大模型微调时学到的能力也是低秩的"，所以用 r 维就够。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>目标模块选择</h2>
+      <table>
+        <thead><tr><th>模块</th><th>是否推荐 LoRA</th><th>参数量影响</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td><code>q_proj</code>（Q 矩阵）</td><td>是（默认）</td><td>小</td><td>LoRA 原文默认配置</td></tr>
+          <tr><td><code>k_proj</code>, <code>v_proj</code></td><td>是（推荐）</td><td>小</td><td>和 q_proj 同时训效果更稳</td></tr>
+          <tr><td><code>o_proj</code>（输出投影）</td><td>视情况</td><td>中</td><td>需要更深度任务适配时加</td></tr>
+          <tr><td><code>gate_proj</code>, <code>up_proj</code>, <code>down_proj</code>（FFN）</td><td>推荐（MLP 关键）</td><td>大</td><td>效果明显但参数占比大</td></tr>
+          <tr><td><code>embed_tokens</code></td><td>不推荐</td><td>极大</td><td>词表适配才考虑</td></tr>
+          <tr><td><code>lm_head</code></td><td>不推荐</td><td>极大</td><td>冻结保持通用生成能力</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：工艺部件库项目（"AI 编程首个纯 AI 项目"），用 Qwen 基座 + LoRA 微调行业知识（小样本几百条 + r=16），单卡 24GB 显存即可训练，推理时合并到 W 部署为标准模型</li>
+        <li><strong>假设场景</strong>：蕉内 AI 客服小蕉 — 用 LoRA 在 Qwen / ChatGLM 上微调蕉内产品知识、尺码表、退换货政策，3 天训完，推理成本与基座一致</li>
+        <li><strong>简历表达</strong>：低资源微调 / 行业适配 / 推理零成本 / 极小参数量达成接近全量效果</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>数据准备</td>
+            <td>收集行业语料 + 清洗 + 标注</td>
+            <td>"用 500 条高质量行业问答完成 LoRA 微调，领域问答准确率从 60% 提升到 88%"</td>
+          </tr>
+          <tr>
+            <td>训练工程</td>
+            <td>选 r、目标模块、batch size、lr</td>
+            <td>"在 24GB 单卡上完成 7B 模型微调，可训参数 0.4%，训练耗时 6 小时"</td>
+          </tr>
+          <tr>
+            <td>合并部署</td>
+            <td>把 A·B 合并到 W，对外提供标准模型</td>
+            <td>"LoRA 合并后零推理成本，部署栈不变，QPS 与基座持平"</td>
+          </tr>
+          <tr>
+            <td>多版本管理</td>
+            <td>不同业务线各训一个 LoRA，动态加载</td>
+            <td>"用 LoRA 热切换支持多业务线，单基座承载 5 个领域 Adapter"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"为什么低秩够 → 训练参数计算 → 推理合并 → 显存节省"四段说清楚，再补一个"行业适配 / 消费级 GPU 可跑"的真实项目，立刻超过 80% 候选人。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：秩 r 怎么选？</h3>
+          <p>A：经验 4-64，r=8/16 是常用起点。原则：任务简单（领域问答）r=4-8，任务复杂（多任务 / 风格迁移）r=16-64。通过验证集 loss 和下游指标调，最佳 r 通常在"参数量能装下任务复杂度"时。</p>
+        </div>
+        <div>
+          <h3>Q2：LoRA 推理要带 Adapter 吗？</h3>
+          <p>A：训练完成后 <code>W_new = W + (α/r)·A·B</code> 合并到 W，推理就是单矩阵前向，零额外成本。多 Adapter 场景下可保留独立 A·B，运行时动态加载（PEFT 库支持）。</p>
+        </div>
+        <div>
+          <h3>Q3：和全量微调效果差多少？</h3>
+          <p>A：经验上能逼近 90-95% 全量效果（r=8-16），r 调到 64 时能到 95-99%。DoRA / AdaLoRA 等变体效果可逼近全量。任务越复杂、训练数据越少，LoRA 优势越明显。</p>
+        </div>
+        <div>
+          <h3>Q4：QLoRA 和 LoRA 区别？</h3>
+          <p>A：QLoRA 把基础模型 4-bit 量化（NF4）+ Double Quant，显存节省约 3x，代价是量化噪声导致轻微效果损失（一般 &lt; 2%）。适合消费级 GPU（24GB）训 7B-13B 模型。</p>
+        </div>
+        <div>
+          <h3>Q5：冻结哪些层？</h3>
+          <p>A：经验上冻结 embedding 和前 1-2 层 Transformer（语义相对通用），微调中间层和输出层（任务特异性）。LoRA 不直接"冻结层"，而是在某些层（Q/K/V、FFN）的权重上加低秩旁路。</p>
+        </div>
+        <div>
+          <h3>Q6：LoRA 显存怎么算？</h3>
+          <p>A：base 模型（fp16/bf16）+ A·B 梯度 + Adam 优化器状态（A·B 的 m 和 v）。以 7B + r=16 训为例：base 14GB + A·B 梯度 50MB + Adam 状态 100MB ≈ 14.2GB 总占用。</p>
+        </div>
+        <div>
+          <h3>Q7：LoRA 适合什么场景？</h3>
+          <p>A：四个典型场景：<code>领域适配</code>（医疗 / 法律 / 电商）、<code>风格迁移</code>（客服口吻 / 角色扮演）、<code>多任务</code>（一个基座 + N 个 Adapter）、<code>消费级资源</code>（单卡 / 小团队）。不适合"需要修改模型底层能力"的任务。</p>
+        </div>
+        <div>
+          <h3>Q8：LoRA 怎么避免灾难性遗忘？</h3>
+          <p>A：三个手段：<code>小学习率</code>（1e-4 ~ 5e-4，避免破坏原模型）、<code>小 r</code>（约束可学空间）、<code>混入通用数据</code>（训练集加 5-10% 原始通用数据）。本质是 LoRA 的低秩约束已经天然防遗忘。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：LoRA 是一种参数高效微调方法，冻结原权重 W、引入低秩旁路 A·B 替代 ΔW，可训参数量 &lt; 1%；关键优势是显存省（7B 模型从 280GB 降到 16GB）、推理零成本（合并到 W）、可热切换多业务 Adapter。变体有 QLoRA、AdaLoRA、DoRA 等。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（全量微调成本高）→ 低秩假设（ΔW 是低秩的）→ 训练参数计算 → 推理合并 → 变体与选型 → 项目落地，逐层展开。最后落到 r 选择、目标模块、显存数据、合并部署实践。有真实数据能立刻拉开差距。</p>
+        </div>
+        <div>
+          <h3>加分：知道 LoRA 的局限</h3>
+          <p>LoRA 不是银弹：r 设小效果差、r 设大省显存优势弱、新增任务时叠加 Adapter 不方便管理、超大模型（70B+）效果略降。建议结合"DoRA / QLoRA 变体 + 多 Adapter 调度框架"缓解。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次踩坑</h3>
+          <p>比如：r=8 时 loss 收敛快但下游效果差（欠拟合）；r=64 时显存爆了（超预算）；目标模块只选 q_proj 时效果差（漏配 FFN）；B 初始化忘了设 0 导致训练初期模型崩坏。讲一次具体排查过程，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>低秩假设</td><td>为什么 ΔW 是低秩的？</td><td>答"实证观察 + 内在解释"：实验上微调 ΔW 的有效秩 &lt; 100（Aghajanyan 2020 论文）；直观看，模型微调是对原有能力的精调，所需新信息维度有限。抓住"少而精"。</td></tr>
+          <tr><td>r 选择</td><td>为什么 r=8 是常用起点？</td><td>答"经验 + 任务复杂度"：8 维能覆盖大多数简单任务、参数量 &lt; 1%、训练快；复杂任务再上调。也可以从 Singular Value Decomposition 分析 ΔW 的有效秩来定。</td></tr>
+          <tr><td>目标模块</td><td>LoRA 应该加到哪些层？</td><td>答"q_proj + v_proj 起步"：原始 LoRA 论文加到 Attention 的 Q/V；实战发现加到 FFN（gate/up/down）效果更明显；embed 和 lm_head 一般不加。可用 target_modules 配置。</td></tr>
+          <tr><td>效果对比</td><td>LoRA 和全量微调效果差多少？</td><td>答"90-95% 是常见结论"：单任务场景 r=8-16 即可；多任务 / 复杂生成 r=64 + DoRA 可逼近全量。关键看任务类型和数据量，小数据下 LoRA 反而更稳（防过拟合）。</td></tr>
+          <tr><td>生产部署</td><td>LoRA 怎么上线？</td><td>答"两种方式"：① 合并到 W，部署为标准模型（简单、QPS 不变）；② 保留独立 Adapter，运行时动态切换（多业务线、PEFT 库支持）。结合 A/B 测试验证效果。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：LoRA 是当前 PEFT 的事实标准，面试允许说"这块我了解原理但生产经验有限"，但要能讲清楚低秩假设、参数计算、推理合并 + 给出项目设计。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>LoRA</td><td>Low-Rank Adaptation，冻结 W 用低秩旁路 A·B 替代 ΔW 的参数高效微调方法</td></tr>
+          <tr><td>Rank r</td><td>低秩旁路的秩，通常 4-64，越大越接近全量效果</td></tr>
+          <tr><td>ΔW = A·B</td><td>低秩旁路矩阵，A ∈ R<sup>d×r</sup>、B ∈ R<sup>r×k</sup>，B 初始化为 0</td></tr>
+          <tr><td>α / r</td><td>缩放系数，控制 ΔW 强度；α 默认 16-32，r 是当前秩</td></tr>
+          <tr><td>合并推理</td><td>训练后 W_new = W + (α/r)·A·B，合并为单矩阵，零额外成本</td></tr>
+          <tr><td>QLoRA</td><td>基础模型 4-bit NF4 量化 + LoRA，显存节省约 3x</td></tr>
+          <tr><td>AdaLoRA</td><td>每层自适应秩预算，重要层高 r、不重要层低 r</td></tr>
+          <tr><td>DoRA</td><td>权重分解为方向 + 幅度，效果逼近全量</td></tr>
+          <tr><td>PEFT</td><td>Parameter-Efficient Fine-Tuning，LoRA 所在的参数高效微调方法族</td></tr>
+          <tr><td>target_modules</td><td>LoRA 注入的目标模块（q_proj / v_proj / FFN 等）</td></tr>
+          <tr><td>灾难性遗忘</td><td>微调后丢失原模型通用能力的现象，LoRA 因低秩约束天然防遗忘</td></tr>
+          <tr><td>Adapter</td><td>LoRA 之前的参数高效方法，在网络中插入小全连接层，有额外推理成本</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

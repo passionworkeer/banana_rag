@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Embedding 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./rerank.html">Rerank</a>
+    <a href="./mcp.html">MCP</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">学习资源 · 检索增强</span>
+    <h1>Embedding 选型</h1>
+    <p class="lead">向量化原理、模型选型、稀疏 vs 稠密检索。</p>
+    <div class="pillrow">
+      <span class="pill">BGE</span><span class="pill">M3E</span><span class="pill">OpenAI</span><span class="pill">Dense</span><span class="pill">Sparse</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Embedding 原理与选型</h2>
+      <ul>
+        <li><strong>核心思想</strong>：文本 → 高维向量，相似度 = 语义相似度
+          <ul>
+            <li>原理：训练模型让"意思相近"的文本在向量空间里距离更近</li>
+            <li>下游用途：检索（KNN）、聚类、分类、推荐、异常检测</li>
+          </ul>
+        </li>
+        <li><strong>稠密 vs 稀疏</strong>：
+          <ul>
+            <li><strong>稠密（Dense）</strong>：BGE / M3E / OpenAI Embedding — 语义理解强，能捕捉同义改写</li>
+            <li><strong>稀疏（Sparse）</strong>：BM25 / SPLADE / TF-IDF — 关键词匹配强，OOV 鲁棒，可解释</li>
+            <li><strong>混合检索</strong>：两者加权融合（RRF 倒数排名融合 / 加权求和），效果通常优于单路</li>
+          </ul>
+        </li>
+        <li><strong>主流模型</strong>：
+          <ul>
+            <li>中文：BGE-M3（智源，1024 维，多语言）、M3E（MokaHR，开源）、Qwen3-Embedding</li>
+            <li>英文：OpenAI <code>text-embedding-3-small/large</code>、Cohere <code>embed-v3</code>、<code>e5-mistral-7b</code></li>
+            <li>多语言：<code>bge-m3</code>（100+ 语言）、<code>multilingual-e5-large</code></li>
+          </ul>
+        </li>
+        <li><strong>选型维度</strong>：语言支持、向量维度、推理速度、领域适配、私有化能力、license</li>
+        <li><strong>训练细节</strong>：对比学习（InfoNCE / Triplet Loss）+ 难负例挖掘 + in-batch negatives</li>
+        <li><strong>评估方式</strong>：MTEB 榜单（公开 benchmark）+ 业务自建评测集（query-doc 相关性标注）</li>
+      </ul>
+      <table>
+        <thead><tr><th>模型</th><th>维度</th><th>语言</th><th>速度</th><th>适用场景</th><th>License</th></tr></thead>
+        <tbody>
+          <tr><td>BGE-M3</td><td>1024</td><td>多语言</td><td>中</td><td>通用中文检索、多语言</td><td>MIT</td></tr>
+          <tr><td>M3E-base</td><td>768</td><td>中/英</td><td>快</td><td>中文轻量场景</td><td>MIT</td></tr>
+          <tr><td>text-embedding-3-small</td><td>1536</td><td>多语言</td><td>API</td><td>云上快速接入</td><td>商用付费</td></tr>
+          <tr><td>text-embedding-3-large</td><td>3072</td><td>多语言</td><td>API</td><td>高精度云上场景</td><td>商用付费</td></tr>
+          <tr><td>e5-mistral-7b</td><td>4096</td><td>多语言</td><td>慢</td><td>高精度英文场景</td><td>MIT</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>稠密 vs 稀疏 vs 混合 选型</h2>
+      <table>
+        <thead><tr><th>维度</th><th>稠密（Dense）</th><th>稀疏（Sparse）</th><th>混合（Hybrid）</th></tr></thead>
+        <tbody>
+          <tr><td>核心能力</td><td>语义匹配</td><td>关键词匹配</td><td>两者兼顾</td></tr>
+          <tr><td>擅长</td><td>同义改写、上下文理解</td><td>专有名词、缩写、代码</td><td>复杂 query 兼顾两者</td></tr>
+          <tr><td>不擅长</td><td>新词、专有名词、冷启动</td><td>语义改写、长 query</td><td>需要调权重</td></tr>
+          <tr><td>索引大小</td><td>小（d × N 浮点）</td><td>大（倒排表，关键词维度爆炸）</td><td>两者之和</td></tr>
+          <tr><td>推理成本</td><td>GPU 编码</td><td>CPU 检索</td><td>两者之和</td></tr>
+          <tr><td>可解释性</td><td>弱</td><td>强（命中词可见）</td><td>中</td></tr>
+          <tr><td>代表实现</td><td>FAISS / Milvus（HNSW）</td><td>Elasticsearch / BM25</td><td>Qdrant Hybrid / Weaviate</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战经验：通用 RAG 场景用稠密 + 稀疏混合检索（权重 7:3 起步），专业术语 / 代码搜索加大稀疏权重（5:5 或 4:6），纯语义理解场景（如推荐）只用稠密。融合算法优先 RRF（reciprocal rank fusion），无需调参。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、向量化流程</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 380" width="100%" height="auto" role="img" aria-label="Embedding pipeline">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">原始文本</text>
+          <text x="280" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Tokenizer</text>
+          <text x="480" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Encoder</text>
+          <text x="680" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Pooler</text>
+          <text x="900" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">向量</text>
+
+          <rect x="20" y="60" width="120" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="80" y="86" text-anchor="middle" font-size="13" font-weight="700">"蕉内袜子"</text>
+          <text x="80" y="104" text-anchor="middle" font-size="11" fill="#475569">4 字</text>
+
+          <rect x="200" y="60" width="160" height="60" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="280" y="86" text-anchor="middle" font-size="13" font-weight="700">BPE / WordPiece</text>
+          <text x="280" y="104" text-anchor="middle" font-size="11" fill="#475569">[CLS] 蕉 ... [SEP]</text>
+
+          <rect x="400" y="60" width="160" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="480" y="86" text-anchor="middle" font-size="13" font-weight="700">BERT / Transformer</text>
+          <text x="480" y="104" text-anchor="middle" font-size="11" fill="#475569">12-24 层注意力</text>
+
+          <rect x="600" y="60" width="160" height="60" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="680" y="86" text-anchor="middle" font-size="13" font-weight="700">Mean / [CLS]</text>
+          <text x="680" y="104" text-anchor="middle" font-size="11" fill="#475569">聚合为单向量</text>
+
+          <rect x="800" y="40" width="200" height="100" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="900" y="68" text-anchor="middle" font-size="13" font-weight="700">d=1024 维向量</text>
+          <text x="900" y="86" text-anchor="middle" font-size="11" fill="#475569">[0.12, -0.05, 0.78, ...]</text>
+          <text x="900" y="104" text-anchor="middle" font-size="11" fill="#475569">L2 归一化</text>
+          <text x="900" y="122" text-anchor="middle" font-size="11" fill="#475569">存 FAISS / Milvus</text>
+
+          <line x1="140" y1="90" x2="200" y2="90" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="360" y1="90" x2="400" y2="90" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="560" y1="90" x2="600" y2="90" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="760" y1="90" x2="800" y2="90" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <rect x="20" y="200" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="160" y="225" text-anchor="middle" font-size="12" font-weight="600">离线：百万文档批量编码</text>
+          <text x="160" y="245" text-anchor="middle" font-size="11" fill="#475569">一次编码长期复用</text>
+
+          <rect x="320" y="200" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="460" y="225" text-anchor="middle" font-size="12" font-weight="600">在线：单 query 实时编码</text>
+          <text x="460" y="245" text-anchor="middle" font-size="11" fill="#475569">~10ms / query</text>
+
+          <rect x="620" y="200" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="760" y="225" text-anchor="middle" font-size="12" font-weight="600">向量检索（ANN）</text>
+          <text x="760" y="245" text-anchor="middle" font-size="11" fill="#475569">HNSW / IVF / ScaNN</text>
+
+          <text x="590" y="340" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Embedding 流水线：文本 → Token → Encoder → Pooler → 向量 → 向量库</text>
+        </svg>
+      </div>
+      <p class="muted">离线阶段把全量文档批量编码入库（耗时但一次完成），在线阶段只对 query 实时编码，然后做 ANN（近似最近邻）检索。优化重点：离线并行、在线 GPU batch 推理、向量库选 HNSW（高召回）或 IVF（低内存）。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、相似度计算</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\mathrm{sim}(q, d) = \cos\!\left(E(q),\, E(d)\right) = \frac{E(q) \cdot E(d)}{\|E(q)\| \cdot \|E(d)\|}$$</p>
+        <p class="mathnote"><strong>余弦相似度</strong>：把两个向量先 L2 归一化后算点积，范围 [-1, 1]，值越大越相似。检索中 0.7+ 通常算相关。</p>
+        <p class="mathline" style="margin-top:14px">$$\mathrm{sim}(q, d) = E(q) \cdot E(d) \quad \text{（L2 归一化后等价于内积）}$$</p>
+        <p class="mathnote"><strong>工程优化</strong>：向量入库前先 L2 normalize，相似度退化为点积，FAISS / Milvus 都直接用内积做 ANN 检索，速度比余弦快一个数量级。</p>
+        <p class="mathline" style="margin-top:14px">$$d(q, d) = 1 - \mathrm{sim}(q, d) \quad \text{（距离 = 1 - 相似度）}$$</p>
+        <p class="mathnote">向量库（FAISS / Milvus）内部把相似度转成距离用，HNSW 图用距离建边，检索时返回 Top-K 最近邻。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>训练与微调</h2>
+      <div class="mathbox">
+        <p class="mathline">$$L = -\log \frac{\exp\!\left(\mathrm{sim}(q, d^{+})\right)}{\sum_{i} \exp\!\left(\mathrm{sim}(q, d_{i})\right)}$$</p>
+        <p class="mathnote"><strong>InfoNCE Loss</strong>：让正样本 $d^{+}$ 和 query 的相似度远高于 batch 内其他负样本 $d_{i}$。在 batch 内做负采样（in-batch negatives）可极大提升训练效率。</p>
+        <p class="mathline" style="margin-top:14px">$$d^{-}_{\text{hard}} = \mathop{\mathrm{arg\,max}}_{d \in D^{-}}\, \mathrm{sim}(q, d) \quad \text{（难负例）}$$</p>
+        <p class="mathnote"><strong>难负例挖掘</strong>：随机负样本太"简单"，模型学不到细粒度差异。用 BM25 召回但 Embedding 给低分、或用上一版模型错分的样本当难负例。</p>
+        <p class="mathline" style="margin-top:14px">微调数据 $= (q, d^{+}, d^{-})$ 三元组</p>
+        <p class="mathnote">构造方法：① 业务日志挖掘（query + 人工标的相关/不相关 doc）；② 大模型合成（GPT-4 生成 query，doc 库内取正负样本）；③ 对比学习数据集（如 <code>ms-marco</code>、<code>BeIR</code>）。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>向量库选型速查</h2>
+      <table>
+        <thead><tr><th>库</th><th>算法</th><th>规模</th><th>部署</th><th>特色</th></tr></thead>
+        <tbody>
+          <tr><td>FAISS</td><td>HNSW / IVF / PQ</td><td>亿级</td><td>本地 / Meta 开源</td><td>离线 / 单机最快</td></tr>
+          <tr><td>Milvus</td><td>HNSW / IVF / DiskANN</td><td>百亿级</td><td>分布式 / 云原生</td><td>生产首选</td></tr>
+          <tr><td>Qdrant</td><td>HNSW</td><td>千万级</td><td>Rust 单二进制</td><td>支持混合检索 / 过滤</td></tr>
+          <tr><td>Weaviate</td><td>HNSW</td><td>千万级</td><td>Go / K8s</td><td>原生多模态 / 模块化</td></tr>
+          <tr><td>pgvector</td><td>IVF</td><td>百万级</td><td>Postgres 扩展</td><td>与业务 DB 合一</td></tr>
+          <tr><td>Elasticsearch</td><td>HNSW（8.x+）</td><td>亿级</td><td>Java 集群</td><td>稀疏 + 稠密混合</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：蕉内 AI 数字员工行业知识向量化（BGE-M3 中文 Embedding，1024 维，FAISS 存储，支持混合检索）</li>
+        <li><strong>假设场景</strong>：蕉内数字员工场景化知识检索（用户问"蕉内袜子材质怎么挑"→ 召回 100 条商品文档 + FAQ，再精排到 Top-5 喂给 LLM）</li>
+        <li><strong>简历表达</strong>：Embedding 选型 / 私有化部署 / 训练数据准备 / 混合检索架构</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Embedding 选型</td>
+            <td>对比 BGE-M3 / M3E / OpenAI，选定业务最优模型</td>
+            <td>"主导 Embedding 选型评测，中文 R@10 从 0.72 提升到 0.85"</td>
+          </tr>
+          <tr>
+            <td>私有化部署</td>
+            <td>sentence-transformers + Triton 推理服务，FAISS 索引</td>
+            <td>"搭建 Embedding 推理服务，QPS 50+，P99 延迟 < 30ms"</td>
+          </tr>
+          <tr>
+            <td>混合检索</td>
+            <td>稠密 + 稀疏 + BM25 三路 RRF 融合</td>
+            <td>"上线混合检索架构，专业术语 query 召回率提升 23%"</td>
+          </tr>
+          <tr>
+            <td>领域微调</td>
+            <td>用业务日志构造 (q, d+, d-) 三元组微调 BGE</td>
+            <td>"基于业务日志微调 BGE-M3，NDCG@10 提升 12%"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"选型对比 → 私有化部署 → 混合检索 → 领域微调"四段说清楚，再带具体数字（Recall / NDCG / QPS / P99），立刻与只会用 OpenAI Embedding 的候选人拉开差距。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：稠密 vs 稀疏怎么选？</h3>
+          <p>A：通用 RAG 场景推荐混合（稠密 + BM25 7:3 起步），专业术语 / 代码搜索加大稀疏权重（5:5 或 4:6），纯语义理解（推荐 / 聚类）只用稠密。融合算法优先 RRF（reciprocal rank fusion），无需调参，效果稳定。</p>
+        </div>
+        <div>
+          <h3>Q2：维度越大越好吗？</h3>
+          <p>A：不一定。768 / 1024 是性价比甜点，更大（如 3072）边际收益递减但存储和计算成本翻倍。原则：MTEB 榜单上同模型不同维度档差距 < 2% 时选小维度。除非做大规模对比学习或极致精度需求，否则 1024 维足够。</p>
+        </div>
+        <div>
+          <h3>Q3：怎么评测 Embedding 质量？</h3>
+          <p>A：双轨评估：① 公开榜单（MTEB / BEIR / C-MTEB）— 看通用能力；② 业务自建评测集（~500 条 query-doc 标注对，含正负样本）— 看业务能力。指标用 NDCG@10 / MRR / Recall@K，最后看端到端 RAG 答案质量是否提升。</p>
+        </div>
+        <div>
+          <h3>Q4：私有化怎么部署？</h3>
+          <p>A：三个组件。① 模型推理：<code>sentence-transformers</code> 加载 BGE / M3E，Triton / vLLM 包装成 gRPC 服务；② 向量库：FAISS（单机）/ Milvus（分布式）；③ API 层：FastAPI 暴露 /embed 和 /search 接口。注意 GPU 显存（7B 模型 ~14GB）和 batch 推理优化。</p>
+        </div>
+        <div>
+          <h3>Q5：Embedding 怎么微调？</h3>
+          <p>A：对比学习（InfoNCE Loss）+ 难负例 + in-batch negatives。构造 (q, d+, d-) 三元组，d+ 是相关 doc，d- 是难负例（BM25 召回但 Embedding 给低分的）。batch size 越大 in-batch negatives 越多，128-512 是常见范围。微调 3-5 epoch，LR 1e-5 到 5e-5。</p>
+        </div>
+        <div>
+          <h3>Q6：多语言场景怎么办？</h3>
+          <p>A：首选多语言预训练模型（<code>bge-m3</code> 支持 100+ 语言，<code>multilingual-e5-large</code>，<code>e5-mistral-7b-instruct</code>）。中英混合场景 bge-m3 是性价比首选。极端多语言（50+）可考虑大模型蒸馏（用 GPT-4 多语言 embedding 蒸馏小模型）。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>选型决策清单</h2>
+      <div class="qa">
+        <div>
+          <h3>选 BGE-M3 的场景</h3>
+          <p>中文为主、需多语言支持（100+）、私有化部署、可接受 1024 维、Apache 2.0 商用免费。中文 RAG 首选，性价比最高。</p>
+        </div>
+        <div>
+          <h3>选 OpenAI Embedding 的场景</h3>
+          <p>云上快速接入、英文为主、对精度有极致要求（<code>text-embedding-3-large</code> 3072 维）、接受 API 成本（$0.13/1M token）、无私有化合规需求。</p>
+        </div>
+        <div>
+          <h3>选 M3E 的场景</h3>
+          <p>中文轻量场景、需 CPU 推理（资源受限）、768 维、速度快于 BGE。适合边缘设备或中小规模 RAG。</p>
+        </div>
+        <div>
+          <h3>选 e5-mistral-7b 的场景</h3>
+          <p>英文为主、追求最高精度（MTEB 榜 top 5）、有 7B 模型推理能力（单卡 A100 80G）、可接受 4096 维。学术和高精度推荐场景。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>学习路径与资源</h2>
+      <table>
+        <thead><tr><th>阶段</th><th>内容</th><th>推荐资源</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td>入门</td><td>理解 Word2Vec / BERT 句向量</td><td><code>sentence-transformers</code> Quickstart、Stanford CS224N 讲义</td><td>能用 BGE 编码文本</td></tr>
+          <tr><td>进阶</td><td>对比学习与 InfoNCE Loss</td><td>SimCSE 论文、Hugging Face 训练教程</td><td>能训练自定义 Embedding</td></tr>
+          <tr><td>实战</td><td>FAISS / Milvus 向量检索</td><td>Qdrant / Milvus 官方文档、<code>faiss</code> Wiki</td><td>可上线 HNSW 检索服务</td></tr>
+          <tr><td>评估</td><td>MTEB 榜单与自建评测</td><td>MTEB Leaderboard、<code>ranx</code> 评估库</td><td>能选最优模型 + 验证</td></tr>
+          <tr><td>优化</td><td>混合检索 + Rerank + ANN 算法</td><td>RRF 论文、Pinecone / Weaviate 工程博客</td><td>P99 延迟 < 50ms</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">一句话总结：Embedding 选型是 RAG 系统最关键的决策之一，决定了召回质量上限。原则：先看 MTEB 榜定候选，再做业务评测验证，最后根据部署成本（私有化 vs 云）做最终决定。</div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

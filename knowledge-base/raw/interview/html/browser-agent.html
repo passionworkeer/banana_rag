@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Browser Agent 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./vlm.html">VLM</a>
+    <a href="./tool-use.html">Tool Use</a>
+    <a href="./a2a.html">A2A</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Agent 应用 · Computer Use</span>
+    <h1>Browser Agent：让 LLM 操控浏览器和电脑</h1>
+    <p class="lead">Browser Agent 让 LLM 操控浏览器（点击、输入、滚动、截图）完成真实任务。代表：Anthropic Computer Use、OpenAI Operator / CUA、browser-use、Self-Operating Computer、OpenInterpreter。核心是 VLM 看截图 + 决策动作 + 执行 Tool。本页讲清能力栈、评测（WebArena / WebVoyager）、安全风险、生产应用边界。</p>
+    <div class="pillrow">
+      <span class="pill">Computer Use</span><span class="pill">VLM 决策</span><span class="pill">browser-use</span><span class="pill">WebArena</span><span class="pill">Self-Operating</span><span class="pill">CUA</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Browser Agent 闭环</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Browser agent loop">
+          <defs>
+            <marker id="arrow-ba" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="220" height="280" rx="16" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="150" y="70" text-anchor="middle" font-size="16" font-weight="700">User 目标</text>
+          <text x="150" y="95" text-anchor="middle" font-size="12" fill="#475569">"帮我订明天北京到上海的高铁票"</text>
+
+          <rect x="290" y="40" width="220" height="280" rx="16" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="400" y="70" text-anchor="middle" font-size="16" font-weight="700">VLM 决策</text>
+          <text x="400" y="92" text-anchor="middle" font-size="12" fill="#475569">看截图 + 历史</text>
+          <rect x="310" y="120" width="180" height="50" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+          <text x="400" y="142" text-anchor="middle" font-size="12" font-weight="600">思考：需要打开 12306</text>
+          <text x="400" y="160" text-anchor="middle" font-size="11" fill="#475569">动作：click(地址栏) + type</text>
+
+          <rect x="540" y="40" width="220" height="280" rx="16" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="650" y="70" text-anchor="middle" font-size="16" font-weight="700">执行</text>
+          <text x="650" y="92" text-anchor="middle" font-size="12" fill="#475569">点击 / 输入 / 滚动</text>
+          <rect x="560" y="120" width="180" height="50" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+          <text x="650" y="142" text-anchor="middle" font-size="12" font-weight="600">Playwright / Puppeteer</text>
+          <text x="650" y="160" text-anchor="middle" font-size="11" fill="#475569">Selenium / Computer Use API</text>
+
+          <rect x="790" y="40" width="350" height="280" rx="16" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="965" y="70" text-anchor="middle" font-size="16" font-weight="700">结果观察</text>
+          <text x="965" y="92" text-anchor="middle" font-size="12" fill="#475569">新截图 + URL + 错误</text>
+          <rect x="810" y="120" width="310" height="60" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+          <text x="965" y="142" text-anchor="middle" font-size="12" font-weight="600">12306 搜索页加载完成</text>
+          <text x="965" y="160" text-anchor="middle" font-size="11" fill="#475569">VLM 看截图确认状态</text>
+
+          <rect x="810" y="200" width="310" height="100" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="965" y="223" text-anchor="middle" font-size="12" font-weight="600">重复：思考 → 动作 → 观察</text>
+          <text x="965" y="245" text-anchor="middle" font-size="11" fill="#0f172a">直到目标完成 / 失败 / 终止</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、Browser Agent 能力栈</h2>
+      <ul>
+        <li><strong>视觉理解</strong>：VLM 理解截图（按钮 / 文本 / 布局）</li>
+        <li><strong>坐标定位</strong>：决定点击 / 输入的像素坐标</li>
+        <li><strong>动作执行</strong>：Playwright / Puppeteer / Selenium / Computer Use API</li>
+        <li><strong>状态追踪</strong>：截图历史 / URL / Cookie / 错误</li>
+        <li><strong>决策循环</strong>：think → act → observe → 反思</li>
+        <li><strong>任务分解</strong>：把"订票"拆成 10-30 步子任务</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>三、主流框架 / 产品</h2>
+      <table>
+        <thead><tr><th>框架</th><th>厂商</th><th>模型</th><th>特点</th></tr></thead>
+        <tbody>
+          <tr><td>Computer Use</td><td>Anthropic</td><td>Claude 3.5+</td><td>通用电脑操控（OS 级）</td></tr>
+          <tr><td>Operator / CUA</td><td>OpenAI</td><td>GPT-4o / o1</td><td>浏览器原生托管</td></tr>
+          <tr><td>browser-use</td><td>开源</td><td>任意 LLM</td><td>Python 库，模型无关</td></tr>
+          <tr><td>Self-OS</td><td>开源</td><td>任意 VLM</td><td>OS 级自主操控</td></tr>
+          <tr><td>Skyvern</td><td>开源</td><td>GPT-4V</td><td>企业 RPA 场景</td></tr>
+          <tr><td>OpenInterpreter</td><td>开源</td><td>任意 LLM</td><td>本地 + OS 操控</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、Computer Use vs browser-use</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Computer Use（OS 级）</th><th>browser-use（仅浏览器）</th></tr></thead>
+        <tbody>
+          <tr><td>操控范围</td><td>任意桌面应用</td><td>仅浏览器内</td></tr>
+          <tr><td>实现方式</td><td>截图 + 鼠标 / 键盘事件</td><td>Playwright + DOM</td></tr>
+          <tr><td>沙箱</td><td>需要 VM / 容器隔离</td><td>Chrome 用户数据目录隔离</td></tr>
+          <tr><td>速度</td><td>慢（截图频繁）</td><td>快（DOM 操作）</td></tr>
+          <tr><td>鲁棒性</td><td>UI 变化敏感</td><td>UI 变化有一定鲁棒性</td></tr>
+          <tr><td>安全</td><td>高（OS 权限大）</td><td>中（受浏览器沙箱限制）</td></tr>
+          <tr><td>代表</td><td>Claude Computer Use</td><td>browser-use / Skyvern</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、WebArena / WebVoyager 评测</h2>
+      <ul>
+        <li><strong>WebArena</strong>：CMU 2023，真实网站复刻（购物 / 论坛 / 地图等），641 任务，主流 benchmark</li>
+        <li><strong>WebVoyager</strong>：Apple 2024，跨 15 个真实网站（Amazon / Google Flights 等）</li>
+        <li><strong>OSWorld</strong>：OS 级任务评测（文件管理 / 安装软件）</li>
+        <li><strong>MobileAgent</strong>：移动端评测</li>
+      </ul>
+      <div class="callout">GPT-4V / Claude 3.5 在 WebArena 上成功率 ~40-60%，远超人类单次通过率（~78%）但仍远低于"完全自主"。SOTA 还在快速演进。</div>
+    </article>
+
+    <article class="card">
+      <h2>六、Browser Agent 安全风险</h2>
+      <ul>
+        <li><strong>提示注入</strong>：网页内容可含恶意指令（间接注入）</li>
+        <li><strong>误操作</strong>：点错按钮导致真实损失（付款 / 删数据）</li>
+        <li><strong>账户劫持</strong>：Agent 登录后 cookie 被劫持</li>
+        <li><strong>隐私泄露</strong>：Agent 看到用户所有操作（密码 / 聊天）</li>
+        <li><strong>DoS</strong>：Agent 死循环点按钮 / 刷新</li>
+        <li><strong>资金损失</strong>：Agent 自动支付 / 转账</li>
+      </ul>
+      <div class="callout">生产中 Browser Agent 必须在沙箱 VM 中跑 + 高危动作必须 HITL（人工确认）+ 输入清洗 + 输出审计。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Browser Agent 和传统 RPA 区别？</h3>
+          <p>A：传统 RPA（UiPath）靠录制 + 规则匹配，UI 一变就废。Browser Agent 用 VLM 理解截图 + LLM 决策，鲁棒性高、能处理没见过的情况。代价是慢 + 贵 + 不可预测。生产中 RPA + Agent 混合（稳定步骤用 RPA，灵活决策用 Agent）较常见。</p>
+        </div>
+        <div>
+          <h3>Q2：Browser Agent 准确率为什么不够高？</h3>
+          <p>A：3 个原因：① VLM 截图理解有偏差（小图标 / 反色 / 模糊）；② 长链路累积错误（10 步中 1 步错就失败）；③ 网页 DOM 复杂（iframe / 弹窗 / 异步加载）。WebArena 上 SOTA 50-60% 远未达到生产标准。</p>
+        </div>
+        <div>
+          <h3>Q3：Computer Use 的安全风险怎么控？</h3>
+          <p>A：5 层：① 沙箱 VM 隔离（不能动真实系统）；② 域名白名单（只允许访问可信网站）；③ 高危动作 HITL（支付 / 删数据前人工确认）；④ 输入清洗（屏蔽 prompt injection 关键词）；⑤ 全程录屏 + 异常告警。</p>
+        </div>
+        <div>
+          <h3>Q4：browser-use 框架怎么工作？</h3>
+          <p>A：3 步循环：① 截图 + DOM 信息给 VLM；② VLM 决定动作（click / type / scroll / navigate）；③ Playwright 执行并返回新截图。框架提供 ReAct 风格的状态管理、错误恢复、超时控制。可接任意 LLM。</p>
+        </div>
+        <div>
+          <h3>Q5：Browser Agent 和 Operator / CUA 区别？</h3>
+          <p>A：Operator / CUA 是 OpenAI 的 SaaS 产品，背后用 GPT-4V 跑 Computer Use，给用户提供托管体验（不需自己搭）。browser-use 是开源框架，自己接任意 LLM。生产中"自己控制"选开源、要"开箱即用"选 SaaS。</p>
+        </div>
+        <div>
+          <h3>Q6：WebArena 任务难在哪？</h3>
+          <p>A：3 个难点：① 自然语言指令模糊（"订便宜机票"含义多样）；② 网页结构复杂（多 tab / 弹窗 / 验证码）；③ 跨网站信息整合（"比价"需打开多个网站）。是 Agent 系统综合能力的"期末考"。</p>
+        </div>
+        <div>
+          <h3>Q7：Browser Agent 适合什么生产场景？</h3>
+          <p>A：3 类典型：① 内部工具（数据录入、批量报告、跨系统对账）；② 客户服务（自动填表、查订单）；③ 数据采集（合规前提下的爬虫）。不适合：① 实时性要求高（毫秒级）；② 高频任务（每天 1000+ 次）；③ 涉及大额资金。</p>
+        </div>
+        <div>
+          <h3>Q8：Browser Agent 的"未来"方向？</h3>
+          <p>A：4 个趋势：① 更高准确率（SOTA 60% → 90%+）；② 多模态融合（截图 + DOM + accessibility tree）；③ 与 A2A 协议结合（Agent 间协作）；④ 安全沙箱标准化（OS 级隔离、审计）。Anthropic / OpenAI 持续投入，是 Agent 商业化的关键路径。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Browser Agent = VLM 截图理解 + 决策动作 + Playwright 执行。代表：Anthropic Computer Use、OpenAI Operator、browser-use 开源框架。评测：WebArena 50-60% 成功率（仍远低于生产标准）。生产风险：误操作 / 提示注入 / 资金损失，必须沙箱 + HITL + 域名白名单。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（让 LLM 操控真实世界）→ 能力栈（视觉 / 坐标 / 动作 / 状态 / 决策）→ 主流框架对比（Computer Use vs browser-use）→ 评测（WebArena / WebVoyager / OSWorld）→ 5 层安全风险（注入 / 误操作 / 账户 / 隐私 / DoS）→ 3 大生产场景 → 4 大未来趋势。能讲清"为什么 VLM 决策 + DOM 操控比纯 RPA 鲁棒"、"为什么必须沙箱隔离"，立刻显得跟得上时代。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"Browser Agent 自动对账"——比如财务场景：每天自动登录 5 个银行系统，下载账单、解析、对比、生成报告。WebArena 风格任务上 Agent 准确率 70%，人工兜底 30%。讲排查 + 沙箱 + HITL 过程立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>Browser Agent 不是银弹：① 准确率仍不达标（50-60% SOTA）；② 慢 + 贵（每步 VLM 调用）；③ 长链路累积错误；④ 安全风险大。诚实说"Browser Agent 适合内部工具 + 人工兜底，不适合直接面向用户的关键操作"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Browser Agent</td><td>LLM/VLM 操控浏览器完成任务的 Agent</td></tr>
+          <tr><td>Computer Use</td><td>Anthropic 提出的 OS 级电脑操控能力</td></tr>
+          <tr><td>CUA / Operator</td><td>OpenAI 的 Browser Agent SaaS 产品</td></tr>
+          <tr><td>browser-use</td><td>开源 Browser Agent 框架，模型无关</td></tr>
+          <tr><td>Playwright</td><td>浏览器自动化库，Browser Agent 常用底层</td></tr>
+          <tr><td>WebArena</td><td>CMU Browser Agent 评测基准，641 任务</td></tr>
+          <tr><td>WebVoyager</td><td>Apple 2024 跨真实网站评测</td></tr>
+          <tr><td>OSWorld</td><td>OS 级任务评测</td></tr>
+          <tr><td>沙箱 VM</td><td>隔离 Browser Agent 的虚拟环境</td></tr>
+          <tr><td>域名白名单</td><td>Browser Agent 只允许访问的网站列表</td></tr>
+          <tr><td>录屏审计</td><td>记录 Browser Agent 全程操作便于审计</td></tr>
+          <tr><td>Skyvern</td><td>开源 Browser Agent，企业 RPA 场景</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

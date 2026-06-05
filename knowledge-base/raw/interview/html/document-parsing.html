@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>文档解析 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./vlm.html">VLM</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./embedding.html">Embedding</a>
+    <a href="./browser-agent.html">Browser Agent</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">多模态 · RAG 前置</span>
+    <h1>文档解析：把 PDF / 图 / 表格变成 RAG 可用的结构化数据</h1>
+    <p class="lead">企业 RAG 的最大瓶颈不是 LLM、不是 Embedding、不是 Vector DB——是"文档进得去、解析得对、结构保留"。PDF 双栏、扫描件、表格、公式、图表都是老大难。MinerU / PaddleOCR / Unstructured / Marker 是主流方案。本页讲清 4 类文档挑战、解析流程、评估、与 VLM 的边界。</p>
+    <div class="pillrow">
+      <span class="pill">PDF 双栏</span><span class="pill">OCR</span><span class="pill">表格抽取</span><span class="pill">Layout Analysis</span><span class="pill">MinerU</span><span class="pill">PaddleOCR</span><span class="pill">Unstructured</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、文档解析 4 大挑战</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Document parsing challenges">
+          <defs>
+            <marker id="arrow-dp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="270" height="280" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="175" y="70" text-anchor="middle" font-size="16" font-weight="700">① Layout 复杂</text>
+          <text x="175" y="92" text-anchor="middle" font-size="11" fill="#475569">双栏 / 多栏 / 跨页</text>
+          <text x="50" y="125" font-size="11">读序错乱</text>
+          <text x="50" y="145" font-size="11">标题/段落/列表分不清</text>
+          <text x="50" y="170" font-size="11">页眉页脚干扰</text>
+          <text x="50" y="195" font-size="11" fill="#7c3aed">解：Layout Analysis + 读序</text>
+          <text x="50" y="220" font-size="11">MinerU / DocXChain</text>
+
+          <rect x="320" y="40" width="270" height="280" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="455" y="70" text-anchor="middle" font-size="16" font-weight="700">② 表格抽取</text>
+          <text x="455" y="92" text-anchor="middle" font-size="11" fill="#475569">合并单元格 / 跨页</text>
+          <text x="330" y="125" font-size="11">结构识别难</text>
+          <text x="330" y="145" font-size="11">嵌套表格复杂</text>
+          <text x="330" y="170" font-size="11">手写表格更差</text>
+          <text x="330" y="195" font-size="11" fill="#7c3aed">解：Table Transformer</text>
+          <text x="330" y="220" font-size="11">PaddleOCR Table</text>
+
+          <rect x="600" y="40" width="270" height="280" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="735" y="70" text-anchor="middle" font-size="16" font-weight="700">③ 扫描件</text>
+          <text x="735" y="92" text-anchor="middle" font-size="11" fill="#475569">图像 PDF / 手写</text>
+          <text x="610" y="125" font-size="11">文字层缺失</text>
+          <text x="610" y="145" font-size="11">需要先 OCR</text>
+          <text x="610" y="170" font-size="11">倾斜 / 噪点</text>
+          <text x="610" y="195" font-size="11" fill="#7c3aed">解：PaddleOCR / Tesseract</text>
+          <text x="610" y="220" font-size="11">+ 倾斜矫正</text>
+
+          <rect x="880" y="40" width="260" height="280" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1010" y="70" text-anchor="middle" font-size="16" font-weight="700">④ 多模态内容</text>
+          <text x="1010" y="92" text-anchor="middle" font-size="11" fill="#475569">图表 / 公式 / 图片</text>
+          <text x="890" y="125" font-size="11">图表数据怎么抽？</text>
+          <text x="890" y="145" font-size="11">公式怎么转 LaTeX？</text>
+          <text x="890" y="170" font-size="11">图片 alt 文本</text>
+          <text x="890" y="195" font-size="11" fill="#7c3aed">解：VLM (Qwen-VL / GPT-4V)</text>
+          <text x="890" y="220" font-size="11">辅助理解</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、解析流程 5 步</h2>
+      <ol>
+        <li><strong>格式检测</strong>：PDF / 图片 / HTML / DOCX</li>
+        <li><strong>Layout Analysis</strong>：识别段落、标题、列表、表格、图片位置</li>
+        <li><strong>OCR 抽取</strong>：图片区段 OCR，文本区直接抽</li>
+        <li><strong>结构化输出</strong>：Markdown / HTML / JSON 保留结构</li>
+        <li><strong>Chunking 准备</strong>：按章节 / 段落切块，附元数据</li>
+      </ol>
+    </article>
+
+    <article class="card">
+      <h2>三、4 大主流方案对比</h2>
+      <table>
+        <thead><tr><th>方案</th><th>Layout</th><th>表格</th><th>OCR</th><th>公式</th><th>语言</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MinerU</strong></td><td>★★★★★</td><td>★★★★</td><td>★★★★</td><td>★★★★</td><td>中英</td></tr>
+          <tr><td><strong>PaddleOCR</strong></td><td>★★★★</td><td>★★★★★</td><td>★★★★★</td><td>★★★</td><td>中英</td></tr>
+          <tr><td><strong>Unstructured</strong></td><td>★★★★</td><td>★★★</td><td>★★★★</td><td>★★★</td><td>英为主</td></tr>
+          <tr><td><strong>Marker</strong></td><td>★★★★</td><td>★★★★</td><td>★★★★</td><td>★★★★</td><td>英为主</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">中文文档首推 MinerU（书生·浦语团队）+ PaddleOCR（百度生态）。英文 PDF Marker 表现佳。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、MinerU vs PaddleOCR 详解</h2>
+      <table>
+        <thead><tr><th>维度</th><th>MinerU</th><th>PaddleOCR</th></tr></thead>
+        <tbody>
+          <tr><td>定位</td><td>一站式 PDF 解析（layout + OCR + 公式）</td><td>OCR 工具箱（文字检测 + 识别 + 表格）</td></tr>
+          <tr><td>License</td><td>AGPL（开源）</td><td>Apache 2.0</td></tr>
+          <tr><td>Pipeline</td><td>PDF → 图像 → Layout → OCR → Markdown</td><td>图像 → 检测 → 识别 → 后处理</td></tr>
+          <tr><td>擅长</td><td>学术论文、复杂排版 PDF</td><td>中文场景、表格抽取、工业级稳定</td></tr>
+          <tr><td>集成</td><td>独立工具，CLI / Python API</td><td>PaddlePaddle 生态，Python SDK</td></tr>
+          <tr><td>性能</td><td>中（GPU 推荐）</td><td>中-高（CPU 可跑）</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、Chunking 策略</h2>
+      <ul>
+        <li><strong>固定长度</strong>：简单但会切断段落</li>
+        <li><strong>按段落</strong>：保持语义完整</li>
+        <li><strong>按章节</strong>：适合长文档 / 论文</li>
+        <li><strong>语义切块</strong>：用 Embedding 检测"主题变化"自动切</li>
+        <li><strong>父子块</strong>：检索粗块、生成用细块</li>
+        <li><strong>结构保留</strong>：表格整块、列表整块、代码整块</li>
+      </ul>
+      <div class="callout">Chunking 决定 RAG 上限——分得不好，Embedding 再强也救不回来。</div>
+    </article>
+
+    <article class="card">
+      <h2>六、解析与 VLM 的边界</h2>
+      <ul>
+        <li><strong>传统 OCR + Layout</strong>：快、便宜、可控，适合结构化文本</li>
+        <li><strong>VLM 端到端</strong>：能处理图表、公式、不规则排版，但慢 + 贵 + 不可控</li>
+        <li><strong>混合方案</strong>：传统 OCR 抽文字 + VLM 辅助图表 / 公式（生产常用）</li>
+        <li><strong>VLM 当 Verifier</strong>：传统 OCR 后 VLM 复查复杂区域（提精度）</li>
+        <li><strong>未来</strong>：VLM 成本下降 → 端到端 VLM 解析成为主流</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：企业 RAG 解析最常踩的坑？</h3>
+          <p>A：4 大坑：① 双栏 PDF 读序错乱（混了第一栏和第二栏）；② 扫描件未 OCR 全是图片；③ 表格结构丢失（变成"列1\n值1\n值2"乱序）；④ 公式 / 图表当字符串存。生产中 80% 的"回答不对"问题溯源都是这 4 类。</p>
+        </div>
+        <div>
+          <h3>Q2：MinerU / PaddleOCR / Unstructured 选哪个？</h3>
+          <p>A：① 中文 PDF（论文 / 报告 / 合同）→ MinerU；② 中文场景表格多 → PaddleOCR Table；③ 英文 PDF 多 → Marker / Unstructured；④ 工业级生产（速度 + 稳定）→ PaddleOCR。生产中常组合：MinerU 解析 + PaddleOCR 兜底。</p>
+        </div>
+        <div>
+          <h3>Q3：Layout Analysis 怎么工作？</h3>
+          <p>A：通常用目标检测模型（YOLO / DETR）识别文档元素：标题、段落、列表、表格、图片、页眉页脚。然后按"阅读顺序"算法（从左到右、从上到下、列优先）排序，输出结构化结果。MinerU 用的是 YOLO + 自定义读序。</p>
+        </div>
+        <div>
+          <h3>Q4：公式怎么转 LaTeX？</h3>
+          <p>A：3 种方案：① 传统 OCR（Pix2Tex / Nougat）专门训公式识别；② VLM（GPT-4V / Qwen-VL）把公式当图识别并输出 LaTeX；③ MinerU 内置公式识别模块。Nougat 是 Meta 2023 论文，专门从 arXiv 论文 PDF 提 LaTeX。</p>
+        </div>
+        <div>
+          <h3>Q5：表格怎么保留结构存 RAG？</h3>
+          <p>A：3 种格式：① Markdown 表格（人类可读、LLM 友好）；② HTML 表格（结构保留完整）；③ JSON 嵌套（程序化处理）。生产中 Markdown 表格最常用——LLM 能直接理解，且能嵌进 Chunk。复杂表格用 HTML 完整保留。</p>
+        </div>
+        <div>
+          <h3>Q6：解析失败的兜底策略？</h3>
+          <p>A：3 层兜底：① 主解析器失败 → 切备用解析器（如 MinerU 失败用 PaddleOCR）；② 整页失败 → 用 VLM 端到端（GPT-4V 兜底）；③ 全文档失败 → 人工标注关键段落，提示"此文档仅支持部分检索"。</p>
+        </div>
+        <div>
+          <h3>Q7：解析 + Chunking + Embedding 哪个最重要？</h3>
+          <p>A：解析 ≈ 50%、Chunking ≈ 30%、Embedding ≈ 20%。解析错了后面全错；Chunking 不对信息检索不到；Embedding 即使不完美也能用 ReRank 补。优化预算按这个分配。</p>
+        </div>
+        <div>
+          <h3>Q8：解析后的元数据怎么设计？</h3>
+          <p>A：必备 5 类：① 来源（文件名 / 页码 / 章节）；② 类型（文本 / 表格 / 图像描述）；③ 时间（文档日期 / 入库时间）；④ 权限（公开 / 内部 / 机密）；⑤ 业务标签（产品线 / 部门）。元数据用于过滤 + 检索后处理 + 审计。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>文档解析 = Layout Analysis + OCR + 结构化输出。4 大挑战：Layout 复杂 / 表格抽取 / 扫描件 / 多模态。中文首推 MinerU + PaddleOCR，英文 Marker 表现佳。解析 ≈ RAG 性能的 50%。生产中常组合：传统 OCR 抽文字 + VLM 辅助图表公式。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（企业 RAG 最大瓶颈是"文档进得去"）→ 4 大挑战 → 5 步解析流程 → 4 大方案对比 → Chunking 策略（结构保留）→ 与 VLM 边界（混合方案）→ 3 层兜底策略 → 元数据设计 5 类。能讲清"为什么解析 ≈ 50% 性能"、"为什么结构保留比 Embedding 重要"，立刻显得有 RAG 工程经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"解析优化上线"——比如客服 RAG 早期用 PyPDF2 抽文字（双栏错乱、表格丢失），文档 QA 准确率 60%；切 MinerU + 表格 Markdown 保留后准确率 85%。再加 Chunking 优化（按章节 + 父子块）到 90%。讲排查 + 优化过程立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>文档解析不是银弹：① 扫描件 OCR 错误率仍高（5-10%）；② 复杂排版（多栏 + 表格 + 公式）仍会失真；③ VLM 兜底贵且慢；④ 表格结构保留 + LLM 理解仍是 trade-off。诚实说"解析 80% 问题靠传统工具，剩下 20% 复杂 case 靠 VLM 兜底"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Layout Analysis</td><td>识别文档元素位置和类型（标题 / 段落 / 表格）</td></tr>
+          <tr><td>OCR</td><td>把图片中的文字识别成可编辑文本</td></tr>
+          <tr><td>读序</td><td>多栏 / 复杂排版下正确的元素读取顺序</td></tr>
+          <tr><td>Chunking</td><td>把长文档切成适合 Embedding 的小块</td></tr>
+          <tr><td>MinerU</td><td>OpenDataLab 出，中英 PDF 解析一站式工具</td></tr>
+          <tr><td>PaddleOCR</td><td>百度 PaddlePaddle 生态 OCR 工具箱</td></tr>
+          <tr><td>Unstructured</td><td>英文文档为主的通用解析框架</td></tr>
+          <tr><td>Marker</td><td>PDF → Markdown 转换器，速度快</td></tr>
+          <tr><td>Table Transformer</td><td>DETR 风格的表格结构识别模型</td></tr>
+          <tr><td>Nougat</td><td>Meta 2023 论文，PDF 公式转 LaTeX</td></tr>
+          <tr><td>父子块</td><td>粗块检索 + 细块生成的 Chunking 策略</td></tr>
+          <tr><td>PII 脱敏</td><td>解析时屏蔽手机号 / 邮箱 / 身份证等敏感信息</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transformer 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./dpo.html">DPO</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Attention / Sequence Modeling</span>
+    <h1>Transformer：把序列依赖变成可并行的注意力计算</h1>
+    <p class="lead">Transformer 的本质不是“一个模型名字”，而是一个序列建模范式：用 Attention 建模 token 之间的关系，用 FFN 做非线性变换，用残差和归一化稳定训练。大模型里最重要的，是理解它为什么能并行、为什么会长上下文退化、以及 KV Cache 和 MoE 是怎么接在它上面的。</p>
+    <div class="pillrow">
+      <span class="pill">Attention</span><span class="pill">Multi-Head</span><span class="pill">RoPE</span><span class="pill">KV Cache</span><span class="pill">MoE</span><span class="pill">Long Context</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一张图看懂 Transformer Block</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 290" width="100%" height="auto" role="img" aria-label="Transformer block">
+          <defs>
+            <marker id="arrow-t" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+          <rect x="20" y="102" width="130" height="72" rx="14" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="85" y="132" text-anchor="middle" font-size="18" font-weight="700">Embedding</text>
+          <text x="85" y="154" text-anchor="middle" font-size="12" fill="#475569">Token + Position</text>
+
+          <rect x="190" y="60" width="180" height="160" rx="18" fill="#fff" stroke="#2563eb"/>
+          <text x="280" y="88" text-anchor="middle" font-size="18" font-weight="700">Attention</text>
+          <rect x="210" y="106" width="140" height="24" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="280" y="123" text-anchor="middle" font-size="12">Q / K / V Projection</text>
+          <rect x="210" y="136" width="140" height="24" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="280" y="153" text-anchor="middle" font-size="12">QK^T / sqrt(d)</text>
+          <rect x="210" y="166" width="140" height="24" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="280" y="183" text-anchor="middle" font-size="12">softmax + weighted sum</text>
+
+          <rect x="410" y="102" width="150" height="72" rx="14" fill="#eff6ff" stroke="#2563eb"/>
+          <text x="485" y="132" text-anchor="middle" font-size="18" font-weight="700">Residual</text>
+          <text x="485" y="154" text-anchor="middle" font-size="12" fill="#475569">+ LayerNorm</text>
+
+          <rect x="600" y="60" width="180" height="160" rx="18" fill="#fff" stroke="#2563eb"/>
+          <text x="690" y="88" text-anchor="middle" font-size="18" font-weight="700">FFN</text>
+          <rect x="620" y="106" width="140" height="24" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="690" y="123" text-anchor="middle" font-size="12">Linear → Activation</text>
+          <rect x="620" y="136" width="140" height="24" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="690" y="153" text-anchor="middle" font-size="12">Hidden Expansion</text>
+          <rect x="620" y="166" width="140" height="24" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="690" y="183" text-anchor="middle" font-size="12">Project Back</text>
+
+          <rect x="830" y="102" width="150" height="72" rx="14" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="905" y="132" text-anchor="middle" font-size="18" font-weight="700">Residual</text>
+          <text x="905" y="154" text-anchor="middle" font-size="12" fill="#475569">+ LayerNorm</text>
+
+          <rect x="1020" y="102" width="140" height="72" rx="14" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="1090" y="132" text-anchor="middle" font-size="18" font-weight="700">Next Block</text>
+          <text x="1090" y="154" text-anchor="middle" font-size="12" fill="#475569">or LM Head</text>
+
+          <line x1="150" y1="138" x2="190" y2="138" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-t)"/>
+          <line x1="370" y1="138" x2="410" y2="138" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-t)"/>
+          <line x1="560" y1="138" x2="600" y2="138" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-t)"/>
+          <line x1="780" y1="138" x2="830" y2="138" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-t)"/>
+          <line x1="980" y1="138" x2="1020" y2="138" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-t)"/>
+
+          <text x="560" y="250" text-anchor="middle" font-size="14" fill="#0f172a">Transformer 的关键不是单个模块，而是：注意力负责“找关系”，FFN 负责“做变换”，残差和归一化负责“让深层网络可训练”。</text>
+        </svg>
+      </div>
+      <p class="muted">如果面试官让你“画一下结构”，这张图就够用了。先画数据流，再拆每个模块的职责。</p>
+    </article>
+
+    <article class="card">
+      <h2>核心公式</h2>
+      <div class="mathbox">
+        <p class="mathline">$$Q = X W_{q},\quad K = X W_{k},\quad V = X W_{v}$$</p>
+        <p class="mathline">$$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\, \frac{Q K^{\top}}{\sqrt{d_{k}}} \,\right) V$$</p>
+        <p class="mathline">$$\mathrm{softmax}(z_{i}) = \frac{e^{z_{i}}}{\sum_{j} e^{z_{j}}}$$</p>
+        <p class="mathnote">Q 是查询，K 是索引，V 是内容；Attention 本质是基于相似度的加权求和。</p>
+      </div>
+      <div class="callout">Scaling 的作用：避免高维点积过大，softmax 过饱和，梯度变小。</div>
+    </article>
+
+    <article class="card">
+      <h2>为什么 Multi-Head 重要</h2>
+      <table>
+        <thead><tr><th>问题</th><th>单头会怎样</th><th>多头怎么改进</th></tr></thead>
+        <tbody>
+          <tr><td>不同语义关系同时存在</td><td>一个注意力分布要兼顾所有关系</td><td>不同头学不同子空间</td></tr>
+          <tr><td>局部与长程依赖并存</td><td>容易顾此失彼</td><td>有的头看局部，有的头看远处</td></tr>
+          <tr><td>格式与内容混合</td><td>难以分离</td><td>某些头专注标点、括号、结构边界</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>长上下文和 KV Cache</h2>
+      <div class="grid" style="margin-top:0">
+        <div class="card" style="grid-column:span 6;box-shadow:none;background:#f8fbff">
+          <h2 style="font-size:18px">KV Cache 为什么快</h2>
+          <p>生成第 t 个 token 时，不需要重算前面所有 token 的 K/V，只需要当前 token 的 Q 和新的 K/V。这样把重复计算变成缓存复用，用空间换时间。</p>
+        </div>
+        <div class="card" style="grid-column:span 6;box-shadow:none;background:#f8fbff">
+          <h2 style="font-size:18px">KV Cache 代价</h2>
+          <p>显存随序列长度、层数、batch 和 KV head 数线性增长。长上下文服务里，显存瓶颈常常不是模型参数，而是缓存本身。</p>
+        </div>
+      </div>
+      <div class="mathbox">
+        <div class="mathline">
+          KVCacheBytes = batch · seq_len · layers · kv_heads · head_dim · 2 · bytes_per_element
+        </div>
+        <div class="mathnote">这里的 2 表示 Key 和 Value 两份缓存。长上下文、高并发时，KV Cache 往往会成为主要显存压力。</div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>面试回答模板</h2>
+      <p>“Transformer 的本质是把序列建模变成注意力加权求和。Self-Attention 负责 token 间关系，FFN 负责非线性映射，Residual 和 LayerNorm 保证深层可训练。多头是让不同头学习不同关系，而 KV Cache 是自回归推理里的缓存复用机制。”</p>
+    </article>
+
+    <article class="card full">
+      <h2>常见追问与回答</h2>
+      <div class="qa">
+        <div>
+          <h3>Self-Attention 和 Cross-Attention 怎么区分？</h3>
+          <p>Self-Attention 的 Q/K/V 都来自同一序列，用来建模内部 token 关系；Cross-Attention 的 Q 来自当前序列，K/V 来自外部序列或模态，用来读取外部信息。</p>
+        </div>
+        <div>
+          <h3>为什么要加 scaling？</h3>
+          <p>高维点积的数值会随维度增大而变大，softmax 容易变得过尖，导致梯度变小。除以 √d<sub>k</sub> 可以稳定分布。</p>
+        </div>
+        <div>
+          <h3>Decoder-only 为什么能做生成？</h3>
+          <p>Decoder-only 用 causal mask 保证每个位置只能看前文，通过 next token prediction 训练。对话、代码和问答都可以转成“给定上下文预测下一个 token”。</p>
+        </div>
+        <div>
+          <h3>长上下文为什么容易遗忘？</h3>
+          <p>原因包括位置外推能力有限、上下文噪声太多、关键信息被埋在中间，以及注意力计算虽然能看全局但不保证有效利用所有信息。常用摘要、RAG、记忆和重排缓解。</p>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

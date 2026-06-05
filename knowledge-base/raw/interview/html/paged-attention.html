@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PagedAttention 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./kv-cache.html">KV Cache</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./speculative-decoding.html">Speculative Decoding</a>
+    <a href="./model-distributed.html">分布式推理</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">推理部署 · KV Cache 优化</span>
+    <h1>PagedAttention：把 KV Cache 从"内存噩梦"变"虚拟内存"</h1>
+    <p class="lead">vLLM 2023 提出。把操作系统虚拟内存的分页思想搬到 KV Cache：把每条请求的 KV Cache 切成固定大小的 block、用 block table 维护逻辑到物理的映射。效果：KV 显存碎片从 60-80% 降到 &lt;4%，吞吐量提升 14-24x。本页讲清 block 机制、continuous batching、Prefix Sharing。</p>
+    <div class="pillrow">
+      <span class="pill">Block Table</span><span class="pill">Virtual Memory</span><span class="pill">vLLM</span><span class="pill">Continuous Batching</span><span class="pill">Prefix Sharing</span><span class="pill">Fragmentation &lt;4%</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、传统 KV Cache 的碎片问题</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="KV Cache fragmentation">
+          <defs>
+            <marker id="arrow-pa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="40" y="30" font-size="14" font-weight="700" fill="#0f172a">传统方案：连续分配（高碎片）</text>
+
+          <rect x="40" y="50" width="1080" height="60" rx="8" fill="#f1f5f9" stroke="#94a3b8"/>
+          <text x="580" y="85" text-anchor="middle" font-size="13" fill="#475569">物理显存 80GB（已用 60GB，空闲 20GB 严重碎片）</text>
+
+          <rect x="40" y="60" width="200" height="40" fill="#fca5a5"/>
+          <text x="140" y="85" text-anchor="middle" font-size="11" fill="#7f1d1d">Req A 用</text>
+
+          <rect x="280" y="60" width="100" height="40" fill="#fde68a"/>
+          <text x="330" y="85" text-anchor="middle" font-size="11" fill="#78350f">碎片</text>
+
+          <rect x="420" y="60" width="250" height="40" fill="#fca5a5"/>
+          <text x="545" y="85" text-anchor="middle" font-size="11" fill="#7f1d1d">Req B 用</text>
+
+          <rect x="710" y="60" width="150" height="40" fill="#fde68a"/>
+          <text x="785" y="85" text-anchor="middle" font-size="11" fill="#78350f">碎片</text>
+
+          <rect x="900" y="60" width="200" height="40" fill="#fca5a5"/>
+          <text x="1000" y="85" text-anchor="middle" font-size="11" fill="#7f1d1d">Req C 用</text>
+
+          <text x="40" y="135" font-size="14" font-weight="700" fill="#0f172a">PagedAttention：分块分配（碎片 &lt;4%）</text>
+
+          <rect x="40" y="155" width="1080" height="60" rx="8" fill="#f1f5f9" stroke="#94a3b8"/>
+          <text x="580" y="190" text-anchor="middle" font-size="13" fill="#475569">物理显存（block = 16 token 固定大小）</text>
+
+          <rect x="40" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="100" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="220" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="280" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="400" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="460" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="640" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="700" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="820" y="165" width="60" height="40" fill="#93c5fd"/>
+          <rect x="880" y="165" width="60" height="40" fill="#93c5fd"/>
+          <text x="70" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">A1</text>
+          <text x="130" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">A2</text>
+          <text x="250" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">B1</text>
+          <text x="310" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">B2</text>
+          <text x="430" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">C1</text>
+          <text x="490" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">C2</text>
+          <text x="670" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">D1</text>
+          <text x="730" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">A3</text>
+          <text x="850" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">D2</text>
+          <text x="910" y="195" text-anchor="middle" font-size="9" fill="#1e3a8a">D3</text>
+
+          <text x="40" y="250" font-size="13" fill="#475569">请求 A 的 block table：[0, 1, 7] （逻辑顺序 → 物理块）</text>
+          <text x="40" y="270" font-size="13" fill="#475569">请求 B 的 block table：[2, 3, ...]</text>
+          <text x="40" y="290" font-size="13" fill="#475569">请求 C 的 block table：[4, 5, ...]</text>
+          <text x="40" y="310" font-size="13" fill="#dc2626" font-weight="600">碎片：传统 60-80% → PagedAttention &lt; 4%</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、PagedAttention 核心机制</h2>
+      <ul>
+        <li><strong>Block Size</strong>：每块固定装 N 个 token 的 KV（典型 N=16）</li>
+        <li><strong>Block Table</strong>：每个请求一张表，记录"逻辑块 → 物理块"映射</li>
+        <li><strong>按需分配</strong>：请求增长时再申请新 block，零浪费</li>
+        <li><strong>逻辑连续、物理离散</strong>：attention 计算时按 block table 索引物理块</li>
+        <li><strong>显存池化</strong>：所有 block 来自统一物理池，无按请求预分配</li>
+      </ul>
+      <div class="callout">类比 OS 虚拟内存：进程看到连续的地址空间，OS 用页表映射到物理页。PagedAttention 把"进程"换成"请求"，"页"换成"block"，"页表"换成"block table"。</div>
+    </article>
+
+    <article class="card">
+      <h2>三、Block Size 选择</h2>
+      <div class="mathbox">
+        <p class="mathline">小 block（4-8）→ 碎片少、调度灵活</p>
+        <p class="mathline">大 block（32-64）→ 块表小、查找快</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">经验：N=16 是 sweet spot</p>
+        <p class="mathline">vLLM 默认 block_size=16</p>
+        <p class="mathnote">过小：block table 项数爆（长序列 8K token 需 512 个 entry），调度开销大；过大：内部碎片（一个请求只用半块就占整个 block）。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、Continuous Batching（连续批处理）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 280" width="100%" height="auto" role="img" aria-label="Continuous batching">
+          <defs>
+            <marker id="arrow-cb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="40" y="30" font-size="14" font-weight="700" fill="#0f172a">传统 Static Batching：等最慢的</text>
+
+          <rect x="40" y="50" width="200" height="40" fill="#fca5a5"/>
+          <text x="140" y="75" text-anchor="middle" font-size="11" fill="#7f1d1d">Req A 跑完</text>
+
+          <rect x="240" y="50" width="200" height="40" fill="#fde68a"/>
+          <text x="340" y="75" text-anchor="middle" font-size="11" fill="#78350f">Req B 等待中（GPU 空转）</text>
+
+          <rect x="440" y="50" width="200" height="40" fill="#fde68a"/>
+          <text x="540" y="75" text-anchor="middle" font-size="11" fill="#78350f">Req C 等待中（GPU 空转）</text>
+
+          <rect x="640" y="50" width="200" height="40" fill="#fca5a5"/>
+          <text x="740" y="75" text-anchor="middle" font-size="11" fill="#7f1d1d">Req D 跑完</text>
+
+          <text x="40" y="120" font-size="14" font-weight="700" fill="#0f172a">Continuous Batching：插空就上</text>
+
+          <rect x="40" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="80" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">A 跑</text>
+
+          <rect x="120" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="160" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">A 完</text>
+
+          <rect x="200" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="240" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">B 跑</text>
+
+          <rect x="280" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="320" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">B 完</text>
+
+          <rect x="360" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="400" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">C 跑</text>
+
+          <rect x="440" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="480" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">D 跑</text>
+
+          <rect x="520" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="560" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">C 完</text>
+
+          <rect x="600" y="140" width="80" height="40" fill="#93c5fd"/>
+          <text x="620" y="165" text-anchor="middle" font-size="10" fill="#1e3a8a">D 完</text>
+
+          <rect x="680" y="140" width="80" height="40" fill="#86efac"/>
+          <text x="720" y="165" text-anchor="middle" font-size="10" fill="#14532d">E 新加入</text>
+
+          <rect x="760" y="140" width="80" height="40" fill="#86efac"/>
+          <text x="800" y="165" text-anchor="middle" font-size="10" fill="#14532d">E 跑</text>
+
+          <text x="40" y="220" font-size="13" fill="#475569">任一请求完成 → 立即塞入新请求 → GPU 几乎不空转</text>
+          <text x="40" y="245" font-size="13" fill="#059669" font-weight="600">吞吐量：static ~2 req/s → continuous ~14-24 req/s（vLLM 论文）</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>五、Prefix Sharing（多请求共享前缀）</h2>
+      <ul>
+        <li><strong>场景</strong>：多用户问相同 system prompt（"你是 XX 客服..."）</li>
+        <li><strong>机制</strong>：相同前缀的 block 物理共享，不同请求的 block table 都指向同一组物理块</li>
+        <li><strong>写时复制</strong>：某请求要修改共享 block 时再分配新块（典型场景少）</li>
+        <li><strong>收益</strong>：system prompt 长（2K+）时显存节省显著</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、PagedAttention vs 传统 KV Cache</h2>
+      <table>
+        <thead><tr><th>维度</th><th>传统连续分配</th><th>PagedAttention</th></tr></thead>
+        <tbody>
+          <tr><td>显存碎片</td><td>60-80%</td><td>&lt; 4%</td></tr>
+          <tr><td>预分配</td><td>按 max_length 预分配</td><td>按需分配</td></tr>
+          <tr><td>吞吐量（vLLM 论文）</td><td>2-4 req/s</td><td>14-24 req/s（6-8x）</td></tr>
+          <tr><td>Prefix 共享</td><td>不支持</td><td>原生支持</td></tr>
+          <tr><td>实现复杂度</td><td>低</td><td>中（block table 管理）</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：PagedAttention 灵感来自哪里？</h3>
+          <p>A：操作系统的虚拟内存分页机制。OS 用页表把进程虚拟地址映射到物理页，进程看到连续地址但物理上分散。PagedAttention 把"进程"换成"请求"、"页"换成"block"、"页表"换成"block table"，解决 KV Cache 碎片。</p>
+        </div>
+        <div>
+          <h3>Q2：block_size 怎么选？</h3>
+          <p>A：经验 16（vLLM 默认）。权衡：太小 → block table 膨胀、调度开销；太大 → 内部碎片（一个请求占半块就浪费）。生产中可按业务调：短回答主导用 32、长生成主导用 8。</p>
+        </div>
+        <div>
+          <h3>Q3：continuous batching 提升多少？</h3>
+          <p>A：vLLM 论文报告 14-24x 吞吐量提升（vs HuggingFace Transformers 静态批处理）。生产实测：用户并发增加时提升更显著（QPS 随并发线性增长到 GPU 瓶颈）。</p>
+        </div>
+        <div>
+          <h3>Q4：PagedAttention 适合所有模型吗？</h3>
+          <p>A：目前主要支持 Decoder-only LLM（GPT / LLaMA / Qwen / Mistral）。Encoder-Decoder 模型的 cross-attention KV Cache 也支持（vLLM 0.4+）。MoE 模型需要额外处理专家路由 KV。</p>
+        </div>
+        <div>
+          <h3>Q5：prefix sharing 在哪些场景收益最大？</h3>
+          <p>A：长 system prompt 场景（客服 Agent 2K system prompt、RAG 检索 1K context、Agent 多工具描述）。多个并发请求共享同一前缀时，KV 显存可减半以上。</p>
+        </div>
+        <div>
+          <h3>Q6：PagedAttention 的写时复制怎么实现？</h3>
+          <p>A：block table 引用计数 + 写时分配。共享 block 引用计数 &gt; 1；要写时引用计数 -1、新分配物理块、更新 block table。典型情况"读多写少"，性能影响可忽略。</p>
+        </div>
+        <div>
+          <h3>Q7：PagedAttention 与 FlashAttention 关系？</h3>
+          <p>A：正交。FlashAttention 优化 attention 计算本身（IO-aware）；PagedAttention 优化 KV Cache 显存管理。生产系统（如 vLLM）通常两者都开：FlashAttention 算得更快、PagedAttention 显存更省。</p>
+        </div>
+        <div>
+          <h3>Q8：除了 vLLM 还有哪些实现？</h3>
+          <p>A：vLLM（首创）、SGLang（更细的 RadixAttention）、TensorRT-LLM（NVIDIA 优化）、TGI（HuggingFace）、LMDeploy（商汤）。核心思想一致，工程优化各有侧重。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>PagedAttention（vLLM 提出）把 OS 虚拟内存分页机制搬到 KV Cache：每条请求的 KV 切成固定大小 block、用 block table 维护逻辑到物理的映射。配合 continuous batching（任一请求完成立即塞新请求）实现 14-24x 吞吐量提升。碎片从 60-80% 降到 &lt; 4%，还顺带原生支持 prefix sharing。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（KV Cache 碎片 60-80% 浪费显存）→ 类比 OS 虚拟内存 → block + block table 机制 → block_size 权衡（默认 16）→ continuous batching 提升 14-24x → prefix sharing 多请求共享前缀 → 写时复制实现 → 与 FlashAttention 正交。能讲清"为什么类比 OS 虚拟内存"、"为什么 block_size 默认 16"、"为什么 continuous batching 收益大"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：踩坑案例</h3>
+          <p>讲一次真实部署：① 用 HuggingFace Transformers 静态批处理，QPS 上不去；② 切 vLLM + PagedAttention 同样 GPU 跑 8x QPS；③ 但 block_size 设 4 调度开销爆炸，调到 16 才稳定；④ 长 system prompt 场景启用 prefix sharing，显存再省 30%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>PagedAttention 不是银弹：① block table 自身有开销（极小）；② 写时复制在生成多分支时可能浪费；③ 不直接优化 attention 计算（需配合 FlashAttention）；④ 仍受 GPU 显存总量限制。要诚实说"PagedAttention + FlashAttention + 量化 + Continuous Batching 是当前推理优化四件套"。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>PagedAttention</td><td>vLLM 提出的 KV Cache 分页管理机制</td></tr>
+          <tr><td>Block</td><td>固定大小（默认 16 token）的 KV 单元</td></tr>
+          <tr><td>Block Table</td><td>每请求一张，逻辑块 → 物理块映射表</td></tr>
+          <tr><td>Block Size</td><td>每块 token 数，典型 16</td></tr>
+          <tr><td>Continuous Batching</td><td>任一请求完成立即塞新请求，GPU 几乎不空转</td></tr>
+          <tr><td>Prefix Sharing</td><td>多请求共享相同前缀的物理 block</td></tr>
+          <tr><td>Copy-on-Write</td><td>写时复制，共享 block 写时才分配新物理块</td></tr>
+          <tr><td>虚拟内存类比</td><td>进程/页/页表 ↔ 请求/Block/Block Table</td></tr>
+          <tr><td>碎片率</td><td>传统 60-80% → PagedAttention &lt; 4%</td></tr>
+          <tr><td>吞吐量提升</td><td>vLLM 论文报告 14-24x（vs 静态批处理）</td></tr>
+          <tr><td>vLLM</td><td>PagedAttention 论文兼开源框架</td></tr>
+          <tr><td>SGLang</td><td>更细的 RadixAttention 实现</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

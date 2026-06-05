@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>推理 / 部署 / 本地化工具 知识页</title>
+  <style>
+    :root{
+      --bg:#f5f9fc;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d6e3f0;
+      --accent:#0369a1;
+      --accent-soft:#dbeaf5;
+      --accent-soft-2:#ecf4fa;
+      --shadow:0 10px 30px rgba(3,105,161,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#ecf4fa;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./quantization.html">量化</a>
+    <a href="./paged-attention.html">PagedAttention</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./kv-cache.html">KV-Cache</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · 模型部署 / 推理 / 本地化</span>
+    <h1>推理引擎与本地化工具：12 大生态对比 + 选型</h1>
+    <p class="lead">vLLM 14-24x 收益的 PagedAttention 怎么工作？TensorRT-LLM 为什么极致快？Ollama / LM Studio / LocalAI 本地三件套怎么选？本页把"为什么需要推理引擎 → 12 大工具对比 → 架构图 → 选型决策树 → 量化集成 → 性能 benchmark → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">vLLM</span><span class="pill">TGI</span><span class="pill">TensorRT-LLM</span><span class="pill">Triton</span><span class="pill">SGLang</span><span class="pill">LMDeploy</span><span class="pill">Ollama</span><span class="pill">LM Studio</span><span class="pill">LocalAI</span><span class="pill">BentoML</span><span class="pill">OpenLLM</span><span class="pill">Ray Serve</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要专门的推理引擎</h2>
+      <ul>
+        <li><strong>Naive HuggingFace generate()</strong>：batch=1、不批处理、KV-Cache 内存碎片化、显存浪费 60%+。</li>
+        <li><strong>推理引擎三大核心优化</strong>：①<strong>连续批处理</strong>（Continuous Batching，新请求随时加入）；②<strong>PagedAttention</strong>（KV-Cache 分页管理，显存利用率从 20% → 90%+）；③<strong>Kernel Fusion</strong>（FlashAttention、PagedAttention 内核）。</li>
+        <li><strong>典型收益</strong>：vLLM 比 HF Transformers throughput 提升 <strong>14-24x</strong>（LLaMA-7B, A100）；TGI 在 H100 上达 12,000+ tokens/s。</li>
+        <li><strong>OpenAI 兼容</strong>：现代推理引擎都支持 <code>/v1/chat/completions</code>，现有应用零代码迁移。</li>
+        <li><strong>量化集成</strong>：AWQ / GPTQ / FP8 / INT4 一行参数启用，吞吐再翻 2-4x。</li>
+      </ul>
+      <div class="callout">判断口诀：<strong>研究实验</strong>用 HF Transformers；<strong>生产高吞吐</strong>用 vLLM / TGI / TensorRT-LLM；<strong>NVIDIA 极致优化</strong>用 TensorRT-LLM；<strong>本地开发</strong>用 Ollama / LM Studio；<strong>企业级多模型编排</strong>用 Triton / BentoML。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、12 大工具全景对比表</h2>
+      <table>
+        <thead><tr><th>工具</th><th>语言/引擎</th><th>核心特性</th><th>批处理</th><th>量化支持</th><th>适用规模</th></tr></thead>
+        <tbody>
+          <tr><td><strong>vLLM</strong></td><td>Python + CUDA</td><td>PagedAttention、连续批处理</td><td>Continuous</td><td>AWQ/GPTQ/FP8</td><td>中大规模生产</td></tr>
+          <tr><td><strong>TGI</strong></td><td>Rust + Python</td><td>Text Generation Inference、HF 生态</td><td>Dynamic batch</td><td>bitsandbytes/GPTQ</td><td>HF 生态生产</td></tr>
+          <tr><td><strong>TensorRT-LLM</strong></td><td>C++/CUDA</td><td>极致内核优化、In-flight batching</td><td>In-flight</td><td>INT8/FP8/INT4</td><td>超低延迟生产</td></tr>
+          <tr><td><strong>Triton</strong></td><td>C++/Python</td><td>多框架推理服务器（TF/PyTorch/ONNX）</td><td>Dynamic + 动态调度</td><td>取决于后端</td><td>多模型编排</td></tr>
+          <tr><td><strong>SGLang</strong></td><td>Python + CUDA</td><td>RadixAttention、结构化生成、lmql 集成</td><td>Continuous</td><td>GPTQ/AWQ</td><td>复杂 LLM 程序</td></tr>
+          <tr><td><strong>LMDeploy</strong></td><td>C++/Python</td><td>TurboMind、AWQ 深度集成</td><td>Persistent + Dynamic</td><td>AWQ/INT4/INT8</td><td>国产化部署</td></tr>
+          <tr><td><strong>Ollama</strong></td><td>Go + llama.cpp</td><td>一键本地、模型市场、GGUF</td><td>Sequential</td><td>Q4/Q5/Q8 GGUF</td><td>本地开发/学习</td></tr>
+          <tr><td><strong>LM Studio</strong></td><td>Electron + llama.cpp</td><td>GUI 本地、跨平台</td><td>Sequential</td><td>GGUF</td><td>非工程师使用</td></tr>
+          <tr><td><strong>LocalAI</strong></td><td>Go + 多后端</td><td>OpenAI 兼容本地 API、多模型</td><td>Dynamic</td><td>GGUF/PTX</td><td>本地替代 OpenAI</td></tr>
+          <tr><td><strong>BentoML</strong></td><td>Python</td><td>模型打包 + 部署 + API 统一</td><td>取决于适配器</td><td>任意</td><td>MLOps 平台</td></tr>
+          <tr><td><strong>OpenLLM</strong></td><td>Python + BentoML</td><td>快速 API、bentoml 生态</td><td>Dynamic</td><td>bitsandbytes</td><td>快速 PoC</td></tr>
+          <tr><td><strong>Ray Serve</strong></td><td>Python + Ray</td><td>分布式、可扩展、框架无关</td><td>自定义</td><td>任意</td><td>大规模分布式</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">分层视角：<strong>vLLM / TensorRT-LLM / SGLang</strong>是 LLM 专用推理引擎（核心战场）；<strong>Triton / BentoML / Ray Serve</strong>是通用模型服务器（多模型 / 多框架）；<strong>Ollama / LM Studio / LocalAI</strong>是本地化工具链（个人开发）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>三、vLLM 架构图（Continuous Batching + PagedAttention）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 540" width="100%" height="auto" role="img" aria-label="vLLM architecture">
+          <defs>
+            <marker id="arrow-v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0369a1"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="20" width="1200" height="60" rx="12" fill="#dbeaf5" stroke="#0369a1" stroke-width="2"/>
+          <text x="640" y="45" text-anchor="middle" font-size="16" font-weight="700">HTTP / gRPC 请求入口（OpenAI 兼容 /v1/chat/completions）</text>
+          <text x="640" y="65" text-anchor="middle" font-size="12" fill="#475569">FastAPI + Uvicorn + Pydantic Schema</text>
+
+          <line x1="640" y1="80" x2="640" y2="120" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-v)"/>
+
+          <rect x="80" y="120" width="240" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="200" y="148" text-anchor="middle" font-size="14" font-weight="700">Scheduler</text>
+          <text x="200" y="170" text-anchor="middle" font-size="12" fill="#475569">连续批处理调度器</text>
+          <text x="200" y="188" text-anchor="middle" font-size="12" fill="#475569">新请求随时加入 / 完成随时退出</text>
+
+          <rect x="360" y="120" width="240" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="480" y="148" text-anchor="middle" font-size="14" font-weight="700">Block Manager</text>
+          <text x="480" y="170" text-anchor="middle" font-size="12" fill="#475569">PagedAttention 分页管理</text>
+          <text x="480" y="188" text-anchor="middle" font-size="12" fill="#475569">KV-Cache 按 Block（16 token）分配</text>
+
+          <rect x="640" y="120" width="240" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="760" y="148" text-anchor="middle" font-size="14" font-weight="700">Worker Pool</text>
+          <text x="760" y="170" text-anchor="middle" font-size="12" fill="#475569">GPU Worker 池</text>
+          <text x="760" y="188" text-anchor="middle" font-size="12" fill="#475569">多 GPU / Tensor Parallel</text>
+
+          <rect x="920" y="120" width="240" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="1040" y="148" text-anchor="middle" font-size="14" font-weight="700">Model Executor</text>
+          <text x="1040" y="170" text-anchor="middle" font-size="12" fill="#475569">CUDA Graph 优化</text>
+          <text x="1040" y="188" text-anchor="middle" font-size="12" fill="#475569">FlashAttention Kernel</text>
+
+          <line x1="320" y1="160" x2="360" y2="160" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-v)"/>
+          <line x1="600" y1="160" x2="640" y2="160" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-v)"/>
+          <line x1="880" y1="160" x2="920" y2="160" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-v)"/>
+
+          <rect x="40" y="240" width="1200" height="60" rx="12" fill="#ecf4fa" stroke="#0ea5e9" stroke-width="2"/>
+          <text x="640" y="265" text-anchor="middle" font-size="14" font-weight="700">PagedAttention KV-Cache 物理内存</text>
+          <text x="640" y="285" text-anchor="middle" font-size="12" fill="#0f172a">Block[0] Block[1] Block[2] ... Block[N] | 每个 Block 16 token | 块表映射到 Sequence</text>
+
+          <rect x="80" y="330" width="320" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="240" y="358" text-anchor="middle" font-size="14" font-weight="700">Sequence A</text>
+          <text x="240" y="378" text-anchor="middle" font-size="11" fill="#475569">Block 表：[12, 45, 78, 102]</text>
+          <text x="240" y="394" text-anchor="middle" font-size="11" fill="#475569">物理块不连续，逻辑连续</text>
+
+          <rect x="440" y="330" width="320" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="600" y="358" text-anchor="middle" font-size="14" font-weight="700">Sequence B</text>
+          <text x="600" y="378" text-anchor="middle" font-size="11" fill="#475569">Block 表：[33, 67, 89]</text>
+          <text x="600" y="394" text-anchor="middle" font-size="11" fill="#475569">与 A 共享空闲块</text>
+
+          <rect x="800" y="330" width="320" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="960" y="358" text-anchor="middle" font-size="14" font-weight="700">Sequence C（已结束）</text>
+          <text x="960" y="378" text-anchor="middle" font-size="11" fill="#475569">块自动归还 Free List</text>
+          <text x="960" y="394" text-anchor="middle" font-size="11" fill="#475569">新请求立即复用</text>
+
+          <rect x="40" y="450" width="1200" height="60" rx="12" fill="#dbeaf5" stroke="#0369a1" stroke-width="2"/>
+          <text x="640" y="478" text-anchor="middle" font-size="14" font-weight="700">流式输出 → SSE / WebSocket 推回客户端</text>
+          <text x="640" y="498" text-anchor="middle" font-size="12" fill="#475569">StreamingResponse + async generator + 采样参数（temperature / top_p / stop）</text>
+        </svg>
+      </div>
+      <p class="muted">请求进入 Scheduler → Block Manager 按 Block 分配 KV-Cache（不预分配整段）→ Worker 池执行 attention → 完成序列的块立即归还 Free List → 新请求可立即复用。显存利用率从 20% 提升到 90%+。</p>
+    </article>
+
+    <article class="card full">
+      <h2>四、TensorRT-LLM 优化流水线</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 280" width="100%" height="auto" role="img" aria-label="TensorRT-LLM pipeline">
+          <defs>
+            <marker id="arrow-t" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0369a1"></path>
+            </marker>
+          </defs>
+
+          <rect x="20" y="100" width="140" height="80" rx="12" fill="#fff" stroke="#0369a1" stroke-width="2"/>
+          <text x="90" y="130" text-anchor="middle" font-size="14" font-weight="700">HF / NeMo</text>
+          <text x="90" y="150" text-anchor="middle" font-size="11" fill="#475569">原始模型</text>
+          <text x="90" y="168" text-anchor="middle" font-size="11" fill="#475569">safetensors</text>
+
+          <line x1="160" y1="140" x2="200" y2="140" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-t)"/>
+
+          <rect x="200" y="100" width="140" height="80" rx="12" fill="#dbeaf5" stroke="#0369a1" stroke-width="2"/>
+          <text x="270" y="130" text-anchor="middle" font-size="14" font-weight="700">Graph Surgery</text>
+          <text x="270" y="150" text-anchor="middle" font-size="11" fill="#475569">算子融合</text>
+          <text x="270" y="168" text-anchor="middle" font-size="11" fill="#475569">LayerNorm + MatMul</text>
+
+          <line x1="340" y1="140" x2="380" y2="140" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-t)"/>
+
+          <rect x="380" y="100" width="140" height="80" rx="12" fill="#dbeaf5" stroke="#0369a1" stroke-width="2"/>
+          <text x="450" y="130" text-anchor="middle" font-size="14" font-weight="700">Kernel Tuning</text>
+          <text x="450" y="150" text-anchor="middle" font-size="11" fill="#475569">GEMM 内核调优</text>
+          <text x="450" y="168" text-anchor="middle" font-size="11" fill="#475569">CUTLASS / cuBLAS</text>
+
+          <line x1="520" y1="140" x2="560" y2="140" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-t)"/>
+
+          <rect x="560" y="100" width="140" height="80" rx="12" fill="#dbeaf5" stroke="#0369a1" stroke-width="2"/>
+          <text x="630" y="130" text-anchor="middle" font-size="14" font-weight="700">Quantization</text>
+          <text x="630" y="150" text-anchor="middle" font-size="11" fill="#475569">INT8 / FP8 / INT4</text>
+          <text x="630" y="168" text-anchor="middle" font-size="11" fill="#475569">SmoothQuant / AWQ</text>
+
+          <line x1="700" y1="140" x2="740" y2="140" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-t)"/>
+
+          <rect x="740" y="100" width="140" height="80" rx="12" fill="#dbeaf5" stroke="#0369a1" stroke-width="2"/>
+          <text x="810" y="130" text-anchor="middle" font-size="14" font-weight="700">In-flight Batch</text>
+          <text x="810" y="150" text-anchor="middle" font-size="11" fill="#475569">动态批处理</text>
+          <text x="810" y="168" text-anchor="middle" font-size="11" fill="#475569">Token 级调度</text>
+
+          <line x1="880" y1="140" x2="920" y2="140" stroke="#0369a1" stroke-width="2" marker-end="url(#arrow-t)"/>
+
+          <rect x="920" y="60" width="220" height="160" rx="12" fill="#ecf4fa" stroke="#0369a1" stroke-width="2"/>
+          <text x="1030" y="90" text-anchor="middle" font-size="14" font-weight="700">TensorRT Engine</text>
+          <text x="1030" y="115" text-anchor="middle" font-size="12" fill="#0f172a">compiled .plan</text>
+          <text x="1030" y="140" text-anchor="middle" font-size="11" fill="#475569">低延迟 + 高吞吐</text>
+          <text x="1030" y="160" text-anchor="middle" font-size="11" fill="#475569">Triton 部署</text>
+          <text x="1030" y="180" text-anchor="middle" font-size="11" fill="#475569">Tensor Parallel</text>
+          <text x="1030" y="200" text-anchor="middle" font-size="11" fill="#475569">Pipeline Parallel</text>
+
+          <rect x="20" y="20" width="1080" height="50" rx="10" fill="#dbeaf5" stroke="#0ea5e9" stroke-width="2"/>
+          <text x="560" y="48" text-anchor="middle" font-size="13" font-weight="700">编译时优化 + 运行时优化 = TensorRT-LLM 极致性能</text>
+        </svg>
+      </div>
+      <p class="muted">TensorRT-LLM 把模型编译成 TensorRT Engine（<code>.plan</code> 文件），离线做算子融合 + 内核调优 + 量化；运行时用 Triton 服务器加载，支持 In-flight Batching 在 token 级调度，多 GPU 张量并行。</p>
+    </article>
+
+    <article class="card">
+      <h2>五、本地化三件套对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Ollama</th><th>LM Studio</th><th>LocalAI</th></tr></thead>
+        <tbody>
+          <tr><td><strong>形态</strong></td><td>CLI / API</td><td>GUI 桌面</td><td>API 服务</td></tr>
+          <tr><td><strong>后端</strong></td><td>llama.cpp</td><td>llama.cpp</td><td>llama.cpp / gpt4all</td></tr>
+          <tr><td><strong>模型管理</strong></td><td><code>ollama pull/run</code></td><td>GUI 搜索下载</td><td>配置 + 启动参数</td></tr>
+          <tr><td><strong>API 兼容</strong></td><td>OpenAI 兼容</td><td>本地推理 + OpenAI 兼容</td><td>OpenAI 兼容</td></tr>
+          <tr><td><strong>跨平台</strong></td><td>macOS/Linux/Win</td><td>macOS/Linux/Win</td><td>macOS/Linux/Win</td></tr>
+          <tr><td><strong>目标用户</strong></td><td>开发者 / CLI 党</td><td>非工程师 / 体验派</td><td>自部署替代 OpenAI</td></tr>
+          <tr><td><strong>模型格式</strong></td><td>GGUF（自建 Modelfile）</td><td>GGUF</td><td>GGUF / 多种</td></tr>
+          <tr><td><strong>远程访问</strong></td><td>需配 OLLAMA_HOST</td><td>内置 Server 模式</td><td>原生支持</td></tr>
+          <tr><td><strong>生产可用</strong></td><td>中等（小团队）</td><td>否（个人/学习）</td><td>中等（自部署）</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型口诀：<strong>开发调试 / CLI 习惯</strong>→ Ollama；<strong>非工程师 / 体验</strong>→ LM Studio；<strong>完全自托管替代 OpenAI API</strong>→ LocalAI。</div>
+    </article>
+
+    <article class="card">
+      <h2>六、vLLM 实战代码</h2>
+      <pre class="code"><code># 服务端启动
+python -m vllm.entrypoints.openai.api_server \
+  --model meta-llama/Llama-3-8B-Instruct \
+  --tensor-parallel-size 2 \
+  --gpu-memory-utilization 0.92 \
+  --max-model-len 8192 \
+  --quantization awq \
+  --dtype float16
+
+# 客户端（OpenAI SDK 直接复用）
+from openai import OpenAI
+client = OpenAI(
+  base_url="http://localhost:8000/v1",
+  api_key="EMPTY",
+)
+resp = client.chat.completions.create(
+  model="meta-llama/Llama-3-8B-Instruct",
+  messages=[{"role":"user","content":"你好"}],
+  stream=True, temperature=0.7,
+)
+for chunk in resp:
+  print(chunk.choices[0].delta.content, end="")
+</code></pre>
+      <p class="muted">现有 OpenAI 客户端代码零修改，只需换 <code>base_url</code>。支持 AWQ/GPTQ/FP8 一行启用。</p>
+    </article>
+
+    <article class="card">
+      <h2>七、TensorRT-LLM 编译 + 部署</h2>
+      <pre class="code"><code># 1. 转模型为 TensorRT-LLM 格式
+python convert.py --model_dir llama-3-8b \
+  --output_dir trt_engines/llama3-8b-fp16 \
+  --dtype float16 --tp_size 2
+
+# 2. 编译 engine（耗时数分钟）
+trtllm-build --checkpoint_dir trt_engines/llama3-8b-fp16 \
+  --output_dir trt_engines/llama3-8b-engine \
+  --max_batch_size 64 --max_input_len 4096
+
+# 3. Triton 部署
+docker run --gpus all -p 8000:8000 \
+  -v $PWD/trt_engines:/models \
+  nvcr.io/nvidia/tritonserver:24.08-trtllm-python-py3 \
+  tritonserver --model-repository=/models
+
+# 4. 性能：H100 上达 8000+ tokens/s/QPS
+</code></pre>
+    </article>
+
+    <article class="card">
+      <h2>八、Ollama 一键本地</h2>
+      <pre class="code"><code># 安装：macOS brew / Linux 一键脚本
+ollama serve                # 启动服务（默认 :11434）
+ollama pull llama3:8b       # 拉模型
+ollama run llama3:8b "你好"  # 直接对话
+
+# OpenAI 兼容调用
+from openai import OpenAI
+client = OpenAI(
+  base_url="http://localhost:11434/v1",
+  api_key="ollama",
+)
+resp = client.chat.completions.create(
+  model="llama3:8b",
+  messages=[{"role":"user","content":"Hi"}],
+)
+print(resp.choices[0].message.content)
+
+# Modelfile 自定义角色
+# FROM llama3:8b
+# SYSTEM "你是中医问诊助手"
+# PARAMETER temperature 0.3
+ollama create my-doctor -f Modelfile
+ollama run my-doctor
+</code></pre>
+    </article>
+
+    <article class="card full">
+      <h2>九、选型决策树</h2>
+      <table>
+        <thead><tr><th>场景</th><th>首选</th><th>备选</th><th>关键理由</th></tr></thead>
+        <tbody>
+          <tr><td><strong>云端高 QPS 通用生产</strong></td><td>vLLM</td><td>TGI / SGLang</td><td>开箱即用、PagedAttention、OpenAI 兼容</td></tr>
+          <tr><td><strong>NVIDIA 极致低延迟</strong></td><td>TensorRT-LLM</td><td>vLLM + CUDA Graph</td><td>编译期优化、内核级调优</td></tr>
+          <tr><td><strong>边缘 / 本地开发</strong></td><td>Ollama</td><td>LM Studio / LocalAI</td><td>一键启动、模型市场、GGUF 量化</td></tr>
+          <tr><td><strong>研究 / 复杂 LLM 程序</strong></td><td>SGLang</td><td>vLLM + lmql</td><td>RadixAttention、结构化生成</td></tr>
+          <tr><td><strong>国产化部署</strong></td><td>LMDeploy</td><td>vLLM</td><td>TurboMind、AWQ 深度集成、中文优化</td></tr>
+          <tr><td><strong>多模型编排 / 业务路由</strong></td><td>Triton</td><td>BentoML / Ray Serve</td><td>动态批处理、A/B Test、模型仓库</td></tr>
+          <tr><td><strong>快速 PoC / API 服务</strong></td><td>OpenLLM</td><td>BentoML</td><td>bentoml 生态、一行启动</td></tr>
+          <tr><td><strong>大规模分布式</strong></td><td>Ray Serve</td><td>Triton Cluster</td><td>Ray 生态、自动扩缩容</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、性能 benchmark（LLaMA-7B, A100-80G, batch=32）</h2>
+      <table>
+        <thead><tr><th>引擎</th><th>吞吐 (tokens/s)</th><th>首 token 延迟</th><th>显存占用</th><th>优势场景</th></tr></thead>
+        <tbody>
+          <tr><td><strong>HF Transformers</strong></td><td>~200</td><td>~300ms</td><td>高（碎片化）</td><td>实验 / 教学</td></tr>
+          <tr><td><strong>vLLM</strong></td><td>~2,800（14x）</td><td>~80ms</td><td>中（分页）</td><td>通用生产</td></tr>
+          <tr><td><strong>TGI</strong></td><td>~2,500</td><td>~100ms</td><td>中</td><td>HF 生态</td></tr>
+          <tr><td><strong>TensorRT-LLM</strong></td><td>~4,200（21x）</td><td>~40ms</td><td>低（量化 + 内核）</td><td>低延迟</td></tr>
+          <tr><td><strong>SGLang</strong></td><td>~3,000</td><td>~70ms</td><td>中（Radix）</td><td>复杂 LLM 程序</td></tr>
+          <tr><td><strong>LMDeploy</strong></td><td>~2,600</td><td>~85ms</td><td>中</td><td>国产化</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">数据为参考量级，实际受模型大小、batch、prompt 长度、量化精度影响。<strong>TensorRT-LLM 极致快</strong>但编译复杂；<strong>vLLM 通用性强</strong>，社区生态最活跃；<strong>HF Transformers 只适合研究</strong>。</p>
+    </article>
+
+    <article class="card full">
+      <h2>十一、量化集成（AWQ / GPTQ / FP8 / INT4）</h2>
+      <table>
+        <thead><tr><th>引擎</th><th>AWQ</th><th>GPTQ</th><th>FP8</th><th>INT4 / INT8</th><th>GGUF</th></tr></thead>
+        <tbody>
+          <tr><td>vLLM</td><td>✓ 一行启用</td><td>✓</td><td>✓ H100</td><td>部分</td><td>✗</td></tr>
+          <tr><td>TGI</td><td>✓</td><td>✓</td><td>✗</td><td>bitsandbytes</td><td>✗</td></tr>
+          <tr><td>TensorRT-LLM</td><td>✓</td><td>✓</td><td>✓</td><td>✓ SmoothQuant</td><td>✗</td></tr>
+          <tr><td>SGLang</td><td>✓</td><td>✓</td><td>部分</td><td>部分</td><td>✗</td></tr>
+          <tr><td>LMDeploy</td><td>✓ 深度优化</td><td>✓</td><td>✗</td><td>✓ INT4</td><td>✗</td></tr>
+          <tr><td>Ollama / LocalAI</td><td>✗</td><td>✗</td><td>✗</td><td>✗</td><td>✓ Q4/Q5/Q8</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">经验：<strong>AWQ 4-bit + vLLM</strong>是当前生产部署"性价比最优"组合（速度损失 &lt;5%，显存省 60%+）；<strong>GGUF Q4</strong>是本地 + CPU/Mac 的事实标准。</div>
+    </article>
+
+    <article class="card full">
+      <h2>十二、10 条面试 FAQ</h2>
+      <div class="qa">
+        <div><h3>1. vLLM 为什么快？</h3><p>三个核心：①<strong>PagedAttention</strong>（KV-Cache 分页，显存利用率 20%→90%）；②<strong>连续批处理</strong>（新请求随时加入，结束随时退出）；③<strong>CUDA Graph + FlashAttention</strong>（kernel 优化）。综合 14-24x 收益。</p></div>
+        <div><h3>2. Ollama 适合生产吗？</h3><p><strong>小规模 / 内部工具可以</strong>，大流量生产不建议。生产推荐 vLLM / TGI / TensorRT-LLM，支持高并发、监控、自动扩缩容。</p></div>
+        <div><h3>3. TensorRT-LLM 和 vLLM 选哪个？</h3><p>追求<strong>极致低延迟 + NVIDIA GPU</strong>选 TensorRT-LLM（编译复杂、性能极致）；追求<strong>通用性 + 快速上线</strong>选 vLLM（PagedAttention 开箱即用、生态最活跃）。</p></div>
+        <div><h3>4. PagedAttention 解决了什么问题？</h3><p>传统 KV-Cache <strong>连续预分配</strong>导致严重碎片化和浪费（最长序列决定显存占用）。PagedAttention 按 <strong>Block（16 token）</strong>分页，按需分配，逻辑连续 / 物理不连续。</p></div>
+        <div><h3>5. 连续批处理 vs 静态批处理？</h3><p><strong>静态批处理</strong>：等齐一个 batch 才推理，长尾请求拖慢整体；<strong>连续批处理</strong>：每步推理后调度器决定下一批，结束的请求立即退出，新请求立即加入，吞吐提升 2-4x。</p></div>
+        <div><h3>6. AWQ / GPTQ / FP8 怎么选？</h3><p><strong>AWQ</strong>：激活感知权重量化，4-bit 几乎无损；<strong>GPTQ</strong>：训练后量化，通用性强；<strong>FP8</strong>：H100 原生支持，速度损失小。生产推荐 <strong>AWQ-4bit</strong>。</p></div>
+        <div><h3>7. Triton 是什么定位？</h3><p><strong>通用模型服务器</strong>，支持 TF/PyTorch/ONNX/TensorRT 多后端，提供动态批处理、模型仓库、A/B Test、Metrics。是大厂多模型生产编排首选。</p></div>
+        <div><h3>8. SGLang 的 RadixAttention 是什么？</h3><p>用 <strong>Radix Tree</strong> 索引所有请求的 KV-Cache，自动识别共享前缀（如 system prompt / few-shot 示例），命中则复用，未命中才重新计算。Tree 结构的 prefix sharing 比 LRU 更高效。</p></div>
+        <div><h3>9. 本地 GPU 显存不够怎么办？</h3><p>三招：①<strong>量化</strong>（GGUF Q4 / AWQ-4bit，显存省 4-8x）；②<strong>Offloading</strong>（CPU + GPU 混合，llama.cpp 支持）；③<strong>多卡切分</strong>（Tensor Parallel，vLLM / TensorRT-LLM 支持）。</p></div>
+        <div><h3>10. 推理引擎怎么监控？</h3><p>vLLM 暴露 <code>/metrics</code> Prometheus 端点；TensorRT-LLM 通过 Triton 集成；关键指标：<strong>throughput / latency p50/p99 / GPU util / KV-Cache usage / queue length</strong>。接 Grafana 做看板。</p></div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>十三、回答模板（30 秒版）</h2>
+      <div class="callout">
+        <strong>问：</strong>"线上部署大模型推理怎么选？"<br>
+        <strong>答：</strong>"看<strong>规模 + 硬件 + 延迟要求</strong>：<strong>通用生产</strong>首选 vLLM，PagedAttention + 连续批处理 + OpenAI 兼容，14x 吞吐收益；<strong>NVIDIA 极致低延迟</strong>用 TensorRT-LLM，编译期算子融合 + 内核调优；<strong>本地开发</strong>用 Ollama 一键启动 GGUF 模型；<strong>多模型编排</strong>用 Triton 或 BentoML。<strong>量化</strong>配 AWQ-4bit，显存省 60% 速度损失 &lt;5%。我现在生产里用 <strong>vLLM + AWQ + Prometheus 监控</strong>，平衡性能和工程效率。"
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>十四、追问方向表</h2>
+      <table>
+        <thead><tr><th>维度</th><th>可能被追问</th><th>应对要点</th></tr></thead>
+        <tbody>
+          <tr><td>原理</td><td>PagedAttention 怎么实现的？</td><td>Block 表（逻辑→物理映射）+ Copy-on-Write + Block 调度器</td></tr>
+          <tr><td>调度</td><td>连续批处理每步怎么调度？</td><td>每步 forward 后调度器选 next batch，按优先级 + 长度 + 等待时间</td></tr>
+          <tr><td>量化</td><td>AWQ 为什么比 GPTQ 好？</td><td>激活感知，对显著权重保护，4-bit 几乎无损精度</td></tr>
+          <tr><td>性能</td><td>首 token 延迟怎么优化？</td><td>Prompt Cache + 投机解码（Speculative Decoding）+ 预编译</td></tr>
+          <tr><td>分布式</td><td>多卡怎么部署？</td><td>Tensor Parallel（层内切分）/ Pipeline Parallel（层间切分）</td></tr>
+          <tr><td>选型</td><td>vLLM vs TGI 区别？</td><td>vLLM PagedAttention 更先进，TGI Rust 实现 + HF 生态更紧密</td></tr>
+          <tr><td>本地</td><td>Mac M2 跑 7B 模型用什么？</td><td>Ollama + GGUF Q4，Metal 加速，约 30 tokens/s</td></tr>
+          <tr><td>监控</td><td>线上怎么定位推理瓶颈？</td><td>nvidia-smi + Prometheus + vLLM /metrics + LangSmith</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十五、概念速查表（17 条）</h2>
+      <table>
+        <thead><tr><th>术语</th><th>一句话定义</th><th>所属引擎</th></tr></thead>
+        <tbody>
+          <tr><td>PagedAttention</td><td>KV-Cache 分页管理，按 Block（16 token）分配</td><td>vLLM</td></tr>
+          <tr><td>Continuous Batching</td><td>连续批处理，请求动态加入 / 退出</td><td>vLLM / TGI</td></tr>
+          <tr><td>In-flight Batching</td><td>Token 级动态批处理，比 sequence 级更细</td><td>TensorRT-LLM</td></tr>
+          <tr><td>Tensor Parallel</td><td>层内切分到多 GPU</td><td>vLLM / TensorRT-LLM</td></tr>
+          <tr><td>Pipeline Parallel</td><td>层间切分到多 GPU</td><td>TensorRT-LLM</td></tr>
+          <tr><td>KV-Cache</td><td>Transformer 推理时缓存的 Key/Value</td><td>通用</td></tr>
+          <tr><td>Block Table</td><td>逻辑 Block → 物理 Block 映射表</td><td>vLLM</td></tr>
+          <tr><td>RadixAttention</td><td>Radix Tree 索引共享前缀 KV-Cache</td><td>SGLang</td></tr>
+          <tr><td>Graph Surgery</td><td>算子融合，合并多个小算子为大算子</td><td>TensorRT-LLM</td></tr>
+          <tr><td>AWQ</td><td>Activation-aware Weight Quantization，4-bit 几乎无损</td><td>量化方法</td></tr>
+          <tr><td>GPTQ</td><td>训练后量化，基于二阶信息分组量化</td><td>量化方法</td></tr>
+          <tr><td>SmoothQuant</td><td>激活 + 权重联合量化，INT8 友好</td><td>量化方法</td></tr>
+          <tr><td>FP8</td><td>8-bit 浮点，H100 原生支持</td><td>量化精度</td></tr>
+          <tr><td>GGUF</td><td>llama.cpp 模型格式，支持 Q4/Q5/Q8</td><td>本地格式</td></tr>
+          <tr><td>Modelfile</td><td>Ollama 自定义模型配方（FROM + SYSTEM + PARAM）</td><td>Ollama</td></tr>
+          <tr><td>Triton</td><td>NVIDIA 通用模型服务器，支持多后端</td><td>NVIDIA</td></tr>
+          <tr><td>TurboMind</td><td>LMDeploy 自研推理引擎</td><td>LMDeploy</td></tr>
+          <tr><td>OpenAI Compatible</td><td>提供 <code>/v1/chat/completions</code> 兼容接口</td><td>通用</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

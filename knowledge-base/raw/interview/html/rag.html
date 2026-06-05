@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAG 知识页</title>
+  <style>
+    :root{
+      --bg:#f7fbfb;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d7e7e4;
+      --accent:#0f766e;
+      --accent-soft:#ccfbf1;
+      --accent-soft-2:#effdfa;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:linear-gradient(180deg,#ffffff 0%, #f7fbfb 100%);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:920px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f0fdfa);border:1px solid #c8eee5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f0fdfa;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .note{font-size:14px;color:var(--muted)}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./dpo.html">DPO</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Retrieval-Augmented Generation</span>
+    <h1>RAG：先找证据，再让模型回答</h1>
+    <p class="lead">RAG 的核心不是“把搜索结果贴给大模型”，而是把检索、重排、上下文组织和生成控制串成一条链路。面试里最重要的是讲清楚：为什么要检索、怎么检索、怎么判断问题出在检索还是生成、以及怎么评估整条链路。</p>
+    <div class="pillrow">
+      <span class="pill">BM25</span><span class="pill">Dense Retrieval</span><span class="pill">Hybrid Search</span><span class="pill">Rerank</span><span class="pill">Faithfulness</span><span class="pill">Answer Relevance</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一张图看懂 RAG</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1100 260" width="100%" height="auto" role="img" aria-label="RAG pipeline">
+          <defs>
+            <marker id="arrow-rag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"></path>
+            </marker>
+          </defs>
+          <rect x="20" y="52" width="140" height="72" rx="14" fill="#ccfbf1" stroke="#0f766e"/>
+          <text x="90" y="81" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">原始文档</text>
+          <text x="90" y="106" text-anchor="middle" font-size="12" fill="#475569">PDF / Markdown / 网页</text>
+
+          <rect x="190" y="52" width="150" height="72" rx="14" fill="#effdfa" stroke="#0f766e"/>
+          <text x="265" y="81" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">切片与清洗</text>
+          <text x="265" y="106" text-anchor="middle" font-size="12" fill="#475569">结构化 chunk + metadata</text>
+
+          <rect x="370" y="52" width="150" height="72" rx="14" fill="#effdfa" stroke="#0f766e"/>
+          <text x="445" y="81" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">向量化</text>
+          <text x="445" y="106" text-anchor="middle" font-size="12" fill="#475569">Embedding / Index</text>
+
+          <rect x="550" y="24" width="170" height="130" rx="16" fill="#fff" stroke="#0f766e"/>
+          <text x="635" y="55" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">召回层</text>
+          <rect x="570" y="70" width="130" height="28" rx="10" fill="#ccfbf1" stroke="#0f766e"/>
+          <text x="635" y="89" text-anchor="middle" font-size="13" fill="#0f172a">Dense Retrieval</text>
+          <rect x="570" y="104" width="130" height="28" rx="10" fill="#f0fdfa" stroke="#0f766e"/>
+          <text x="635" y="123" text-anchor="middle" font-size="13" fill="#0f172a">BM25 / Sparse</text>
+
+          <rect x="760" y="52" width="130" height="72" rx="14" fill="#effdfa" stroke="#0f766e"/>
+          <text x="825" y="81" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">Rerank</text>
+          <text x="825" y="106" text-anchor="middle" font-size="12" fill="#475569">精排 Top-K</text>
+
+          <rect x="920" y="52" width="160" height="72" rx="14" fill="#ccfbf1" stroke="#0f766e"/>
+          <text x="1000" y="81" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">LLM 生成</text>
+          <text x="1000" y="106" text-anchor="middle" font-size="12" fill="#475569">带证据的最终答案</text>
+
+          <line x1="160" y1="88" x2="190" y2="88" stroke="#0f766e" stroke-width="3" marker-end="url(#arrow-rag)"/>
+          <line x1="340" y1="88" x2="370" y2="88" stroke="#0f766e" stroke-width="3" marker-end="url(#arrow-rag)"/>
+          <line x1="520" y1="88" x2="550" y2="88" stroke="#0f766e" stroke-width="3" marker-end="url(#arrow-rag)"/>
+          <line x1="720" y1="88" x2="760" y2="88" stroke="#0f766e" stroke-width="3" marker-end="url(#arrow-rag)"/>
+          <line x1="890" y1="88" x2="920" y2="88" stroke="#0f766e" stroke-width="3" marker-end="url(#arrow-rag)"/>
+
+          <rect x="555" y="176" width="250" height="54" rx="12" fill="#f8fafc" stroke="#d7e7e4"/>
+          <text x="680" y="199" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">知识不是全部塞进上下文</text>
+          <text x="680" y="219" text-anchor="middle" font-size="12" fill="#475569">而是按 query 动态挑选最相关证据</text>
+        </svg>
+      </div>
+      <p class="note">RAG 的目标是让模型“基于证据回答”，不是让模型“看起来像知道答案”。</p>
+    </article>
+
+    <article class="card">
+      <h2>核心公式</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\cos(x, y) = \frac{x \cdot y}{\|x\| \cdot \|y\|}$$</p>
+        <p class="mathline">$$\mathrm{BM25}(q, d) = \sum_{t \in q} \mathrm{IDF}(t) \cdot \frac{f(t, d)\,(k_{1} + 1)}{f(t, d) + k_{1}\!\left(1 - b + b \cdot \tfrac{|d|}{\mathrm{avgdl}}\right)}$$</p>
+        <p class="mathline">$$\mathrm{RRF}(d) = \sum_{i} \frac{1}{k + \mathrm{rank}_{i}(d)}$$</p>
+        <p class="mathnote">cos 用于向量相似度，BM25 用于关键词相关性，RRF 用于多路检索排序融合。</p>
+      </div>
+      <div class="callout">公式怎么讲：Dense 负责语义近似，BM25 负责词项精确，RRF 负责把不同检索器的排序结果稳妥融合。</div>
+    </article>
+
+    <article class="card">
+      <h2>为什么要分三层评估</h2>
+      <table>
+        <thead>
+          <tr><th>层级</th><th>看什么</th><th>典型指标</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>检索层</td><td>有没有找到答案证据</td><td>Recall@K、MRR、nDCG</td></tr>
+          <tr><td>生成层</td><td>是否忠于证据、是否答题切题</td><td>Faithfulness、Answer Relevance</td></tr>
+          <tr><td>端到端</td><td>用户是否真正接受结果</td><td>采纳率、人工修改率、延迟</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>知识点拆解</h2>
+      <div class="qa">
+        <div><h3>1. 为什么要 chunk</h3><p>因为整篇文档太长，直接向量化会稀释语义；切片能让每个块更纯，检索更准。但切得太碎会丢上下文，所以要结合标题、段落、表格和页码。</p></div>
+        <div><h3>2. 为什么要 rerank</h3><p>召回只解决“找得到”，rerank 解决“排得准”。它可以把语义接近但不真正相关的片段往后压，提升最终上下文质量。</p></div>
+        <div><h3>3. 为什么会幻觉</h3><p>证据缺失、Top-K 噪声过多、提示词约束不够、模型喜欢补全。解决方式是加强证据链、拒答策略和答案引用。</p></div>
+        <div><h3>4. 为什么长上下文不够</h3><p>因为成本、噪声和更新性都不理想。RAG 依然更适合有频繁更新和证据引用要求的企业知识场景。</p></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>面试回答模板</h2>
+      <p>“RAG 本质上是把检索做成生成前的证据选择问题。第一层先保证召回，第二层用 rerank 选最相关证据，第三层把证据按 prompt 组织给模型，最后再用 faithfulness 和 answer relevance 做评估。”</p>
+    </article>
+
+    <article class="card full">
+      <h2>常见追问与回答</h2>
+      <div class="qa">
+        <div>
+          <h3>文档怎么切片，overlap 怎么定？</h3>
+          <p>先按结构切，比如标题、段落、表格、代码块，再用 token 长度做二次约束。overlap 用来防止边界处语义断裂，一般从 10% 到 20% 试起，最终看 Recall@K 和重复率。</p>
+        </div>
+        <div>
+          <h3>Top-K 太大或太小分别有什么问题？</h3>
+          <p>Top-K 太小容易漏掉答案证据，太大又会引入噪声、拉长 prompt、增加幻觉风险。工程上常用“大召回 + rerank + 小上下文”的方式控制。</p>
+        </div>
+        <div>
+          <h3>怎么判断是检索错了还是生成错了？</h3>
+          <p>先看检索结果里有没有 gold evidence。如果证据没召回，是检索问题；如果证据召回了但回答错，是生成、prompt 或上下文组织问题。</p>
+        </div>
+        <div>
+          <h3>知识过期后怎么治理？</h3>
+          <p>给 chunk 加来源、时间戳、版本和状态；更新时只重建变化 chunk 的向量；生成阶段优先使用新版本，并对过期知识降权或下线。</p>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

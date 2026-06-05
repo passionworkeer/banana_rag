@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SFT 知识页</title>
+  <style>
+    :root{--bg:#fffbeb;--panel:#fff;--text:#0f172a;--muted:#475569;--line:#eadfbd;--accent:#d97706;--accent-soft:#fef3c7;--accent-soft-2:#fff7ed;--shadow:0 10px 30px rgba(15,23,42,.08)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .formula{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:16px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:14px;line-height:1.75;overflow:auto;white-space:pre-wrap}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#fff7ed;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .mathbox{background:linear-gradient(180deg,#fff,#fff7ed);border:1px solid #f0d7a9;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./dpo.html">DPO</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Supervised Fine-Tuning</span>
+    <h1>SFT：让模型学会“按指定任务回答”</h1>
+    <p class="lead">SFT 的核心是用高质量输入输出样本，把基座模型调成更符合任务格式和领域习惯的模型。面试重点不是“训了一下模型”，而是数据怎么构造、loss 怎么算、mask 怎么做、怎么避免只学模板。</p>
+    <div class="pillrow"><span class="pill">Instruction Data</span><span class="pill">Causal LM Loss</span><span class="pill">Shift Right</span><span class="pill">Loss Mask</span><span class="pill">LoRA</span></div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>SFT 训练流程图</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1080 250" width="100%" height="auto" role="img" aria-label="SFT training flow">
+          <defs><marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#d97706"/></marker></defs>
+          <rect x="20" y="85" width="140" height="70" rx="14" fill="#fef3c7" stroke="#d97706"/><text x="90" y="114" text-anchor="middle" font-size="18" font-weight="700">原始样本</text><text x="90" y="136" text-anchor="middle" font-size="12" fill="#475569">业务问答 / 轨迹</text>
+          <rect x="200" y="85" width="140" height="70" rx="14" fill="#fff7ed" stroke="#d97706"/><text x="270" y="114" text-anchor="middle" font-size="18" font-weight="700">清洗去重</text><text x="270" y="136" text-anchor="middle" font-size="12" fill="#475569">格式统一</text>
+          <rect x="380" y="85" width="150" height="70" rx="14" fill="#fff7ed" stroke="#d97706"/><text x="455" y="114" text-anchor="middle" font-size="18" font-weight="700">Chat Template</text><text x="455" y="136" text-anchor="middle" font-size="12" fill="#475569">system/user/assistant</text>
+          <rect x="570" y="85" width="130" height="70" rx="14" fill="#fff7ed" stroke="#d97706"/><text x="635" y="114" text-anchor="middle" font-size="18" font-weight="700">Tokenize</text><text x="635" y="136" text-anchor="middle" font-size="12" fill="#475569">ids + labels</text>
+          <rect x="740" y="85" width="130" height="70" rx="14" fill="#fff7ed" stroke="#d97706"/><text x="805" y="114" text-anchor="middle" font-size="18" font-weight="700">Shift</text><text x="805" y="136" text-anchor="middle" font-size="12" fill="#475569">预测下个 token</text>
+          <rect x="910" y="85" width="150" height="70" rx="14" fill="#fef3c7" stroke="#d97706"/><text x="985" y="114" text-anchor="middle" font-size="18" font-weight="700">Loss</text><text x="985" y="136" text-anchor="middle" font-size="12" fill="#475569">只训目标输出</text>
+          <line x1="160" y1="120" x2="200" y2="120" stroke="#d97706" stroke-width="3" marker-end="url(#arrow-s)"/>
+          <line x1="340" y1="120" x2="380" y2="120" stroke="#d97706" stroke-width="3" marker-end="url(#arrow-s)"/>
+          <line x1="530" y1="120" x2="570" y2="120" stroke="#d97706" stroke-width="3" marker-end="url(#arrow-s)"/>
+          <line x1="700" y1="120" x2="740" y2="120" stroke="#d97706" stroke-width="3" marker-end="url(#arrow-s)"/>
+          <line x1="870" y1="120" x2="910" y2="120" stroke="#d97706" stroke-width="3" marker-end="url(#arrow-s)"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>核心公式</h2>
+      <div class="mathbox">
+        <div class="mathline">
+          L = - Σ<sub>t</sub> log p(x<sub>t</sub> | x<sub>&lt;t</sub>)
+        </div>
+        <div class="mathline">
+          shift_logits = logits[:, :-1, :], shift_labels = labels[:, 1:]
+        </div>
+        <div class="mathline">
+          CrossEntropy(shift_logits, shift_labels)
+        </div>
+        <div class="mathnote">shift right 的本质是：位置 t 的输出去预测 t+1 的 token，这样训练目标和推理方式完全一致。</div>
+      </div>
+      <div class="callout">shift right 的本质：当前位置的输出预测下一个 token，训练方式和自回归推理方式保持一致。</div>
+    </article>
+
+    <article class="card">
+      <h2>Loss Mask 怎么讲</h2>
+      <table>
+        <thead><tr><th>内容</th><th>是否算 loss</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>system prompt</td><td>通常不算</td><td>它是控制指令，不是模型目标输出</td></tr>
+          <tr><td>user input</td><td>通常不算</td><td>用户输入不是模型要生成的内容</td></tr>
+          <tr><td>assistant answer</td><td>算</td><td>模型要学习的目标回答</td></tr>
+          <tr><td>tool response</td><td>通常不算</td><td>外部工具结果不应由模型伪造</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>知识点拆解</h2>
+      <div class="qa">
+        <div><h3>1. SFT 学什么</h3><p>学任务格式、领域表达、回答风格和基本能力调用方式，不适合直接解决复杂偏好排序。</p></div>
+        <div><h3>2. 数据质量</h3><p>高质量样本要覆盖多类型、多难度、多边界条件，且答案标准一致。低质量重复样本会让模型模板化。</p></div>
+        <div><h3>3. LoRA 关系</h3><p>SFT 是训练阶段，LoRA 是参数高效训练方法。可以用 LoRA 做 SFT，也可以全量微调做 SFT。</p></div>
+        <div><h3>4. 什么时候不够</h3><p>当问题不是“会不会答”，而是“哪个答案更符合偏好”时，要考虑 DPO 或 RLHF。</p></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>面试回答模板</h2>
+      <p>“SFT 是用高质量监督数据让模型学习目标任务。训练时要把对话转成 token 序列，用 causal LM loss 预测下一个 token，同时对 system、user、padding 和工具返回做 mask，只训练 assistant 该生成的部分。”</p>
+    </article>
+    <article class="card full">
+      <h2>常见追问与回答</h2>
+      <div class="qa">
+        <div>
+          <h3>为什么要 shift right？</h3>
+          <p>因为自回归模型的训练目标就是“用前文预测后文”。如果不 shift，模型会看到答案再预测答案，训练和推理不一致，目标也会失真。</p>
+        </div>
+        <div>
+          <h3>tool response 需要 loss mask 吗？</h3>
+          <p>一般需要。工具返回是外部系统的结果，不应该让模型去学习“伪造”工具输出。常见做法是只训练 assistant 的自然语言答案或行动决策部分。</p>
+        </div>
+        <div>
+          <h3>数据怎么保证多样性？</h3>
+          <p>要覆盖不同任务类型、格式、长度、难度和边界条件，不能只堆模板化的标准答案。越接近真实业务分布的数据越有效。</p>
+        </div>
+        <div>
+          <h3>为什么 loss 降了但 F1 不涨？</h3>
+          <p>可能是训练目标和最终任务指标不一致，也可能是类别不均衡、阈值不对、数据有噪声或过拟合模板。要同时看分布、阈值和错误类型。</p>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

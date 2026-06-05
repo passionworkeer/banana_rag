@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scaling Law 规模定律 知识页</title>
+  <style>
+    :root{
+      --bg:#f5f8fd;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d0dcec;
+      --accent:#1e40af;
+      --accent-soft:#dbe5fa;
+      --accent-soft-2:#eff4fd;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff4fd);border:1px solid #b6c4e5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff4fd;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./reasoning-models.html">Reasoning</a>
+    <a href="./quantization.html">量化</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">基础理论 · 规模定律</span>
+    <h1>Scaling Law：模型怎么变大才划算？</h1>
+    <p class="lead">Scaling Law 描述了模型损失与参数量 (N) / 数据量 (D) / 算力 (C) 的幂律关系——Loss ∝ N^−α。Kaplan 2020 → Chinchilla 2022（20 token/参数最优）→ Compute-Optimal 2024 → Test-Time Scaling 2024（o1 开启）。本页把"3 大经典定律 → 涌现 vs 平滑 → Test-Time Scaling → 与推理算力关系 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Power Law</span><span class="pill">Chinchilla</span><span class="pill">Compute-Optimal</span><span class="pill">Emergent</span><span class="pill">Test-Time Compute</span><span class="pill">o1 / R1</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要 Scaling Law</h2>
+      <ul>
+        <li><strong>训练投入巨大</strong>：GPT-4 训练成本 $50M+，Llama-3 405B $60M+，错配就是浪费</li>
+        <li><strong>预测收益</strong>：给定算力预算，怎么分配 N / D 才能 Loss 最低？</li>
+        <li><strong>可解释性</strong>：理解大模型为什么"大力出奇迹"——是参数、数据、还是算力驱动</li>
+        <li><strong>决策依据</strong>：① 买多少 GPU？② 训多久？③ 训完还能再 SFT 多大？</li>
+        <li><strong>2024 范式变化</strong>：Test-Time Compute 引入第四维度"推理时算力"，Scaling Law 扩展</li>
+      </ul>
+      <div class="callout">一句话核心：Loss 和 N / D / C 呈幂律（Power Law），可预测、可外推；但分配比例不同时效率差异巨大（Chinchilla 修正 Kaplan 2-3x 效率差）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、Kaplan 2020 经典 Scaling Law</h2>
+      <p>OpenAI 2020 首次系统化研究 Scaling Law：训练 Transformer 时，Loss 与 N / D / C 呈幂律关系。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>核心公式（Kaplan 2020）</strong></p>
+        <p class="mathline">L(N) = (N<sub>c</sub> / N)<sup>α<sub>N</sub></sup> &nbsp;&nbsp; α<sub>N</sub> ≈ 0.076</p>
+        <p class="mathline">L(D) = (D<sub>c</sub> / D)<sup>α<sub>D</sub></sup> &nbsp;&nbsp; α<sub>D</sub> ≈ 0.095</p>
+        <p class="mathline">L(C) = (C<sub>c</sub> / C)<sup>α<sub>C</sub></sup> &nbsp;&nbsp; α<sub>C</sub> ≈ 0.050</p>
+        <p class="mathnote">N<sub>c</sub>, D<sub>c</sub>, C<sub>c</sub> 是常数（不可约损失 + 模型族相关）。α 是缩放指数，越大代表收益越快。</p>
+        <p class="mathnote"><strong>关键发现</strong>：① 模型越大，缩放效率越高（→ 鼓励训大模型）；② 数据 / 算力 也有独立贡献；③ Loss 可外推——训 1/10 规模可预测全规模表现。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>三、Chinchilla 2022 修正</h2>
+      <p>DeepMind 2022 严格控制算力实验，发现 Kaplan 结论"参数越多越好"是错的——实际是"算力一定时，N 和 D 要等比增长"。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>Chinchilla 最优分配</strong></p>
+        <p class="mathline">N<sub>opt</sub> ∝ C<sup>0.5</sup> &nbsp;&nbsp; D<sub>opt</sub> ∝ C<sup>0.5</sup></p>
+        <p class="mathline"><strong>每参数 20 token</strong>（最优）：D ≈ 20 × N</p>
+        <p class="mathnote">含义：模型参数量翻倍，训练数据也要翻倍，否则欠拟合 / 过拟合。</p>
+        <p class="mathnote"><strong>实验</strong>：Gopher 280B 用 280B token → Chinchilla 70B 用 1.4T token → 同样算力下 Chinchilla Loss 低 5.6%</p>
+        <p class="mathnote"><strong>结论</strong>：① 业界普遍"欠训"——大模型数据不够；② 训练 N 模型需 ≥ 20N tokens；③ GPT-3 175B 用了 300B token 是欠训的（应该 3.5T）。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、3 大 Scaling Law 对比</h2>
+      <table>
+        <thead><tr><th>工作</th><th>时间</th><th>核心结论</th><th>代表意义</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Kaplan</strong></td><td>2020.1 (OpenAI)</td><td>Loss ∝ N<sup>−0.076</sup> D<sup>−0.095</sup>；N 收益 &gt; D 收益</td><td>首次系统化，但实验控制不足（同时变 N 和 D）</td></tr>
+          <tr><td><strong>Chinchilla</strong></td><td>2022.3 (DeepMind)</td><td>算力一定 N ∝ D ∝ C<sup>0.5</sup>；20 tokens/参数最优</td><td>修正 Kaplan，业界重新校准</td></tr>
+          <tr><td><strong>Compute-Optimal (Hoffmann)</strong></td><td>同上 (Chinchilla 同篇)</td><td>"Optimal"模型不是越大越好，要看算力预算</td><td>Llama / Mistral 7B-70B 都按 20:1 比例</td></tr>
+          <tr><td><strong>Scaling for Code / Multimodal</strong></td><td>2023-2024</td><td>Code 模型数据效率 4x 高于文本；多模态有独立缩放</td><td>垂直领域可少训</td></tr>
+          <tr><td><strong>Test-Time Compute Scaling</strong></td><td>2024 (OpenAI o1 / R1)</td><td>推理时算力可换能力，Loss vs Inference Compute 也幂律</td><td>2024-2026 范式扩展</td></tr>
+          <tr><td><strong>Llama-3 实证</strong></td><td>2024.4 (Meta)</td><td>15.6T token 训 405B，远超 Chinchilla 比例</td><td>在 inference cost 主导时，可"过训"换部署效率</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>五、Chinchilla vs Llama-3 的分歧</h2>
+      <p>Llama-3 405B 用 15.6T tokens 训练（35:1 token/参数，远超 Chinchilla 20:1），这违反 Chinchilla 吗？</p>
+      <ul>
+        <li><strong>不违反</strong>：Chinchilla 是"给定训练算力 C"的最优；Llama-3 故意"过训"（over-train），因为推理成本远高于训练成本</li>
+        <li><strong>Over-train 的代价</strong>：训练时多花 10x 算力，但推理时同规模模型可以服务更多用户</li>
+        <li><strong>Llama-3.1 修正</strong>：100M-405B 全系列 15.6T tokens 训练 → 小模型严重过训、大模型恰到好处</li>
+        <li><strong>Qwen 2.5 / DeepSeek 策略</strong>：类似，过训 7B-72B 提升推理效率</li>
+      </ul>
+      <div class="callout">2024 主流策略：① 早期模型按 Chinchilla 20:1 训；② 2024 后普遍"过训"（Llama-3 35:1、Qwen 2.5 30:1、DeepSeek-V3 60:1 接近）；③ 推理成本主导，过训更划算。Chinchilla 不是绝对真理，是"算力最优"。</div>
+    </article>
+
+    <article class="card full">
+      <h2>六、Scaling Law 曲线与算力预算</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 460" width="100%" height="auto" role="img" aria-label="Scaling law curves">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e40af"></path>
+            </marker>
+          </defs>
+
+          <!-- Axes -->
+          <line x1="80" y1="400" x2="1140" y2="400" stroke="#1e40af" stroke-width="2"/>
+          <line x1="80" y1="400" x2="80" y2="40" stroke="#1e40af" stroke-width="2"/>
+
+          <text x="610" y="440" text-anchor="middle" font-size="14" font-weight="700">Compute C (FLOPs) →</text>
+          <text x="40" y="220" text-anchor="middle" font-size="14" font-weight="700" transform="rotate(-90 40 220)">Loss →</text>
+
+          <!-- Power law curve -->
+          <path d="M 120 80 Q 200 130 280 170 Q 380 200 480 225 Q 600 250 720 270 Q 860 290 1000 310 Q 1080 320 1130 330" fill="none" stroke="#1e40af" stroke-width="3"/>
+
+          <!-- Points -->
+          <circle cx="160" cy="105" r="6" fill="#1e40af"/>
+          <text x="160" y="92" text-anchor="middle" font-size="11" font-weight="700">GPT-2 1.5B</text>
+          <text x="160" y="78" text-anchor="middle" font-size="10" fill="#475569">Loss 2.0</text>
+
+          <circle cx="320" cy="180" r="6" fill="#1e40af"/>
+          <text x="320" y="167" text-anchor="middle" font-size="11" font-weight="700">GPT-3 175B</text>
+          <text x="320" y="153" text-anchor="middle" font-size="10" fill="#475569">Loss 1.7</text>
+
+          <circle cx="500" cy="235" r="6" fill="#1e40af"/>
+          <text x="500" y="222" text-anchor="middle" font-size="11" font-weight="700">Gopher 280B</text>
+          <text x="500" y="208" text-anchor="middle" font-size="10" fill="#475569">Loss 1.55</text>
+
+          <circle cx="700" cy="270" r="6" fill="#1e40af"/>
+          <text x="700" y="257" text-anchor="middle" font-size="11" font-weight="700">Chinchilla 70B</text>
+          <text x="700" y="243" text-anchor="middle" font-size="10" fill="#475569">Loss 1.50</text>
+
+          <circle cx="900" cy="295" r="6" fill="#1e40af"/>
+          <text x="900" y="282" text-anchor="middle" font-size="11" font-weight="700">Llama-3 405B</text>
+          <text x="900" y="268" text-anchor="middle" font-size="10" fill="#475569">Loss 1.40</text>
+
+          <circle cx="1080" cy="320" r="6" fill="#1e40af"/>
+          <text x="1080" y="307" text-anchor="middle" font-size="11" font-weight="700">DeepSeek-V3 671B</text>
+          <text x="1080" y="293" text-anchor="middle" font-size="10" fill="#475569">Loss 1.30</text>
+
+          <text x="610" y="420" text-anchor="middle" font-size="12" fill="#475569">Loss ∝ C<sup>−α</sup>  (α ≈ 0.05 for compute)</text>
+        </svg>
+      </div>
+      <p class="muted">横轴是训练算力（FLOPs），纵轴是 Loss。曲线越往后越平——Loss 收益递减，这就是"算力不够再翻倍意义不大"的根因。每 10x 算力降 ~12% Loss。</p>
+    </article>
+
+    <article class="card full">
+      <h2>七、涌现能力（Emergent Ability）</h2>
+      <p>某些能力在模型小到一定规模后"突然"出现，而不是平滑提升。OpenAI 2022 论文提出，2023-2024 引发争议。</p>
+      <div class="qa">
+        <div>
+          <h3>支持涌现（Wei et al. 2022）</h3>
+          <p>① 大模型在 BIG-Bench / MMLU 等任务上呈现"阶梯式"提升；② CoT / 推理 / 工具调用在 100B+ 才稳定出现；③ GPT-3 → GPT-4 跨度大、量变到质变。</p>
+        </div>
+        <div>
+          <h3>反对涌现（Schaeffer 2023, "Are Emergent Abilities a Mirage?"）</h3>
+          <p>① 涌现是"评估指标选择"的假象——换连续指标（如 token 编辑距离）后曲线变平滑；② 涌现依赖 strict-match / multiple-choice 指标；③ 模型实际能力是连续提升的。</p>
+        </div>
+      </div>
+      <div class="callout">2024 主流观点：① 大模型确有"质变"——CoT、Reasoning、Tool Use 在 70B+ 才稳定；② 但具体任务看指标选择，strict-match 易出现"阶梯"假象；③ Test-Time Compute（o1/R1）让"小模型 + 多思考"也能涌现推理能力。Scaling Law 仍是核心，但"涌现"被重新理解。</div>
+    </article>
+
+    <article class="card full">
+      <h2>八、Test-Time Compute Scaling（2024 范式扩展）</h2>
+      <p>OpenAI o1 (2024.9) / DeepSeek-R1 (2025.1) 引入第四个维度：推理时算力。给定 7B 模型，思考越久越准——Loss ∝ Inference FLOPs<sup>−β</sup>。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>4 维 Scaling Law（含 Inference）</strong></p>
+        <p class="mathline">L(N, D, C<sub>train</sub>, C<sub>test</sub>) = L<sub>0</sub> + a · N<sup>−α</sup> + b · D<sup>−β</sup> + c · C<sub>test</sub><sup>−γ</sup></p>
+        <p class="mathnote">C<sub>test</sub>：推理时算力（CoT 长度、采样数、树搜索深度）</p>
+        <p class="mathnote"><strong>Snell et al. 2024 (OpenAI)</strong> 证明：固定训练 FLOPs 时，o1-style 模型可与 14x 训练算力的 GPT-4 持平。</p>
+        <p class="mathnote"><strong>意义</strong>：① 模型大小不再是唯一杠杆；② 推理时"慢思考"可补偿训练 FLOPs 不足；③ 部署时可"动态调整算力"——简单题快答，难题慢想。</p>
+      </div>
+      <ul>
+        <li><strong>Snell / OpenAI 2024</strong>：Test-Time Compute 可换 14x 训练算力（MATH 任务）</li>
+        <li><strong>o1 / o3 (2024.9 / 2024.12)</strong>：内化 CoT，APM / CodeForces 显著提升</li>
+        <li><strong>DeepSeek-R1 (2025.1)</strong>：开源，GRPO RL 训出内化长 CoT</li>
+        <li><strong>Long CoT (10K-100K token)</strong>：难题准确率 5-10x 提升</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>九、4 大经典定律 / 公式</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>1. Kaplan Power Law (2020)</strong></p>
+        <p class="mathline">L(N, D) = (N<sub>0</sub>/N)<sup>α</sup> + (D<sub>0</sub>/D)<sup>β</sup> + L<sub>∞</sub> &nbsp;&nbsp; α=0.076, β=0.095</p>
+        <p class="mathnote"><strong>2. Chinchilla Compute-Optimal (2022)</strong></p>
+        <p class="mathline">N<sub>opt</sub>(C) = (C / a)<sup>0.5</sup> &nbsp;&nbsp; D<sub>opt</sub>(C) = (C / b)<sup>0.5</sup> &nbsp;&nbsp; D<sub>opt</sub> ≈ 20 · N<sub>opt</sub></p>
+        <p class="mathnote"><strong>3. Test-Time Compute Scaling (2024)</strong></p>
+        <p class="mathline">L(C<sub>test</sub>) = L<sub>0</sub> · C<sub>test</sub><sup>−γ</sup> &nbsp;&nbsp; γ ≈ 0.05-0.10</p>
+        <p class="mathnote"><strong>4. Emergent Threshold (经验)</strong></p>
+        <p class="mathline">CoT 稳定：~7B → 13B → 70B 阶梯</p>
+        <p class="mathline">Tool Use 稳定：~70B+</p>
+        <p class="mathline">Reasoning / Code Competition：~300B+ 或 Test-Time Scaling</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>十、Scaling Law 实践含义</h2>
+      <ul>
+        <li><strong>算力预算决策</strong>：C 翻 10x → Loss 降 ~12%；C 翻 100x → Loss 降 ~23%</li>
+        <li><strong>N / D 配比</strong>：默认 Chinchilla 20:1；推理主导场景可"过训"到 30-60:1</li>
+        <li><strong>小模型 + Test-Time</strong>：固定 7B 模型可"用思考换能力"（o1-mini 7B 风格）</li>
+        <li><strong>训练前预测</strong>：用小规模实验外推全规模 Loss（1% 算力预测 100% 表现）</li>
+        <li><strong>数据天花板</strong>：高质量数据 &lt; 100T tokens 时不要盲训 1T 模型（数据不够）</li>
+        <li><strong>评估陷阱</strong>：bench 上"涌现"可能是指标选择假象，多用连续指标</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>十一、项目落地 / 业务场景</h2>
+      <ul>
+        <li><strong>算力分配决策</strong>：1B 预算训 70B 还是 7B+15T tokens？答：看推理 vs 训练算力比，QPS 100+ 选 7B，QPS 1 选 70B</li>
+        <li><strong>小模型做大</strong>：6B 模型 vs 70B 蒸馏——前者部署成本 1/10、latency 1/5、QPS 10x</li>
+        <li><strong>数据规模估算</strong>：要训 7B → 需要 ≥ 140B tokens；要训 70B → 1.4T+ tokens</li>
+        <li><strong>Test-Time 应用</strong>：o1-style 模型用 CoT + Self-Consistency + Tree Search → 难题准度 +20pp</li>
+      </ul>
+      <table>
+        <thead><tr><th>场景</th><th>推荐策略</th><th>Scaling Law 依据</th></tr></thead>
+        <tbody>
+          <tr><td>高 QPS 客服（&gt;100 QPS）</td><td>小模型 7B + 长 CoT（test-time）</td><td>推理成本主导，Test-Time 换能力</td></tr>
+          <tr><td>低 QPS 复杂分析（&lt;5 QPS）</td><td>大模型 70B / MoE 671B</td><td>训练算力摊到 long context，能力强</td></tr>
+          <tr><td>端侧 / 边缘</td><td>1-3B 蒸馏 + INT4 量化</td><td>显存主导，过训可换小尺寸</td></tr>
+          <tr><td>企业私有化</td><td>Llama-3 70B + SFT 5-50K</td><td>Chinchilla 比例 20:1 已过训</td></tr>
+          <tr><td>代码生成</td><td>DeepSeek-Coder 7B-33B（数据效率 4x）</td><td>Code 领域数据效率高，可少训</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十二、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Scaling Law 核心公式？</h3>
+          <p>A：Loss = L<sub>∞</sub> + a · N<sup>−α</sup> + b · D<sup>−β</sup>。Loss 与 N / D 呈幂律关系，α ≈ 0.076，β ≈ 0.095。每 10x 参数量 / 数据量 → Loss 降 ~12%。</p>
+        </div>
+        <div>
+          <h3>Q2：Kaplan 和 Chinchilla 区别？</h3>
+          <p>A：Kaplan 2020 结论"参数越多越好"，但实验同时变 N 和 D 不可靠。Chinchilla 2022 严格控制算力 → N ∝ D ∝ C<sup>0.5</sup> → 20 token/参数最优 → Gopher 280B vs Chinchilla 70B 同算力 Loss 低 5.6%。</p>
+        </div>
+        <div>
+          <h3>Q3：Chinchilla 20:1 比例还适用吗？</h3>
+          <p>A：作为起点适用，但 2024 后普遍"过训"（Llama-3 35:1、Qwen 2.5 30:1）。过训在"推理成本 &gt;&gt; 训练成本"时划算（行业推理 QPS 大）。小模型 20:1，大模型 30-60:1 是 2024-2025 主流。</p>
+        </div>
+        <div>
+          <h3>Q4：Test-Time Compute Scaling 怎么理解？</h3>
+          <p>A：o1 / R1 引入第 4 维度——推理时算力。模型思考越久、采样越多、树搜索越深 → 准确率越高。OpenAI 2024 证明：固定 7B 模型 + Test-Time Compute 可达到 14x 训练算力的 GPT-4 水平（MATH 任务）。</p>
+        </div>
+        <div>
+          <h3>Q5：涌现是真实现还是评测假象？</h3>
+          <p>A：两者部分都对。① 真实现：CoT / Tool Use / Reasoning 在 70B+ 确实质变；② 评测假象：Schaeffer 2023 证明换连续指标后阶梯变平滑。结论：模型能力是连续提升的，但"易用"任务（strict-match）的"涌现"是真的能力跃迁。</p>
+        </div>
+        <div>
+          <h3>Q6：怎么预测训一个 70B 模型需要多少算力？</h3>
+          <p>A：训练 FLOPs ≈ 6 · N · D（每 token 6N FLOPs，N 参 D token）。70B × 1.4T = 6 · 70e9 · 1.4e12 = 5.88e23 FLOPs ≈ 5000 PFLOPs-day。H100 假设 50% MFU → 50000 张 H100 训 4 天 ≈ 200000 GPU-hours。</p>
+        </div>
+        <div>
+          <h3>Q7：Scaling Law 还成立吗？</h3>
+          <p>A：① Pre-training Loss 还在下降（Chinchilla 之外 Llama-3 405B Loss 1.40 vs Chinchilla 70B 1.50）；② 但"能力"维度（reasoning / agent）出现收益递减，需要新方法（Test-Time Compute / RL / Tool Use）；③ 2024-2026 是 pre-training + test-time + RLHF + agent 多维组合。</p>
+        </div>
+        <div>
+          <h3>Q8：为什么大模型能"涌现"小模型做不到的能力？</h3>
+          <p>A：① 参数量大 → 表征空间大，可学更抽象概念；② 数据量大 → 见过更多 pattern，可外推到新场景；③ 训练充分 → 多步推理、组合泛化能力涌现。本质：足够大的网络 + 数据 + 算力 = 通用逼近器。但"涌现"在指标选择下不绝对。</p>
+        </div>
+        <div>
+          <h3>Q9：Train Compute vs Inference Compute 怎么权衡？</h3>
+          <p>A：3 个场景：① QPS 高 / 延迟敏感 → 训大模型（一次成本高，多次摊销）；② QPS 低 / 准确率敏感 → 训小模型 + Test-Time（成本按需）；③ 部署成本敏感 → 蒸馏 + 量化。Snell 2024 实验：固定 QPS，小模型 + Test-Time 比大模型 + 标准推理便宜 2-10x。</p>
+        </div>
+        <div>
+          <h3>Q10：训练数据不够时怎么办？</h3>
+          <p>A：① 数据合成（Teacher 生成 / 改写）；② 数据增强（回译 / 释义）；③ 课程学习（先易后难）；④ 用更强 base + 更少数据（依赖泛化）；⑤ 降模型尺寸（Chinchilla 调整）；⑥ 关键：先看数据质量再扩量，质量 &gt; 数量 1 个数量级时收益更大。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：Scaling Law 描述 Loss ∝ N<sup>−α</sup> · D<sup>−β</sup>，即 Loss 与参数 / 数据呈幂律。Kaplan 2020 开创，Chinchilla 2022 修正为"算力一定时 N 和 D 等比增长，20:1 最优"。2024 主流"过训"（Llama-3 35:1）以节省推理成本。OpenAI o1 开启 Test-Time Compute 范式——推理时算力可换能力，固定小模型 + 慢思考 = 14x 训练算力效果。2024-2026 是 4 维 Scaling（N/D/C<sub>train</sub>/C<sub>test</sub>）。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（训练投入大 / 需预测收益）→ Kaplan 2020 公式 → Chinchilla 修正（20:1）+ Gopher 实验 → Compute-Optimal 框架 → 2024 过训趋势（Llama-3）→ 涌现 vs 平滑 → Test-Time Compute（o1/R1 范式）→ 4 维 Scaling → 业务落地决策。能讲清"为什么 Chinchilla 被 Llama-3 '违反' 仍合理"、"Test-Time 如何换 14x 训练算力"，立刻显得有真研究。</p>
+        </div>
+        <div>
+          <h3>加分：知道 Scaling Law 局限</h3>
+          <p>Scaling Law 不是银弹：① 预测的是"Loss"，不是"能力"——Loss 降到 1.5 不代表 AGI；② 涌现可能是评测假象（换指标后变平滑）；③ 边际收益递减——C 翻 10x 仅 Loss -12%，C 翻 100x 也只 -23%；④ 推理成本、数据质量、算法创新同样重要；⑤ Reasoning 维度（o1/R1）需 RL + Test-Time 共同驱动。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：盲目照搬 Chinchilla 20:1 训 70B 模型，结果数据耗尽 Loss 不降——发现是过拟合 → 加 5T tokens 过训到 70:1，推理成本持平但 Loss 降 0.05；或用 7B 模型加 Test-Time Compute（CoT + Self-Consistency）替代 70B 推理，成本降 5x、准确率持平。讲清"理论 → 实际 → 调优"三步，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>原理</td><td>Kaplan 和 Chinchilla 矛盾在哪？</td><td>答"实验设计"：Kaplan 没严格控制算力（同时变 N 和 D），Chinchilla 控制 C 不变 → 等比增长。Chinchilla 重新校准业界认知：模型欠训（数据不够），不是越大越好。</td></tr>
+          <tr><td>配比</td><td>70B 模型需要多少数据？</td><td>答"Chinchilla 20:1"：1.4T tokens。2024 主流过训 30-60:1：2-4T tokens。Llama-3 405B 用 15.6T。理由：推理成本主导时过训划算。</td></tr>
+          <tr><td>Test-Time</td><td>Test-Time Compute 怎么换训练算力？</td><td>答"o1 范式"：CoT 长度 + 采样数 + 树搜索深度，每 token 推理 FLOPs 可调。Snell 2024 实验：7B 模型 + Test-Time = 14x 训练算力 GPT-4 水平。Loss vs Test-Time Compute 也呈幂律，γ ≈ 0.05-0.10。</td></tr>
+          <tr><td>涌现</td><td>涌现是真的还是假象？</td><td>答"两个层面"：① 能力是真——CoT / Tool Use / Reasoning 在 70B+ 确实质变；② 评测假象——Schaeffer 2023 证明换连续指标后阶梯变平滑。结论：能力是连续的，但 strict-match 任务呈现"易用性跃迁"。</td></tr>
+          <tr><td>成本</td><td>怎么算训练成本？</td><td>答"6ND 公式"：FLOPs ≈ 6 · N · D。70B × 1.4T = 6e23 FLOPs。H100 算 50% MFU → 5万张训 4 天。Llama-3 405B 用 16K H100 训 90 天 ≈ $60M+。</td></tr>
+          <tr><td>趋势</td><td>Scaling Law 2024 之后怎么发展？</td><td>答"4 维 Scaling"：① 预训练 Loss 继续下降（但收益递减）；② Test-Time Compute（o1/R1）打开新维度；③ RLHF / RLAIF 后训练 + 推理 chain；④ Agent / Tool Use 加工具调用。Pre-training → Pre-training + Test-Time + RL + Agent 多维驱动。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：Scaling Law 是大模型面试"必问"基础题。面试允许说"我只了解经典公式，未深入外推实践"，但要能讲清 Kaplan → Chinchilla → Compute-Optimal → Test-Time 四阶段、与涌现关系、4 维 Scaling。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Scaling Law</td><td>Loss ∝ N<sup>−α</sup> D<sup>−β</sup>，幂律关系</td></tr>
+          <tr><td>Kaplan Law</td><td>OpenAI 2020 开创，N 收益 &gt; D 收益</td></tr>
+          <tr><td>Chinchilla Law</td><td>DeepMind 2022 修正，20:1 token/参数最优</td></tr>
+          <tr><td>Compute-Optimal</td><td>给定 C 算力，最优 N ∝ D ∝ C<sup>0.5</sup></td></tr>
+          <tr><td>6ND 公式</td><td>训练 FLOPs ≈ 6 · N · D</td></tr>
+          <tr><td>Over-train</td><td>过训，token/参数 &gt; 20:1，2024 主流（Llama-3 35:1）</td></tr>
+          <tr><td>Emergent</td><td>能力跃迁，70B+ CoT / Tool Use 稳定</td></tr>
+          <tr><td>Mirage (Schaeffer)</td><td>2023 论文，涌现是 strict-match 指标假象</td></tr>
+          <tr><td>Test-Time Compute</td><td>推理时算力，o1 / R1 范式，可换 14x 训练算力</td></tr>
+          <tr><td>o1 / o3</td><td>OpenAI 内化长 CoT 的 reasoning 模型</td></tr>
+          <tr><td>R1</td><td>DeepSeek 2025.1，GRPO RL 训出 reasoning</td></tr>
+          <tr><td>4 维 Scaling</td><td>N / D / C<sub>train</sub> / C<sub>test</sub>，2024 后多维驱动</td></tr>
+          <tr><td>Loss 外推</td><td>用 1% 算力训练预测 100% 表现</td></tr>
+          <tr><td>Diminishing Returns</td><td>收益递减，C 翻 10x 仅 Loss -12%</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

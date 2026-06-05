@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Evaluation 评估 知识页</title>
+  <style>
+    :root{
+      --bg:#f0fbf7;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#bfdfd0;
+      --accent:#0d9488;
+      --accent-soft:#ccfbf1;
+      --accent-soft-2:#f0fdfa;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#f0fdfa);border:1px solid #99e4d3;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f0fdfa;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./ai-pm.html">AI PM</a>
+    <a href="./sft.html">SFT</a>
+    <a href="./reasoning-models.html">Reasoning</a>
+    <a href="./agent-observability.html">可观测性</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">评估体系 · Benchmark / 评测</span>
+    <h1>Evaluation：怎么判断大模型"真的好"？</h1>
+    <p class="lead">MMLU / GSM8K / HumanEval / MT-Bench / Chatbot Arena / IFEval / AgentBench / SWE-bench / LLM-as-Judge——主流评估基准的能力维度、评测陷阱、如何选型。本页把"5 大类 Benchmark → 评测方法论 → LLM-as-Judge → 评测陷阱 → 5 阶段评估流水线 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">MMLU</span><span class="pill">GSM8K</span><span class="pill">HumanEval</span><span class="pill">MT-Bench</span><span class="pill">Chatbot Arena</span><span class="pill">IFEval</span><span class="pill">AgentBench</span><span class="pill">LLM-as-Judge</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要系统化评估</h2>
+      <ul>
+        <li><strong>能力量化</strong>：研发 / 选型 / 落地都需要"这个模型到底怎么样"</li>
+        <li><strong>横向比较</strong>：GPT-4 vs Claude vs Gemini vs Llama 谁更强？</li>
+        <li><strong>回归测试</strong>：SFT / DPO / LoRA 训练后是否真的提升？</li>
+        <li><strong>业务对齐</strong>：通用榜单 ≠ 业务场景，需要自定义评估集</li>
+        <li><strong>避免"看着好"</strong>：单 case 演示易骗人，统计指标才可靠</li>
+        <li><strong>评测陷阱多</strong>：数据污染、过拟合 benchmark、指标选择都会误导</li>
+      </ul>
+      <div class="callout">核心认知：① 单一 benchmark 不可信，需多维度组合；② 通用榜单 ≠ 业务能力；③ 评测方法本身（prompt、few-shot、温度）会大幅影响结果；④ LLM-as-Judge 有偏，需用人类标注校准。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、5 大类 Benchmark 全景</h2>
+      <table>
+        <thead><tr><th>类别</th><th>代表</th><th>测什么</th><th>典型规模</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通用知识 / 学科</strong></td><td>MMLU / MMLU-Pro / C-Eval / CMMLU / AGIEval</td><td>57+ 学科（数学/法律/医学/历史…）</td><td>10K-14K 题</td></tr>
+          <tr><td><strong>数学 / 推理</strong></td><td>GSM8K / MATH / MathBench / AIME 2024 / Omni-MATH</td><td>小学数学 → 竞赛数学</td><td>1K-12K 题</td></tr>
+          <tr><td><strong>代码</strong></td><td>HumanEval / MBPP / CodeContests / BigCodeBench / SWE-bench / LiveCodeBench</td><td>代码生成 / 补全 / 仓库级修复</td><td>164-2K 任务</td></tr>
+          <tr><td><strong>多轮 / 指令遵循</strong></td><td>MT-Bench / AlpacaEval / IFEval / Arena-Hard / Chatbot Arena</td><td>多轮对话 / 指令遵循 / 人类偏好</td><td>3K-100K 投票</td></tr>
+          <tr><td><strong>Agent / 工具</strong></td><td>AgentBench / SWE-bench / GAIA / WebArena / ToolBench / τ-bench</td><td>多步任务 / 工具调用 / 真实环境</td><td>100-1000 任务</td></tr>
+          <tr><td><strong>长上下文</strong></td><td>Needle-in-Haystack / RULER / LongBench / InfiniteBench</td><td>长文本检索 / 推理 / 摘要</td><td>10K-1M tokens</td></tr>
+          <tr><td><strong>幻觉 / 真实性</strong></td><td>TruthfulQA / HaluEval / FreshQA / HalluLens</td><td>幻觉 / 真实性 / 时效性</td><td>800-10K 题</td></tr>
+          <tr><td><strong>安全 / 对齐</strong></td><td>AdvBench / HarmBench / JailbreakBench / BeaverTails</td><td>红队 / 越狱 / 有害内容</td><td>500-10K 攻击</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>三、MMLU / GSM8K / HumanEval 经典三件套</h2>
+      <table>
+        <thead><tr><th>基准</th><th>全称</th><th>内容</th><th>典型分数（GPT-4o）</th><th>局限</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MMLU</strong></td><td>Massive Multitask Language Understanding</td><td>57 学科 4 选 1，难度从高中到专业</td><td>88.0%</td><td>题型简单（多选），易饱和；可被 fine-tune 数据污染</td></tr>
+          <tr><td><strong>GSM8K</strong></td><td>Grade School Math 8K</td><td>小学数学应用题，需 2-8 步推理</td><td>92.0%</td><td>难度天花板低；2024 模型已超 95%</td></tr>
+          <tr><td><strong>MATH</strong></td><td>Mathematics</td><td>高中竞赛数学，含代数几何</td><td>76.6%</td><td>符号运算重，CoT 后才可比</td></tr>
+          <tr><td><strong>HumanEval</strong></td><td>—</td><td>164 题 Python 函数生成，pass@k</td><td>90.2%</td><td>题库小（164）；数据污染高（已泄漏到训练集）</td></tr>
+          <tr><td><strong>MBPP</strong></td><td>Mostly Basic Python Problems</td><td>974 题基础 Python，pass@1</td><td>87.0%</td><td>基础题，已接近饱和</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">2024 后 MMLU-Pro / MathVista / LiveCodeBench / SWE-bench 等"更难 / 更动态"版本逐渐成为新基准。MMLU 88% 已是入场券，要体现"比 GPT-4 强"必须打 Math 竞赛 / SWE-bench / Agent 任务。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、Human Preference 类（MT-Bench / Arena）</h2>
+      <table>
+        <thead><tr><th>基准</th><th>评测方式</th><th>代表分数（GPT-4o）</th><th>优缺点</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MT-Bench</strong></td><td>80 题 × 2 轮，GPT-4 打分（pairwise）</td><td>9.32 / 10</td><td>多轮 + GPT-4 judge，快；judge 偏置</td></tr>
+          <tr><td><strong>AlpacaEval</strong></td><td>805 题，GPT-4 Turbo judge，win rate</td><td>57.5% vs Davinci-003</td><td>轻量、开源、易复现；judge 偏置</td></tr>
+          <tr><td><strong>Chatbot Arena</strong></td><td>LMSYS 真实用户盲测，Elo 评分</td><td>1287 Elo</td><td>真实偏好，金标准；样本偏分布</td></tr>
+          <tr><td><strong>Arena-Hard</strong></td><td>Chatbot Arena 难题 1K 子集</td><td>79.7%</td><td>高难度，避免 judge 偏置</td></tr>
+          <tr><td><strong>IFEval</strong></td><td>Instruction Following，验证性指令</td><td>83.7%</td><td>指令遵循可验证，避免 judge 偏置</td></tr>
+          <tr><td><strong>WildBench</strong></td><td>真实用户查询，LLM judge + 人类标注</td><td>58.1%</td><td>真实分布；数据集需不断更新</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">Chatbot Arena（lmarena.ai）是当下最权威的人类偏好榜单，Elo 排名是模型"真实好用程度"的黄金标准。但中文场景需看国内榜单（CompassRank、C-Eval、SuperCLUE）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、代码与 Agent 评测（2024 重点）</h2>
+      <table>
+        <thead><tr><th>基准</th><th>测什么</th><th>典型 GPT-4o</th><th>代表意义</th></tr></thead>
+        <tbody>
+          <tr><td><strong>HumanEval</strong></td><td>164 题 Python 函数，pass@1</td><td>90.2%</td><td>经典，已饱和</td></tr>
+          <tr><td><strong>MBPP</strong></td><td>974 题基础 Python，pass@1</td><td>87.0%</td><td>经典，已饱和</td></tr>
+          <tr><td><strong>BigCodeBench</strong></td><td>1140 题复杂 Python，139 库</td><td>55.6%</td><td>复杂任务，区分度高</td></tr>
+          <tr><td><strong>LiveCodeBench</strong></td><td>动态更新 LeetCode / AtCoder 题</td><td>62.7%</td><td>防数据污染，2024 主推</td></tr>
+          <tr><td><strong>SWE-bench</strong></td><td>GitHub Issue 修复，仓库级</td><td>33.2% (Verified)</td><td>真实工程任务，Agent 必测</td></tr>
+          <tr><td><strong>AgentBench</strong></td><td>8 类环境（OS / DB / Web / Game）</td><td>54.2%</td><td>综合 Agent 能力</td></tr>
+          <tr><td><strong>GAIA</strong></td><td>多步推理 + 工具调用</td><td>27.3%</td><td>人类级 AI 助手基准</td></tr>
+          <tr><td><strong>WebArena</strong></td><td>真实 Web 任务（购物/订票/论坛）</td><td>14.4%</td><td>浏览器 Agent 必测</td></tr>
+          <tr><td><strong>τ-bench</strong></td><td>真实客服多轮对话 + 工具</td><td>—</td><td>2025 新，Agent 真实场景</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">2024-2025 重点：① SWE-bench 区分度高（GPT-4 33% vs Claude 3.5 49% vs R1 49%）；② AgentBench / GAIA / WebArena 测真实多步任务；③ LiveCodeBench 持续更新防数据污染。Code/Agent 评测是落地金标准。</div>
+    </article>
+
+    <article class="card full">
+      <h2>六、LLM-as-Judge（用大模型打分）</h2>
+      <p>用强模型（GPT-4 / Claude 3.5）当裁判给候选模型打分，规模化、便宜、可复现。但有偏置。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>两种范式</strong></p>
+        <p class="mathline">Single Answer：Judge(A_out) → 1-10 分</p>
+        <p class="mathline">Pairwise：Judge(A_out, B_out) → "A 更好" / "B 更好" / "平局"</p>
+        <p class="mathnote"><strong>标准 prompt 模板（pairwise）</strong></p>
+        <pre class="code">System: You are a fair judge of AI response quality.
+[Question]
+A: {response_A}
+B: {response_B}
+Output: {"winner": "A" | "B" | "tie", "reason": "..."}</pre>
+        <p class="mathnote"><strong>常见偏置及解法</strong></p>
+        <p class="mathline">① 位置偏置（A 总是赢）→ 随机化 A/B 顺序，两次取平均</p>
+        <p class="mathline">② 长度偏置（长答案赢）→ 加 length-instruction 提示</p>
+        <p class="mathline">③ 自我偏置（GPT-4 偏 GPT-4 风格）→ 用第三方 judge 或 ensemble</p>
+        <p class="mathline">④ 风格偏置（Markdown / Bullet 赢）→ 提示忽略格式</p>
+        <p class="mathnote"><strong>校准</strong>：用 500+ 人类标注样本计算 judge 与人类一致性，&gt;80% 才可信。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>七、5 阶段评估流水线</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 460" width="100%" height="auto" role="img" aria-label="Evaluation pipeline">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="40" text-anchor="middle" font-size="14" font-weight="700">1. 离线</text>
+          <text x="280" y="40" text-anchor="middle" font-size="14" font-weight="700">2. 内部</text>
+          <text x="490" y="40" text-anchor="middle" font-size="14" font-weight="700">3. 在线</text>
+          <text x="700" y="40" text-anchor="middle" font-size="14" font-weight="700">4. 监控</text>
+          <text x="900" y="40" text-anchor="middle" font-size="14" font-weight="700">5. 反馈</text>
+          <text x="1080" y="40" text-anchor="middle" font-size="14" font-weight="700">迭代</text>
+
+          <rect x="20" y="60" width="120" height="100" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="80" y="90" text-anchor="middle" font-size="13" font-weight="700">离线 Bench</text>
+          <text x="80" y="115" text-anchor="middle" font-size="11" fill="#475569">MMLU / GSM8K</text>
+          <text x="80" y="132" text-anchor="middle" font-size="11" fill="#475569">HumanEval / MT</text>
+          <text x="80" y="149" text-anchor="middle" font-size="11" fill="#475569">bench / IFEval</text>
+
+          <rect x="220" y="60" width="120" height="100" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="280" y="90" text-anchor="middle" font-size="13" font-weight="700">内部 Eval</text>
+          <text x="280" y="115" text-anchor="middle" font-size="11" fill="#475569">业务数据集</text>
+          <text x="280" y="132" text-anchor="middle" font-size="11" fill="#475569">100-1000 题</text>
+          <text x="280" y="149" text-anchor="middle" font-size="11" fill="#475569">人标 + LLM Judge</text>
+
+          <rect x="420" y="60" width="140" height="100" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="490" y="90" text-anchor="middle" font-size="13" font-weight="700">A/B / Shadow</text>
+          <text x="490" y="115" text-anchor="middle" font-size="11" fill="#475569">小流量测试</text>
+          <text x="490" y="132" text-anchor="middle" font-size="11" fill="#475569">对比指标</text>
+          <text x="490" y="149" text-anchor="middle" font-size="11" fill="#475569">P99 延迟 / 满意度</text>
+
+          <rect x="620" y="60" width="160" height="100" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="700" y="90" text-anchor="middle" font-size="13" font-weight="700">线上监控</text>
+          <text x="700" y="115" text-anchor="middle" font-size="11" fill="#475569">用户反馈</text>
+          <text x="700" y="132" text-anchor="middle" font-size="11" fill="#475569">bad case 抽取</text>
+          <text x="700" y="149" text-anchor="middle" font-size="11" fill="#475569">质量抽样评分</text>
+
+          <rect x="840" y="60" width="120" height="100" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="900" y="90" text-anchor="middle" font-size="13" font-weight="700">反馈循环</text>
+          <text x="900" y="115" text-anchor="middle" font-size="11" fill="#475569">失败 case</text>
+          <text x="900" y="132" text-anchor="middle" font-size="11" fill="#475569">→ 训练集</text>
+          <text x="900" y="149" text-anchor="middle" font-size="11" fill="#475569">→ 下一轮 SFT</text>
+
+          <rect x="1020" y="60" width="120" height="100" rx="12" fill="#fff" stroke="#0d9488" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="1080" y="90" text-anchor="middle" font-size="13" font-weight="700">下一版本</text>
+          <text x="1080" y="115" text-anchor="middle" font-size="11" fill="#475569">新模型</text>
+          <text x="1080" y="132" text-anchor="middle" font-size="11" fill="#475569">回到 1</text>
+          <text x="1080" y="149" text-anchor="middle" font-size="11" fill="#475569">形成闭环</text>
+
+          <line x1="140" y1="110" x2="220" y2="110" stroke="#0d9488" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="340" y1="110" x2="420" y2="110" stroke="#0d9488" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="560" y1="110" x2="620" y2="110" stroke="#0d9488" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="780" y1="110" x2="840" y2="110" stroke="#0d9488" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="960" y1="110" x2="1020" y2="110" stroke="#0d9488" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <path d="M 1080 160 Q 1080 240 1080 280" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-m)"/>
+          <path d="M 1080 280 Q 600 320 80 200" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-m)"/>
+
+          <text x="80" y="200" text-anchor="middle" font-size="11" fill="#475569">下一版本</text>
+          <text x="600" y="350" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">评估闭环：从离线到反馈再到训练</text>
+          <text x="600" y="370" text-anchor="middle" font-size="12" fill="#475569">bad case → 数据集 → SFT/DPO → 新模型 → 重测</text>
+          <text x="600" y="395" text-anchor="middle" font-size="12" fill="#475569">关键：业务评估集 + LLM-Judge + 人类标注三者结合</text>
+          <text x="600" y="420" text-anchor="middle" font-size="12" fill="#475569">生产中每 SFT/DPO 一次就要走一遍完整评估</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、评测陷阱（避坑指南）</h2>
+      <div class="qa">
+        <div>
+          <h3>陷阱 1：数据污染（Data Contamination）</h3>
+          <p>Benchmark 题目被收进预训练 / SFT 训练集，模型"背答案"。解法：① 用 LiveCodeBench / MMLU-Pro / 动态更新 benchmark；② 检查 n-gram 重叠；③ 改写题目测试泛化。</p>
+        </div>
+        <div>
+          <h3>陷阱 2：Judge 偏置（LLM-as-Judge Bias）</h3>
+          <p>位置偏置（首选 A）、长度偏置、风格偏置、自我偏置（GPT-4 偏 GPT-4 风格）。解法：① 随机化 A/B；② 多次取平均；③ 用 ensemble（GPT-4 + Claude + Gemini）；④ 人类标注校准。</p>
+        </div>
+        <div>
+          <h3>陷阱 3：单次采样 vs 多采样</h3>
+          <p>Greedy 解（temperature=0）会低估真实能力。Self-Consistency 多采样投票可 +5-10%，但榜单是单次。生产中要明确：榜单分 = 实际分？</p>
+        </div>
+        <div>
+          <h3>陷阱 4：CoT 触不触发</h3>
+          <p>Math 评测需明确"是否允许 CoT"。zero-shot greedy vs zero-shot CoT vs 5-shot CoT 分数差 10-20pp。同一模型在 GSM8K：greedy 60% / CoT 80% / R1 风格 95%。</p>
+        </div>
+        <div>
+          <h3>陷阱 5：超参数不一致</h3>
+          <p>不同评测框架用不同 prompt、tokenizer、max length、温度，导致不可比。解法：① 用统一框架（lm-eval-harness / OpenCompass / HELM）；② 锁定 prompt 和超参；③ 注明评测配置。</p>
+        </div>
+        <div>
+          <h3>陷阱 6：榜单过拟合</h3>
+          <p>模型针对某个榜单微调（benchmark hacking）→ 真实能力没提升。解法：① 多个 benchmark 交叉；② 用业务数据集评估；③ 用 held-out 测试集。</p>
+        </div>
+        <div>
+          <h3>陷阱 7：忽视分布偏移</h3>
+          <p>Bench 分布 ≠ 真实分布。GSM8K 90% 不代表客服场景 90%。生产中必须用业务数据评估 + 持续监控。</p>
+        </div>
+        <div>
+          <h3>陷阱 8：能力 vs 风格</h3>
+          <p>LLM-as-Judge 常被"看起来专业"骗——Markdown 格式 / 长答案 / 自信口吻都加分。能力差的模型做"风格好"也能拿高分。解法：① IFEval 类可验证 benchmark；② 人类标注金标准。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>九、5 大主流评测框架</h2>
+      <table>
+        <thead><tr><th>框架</th><th>团队</th><th>特点</th><th>语言</th></tr></thead>
+        <tbody>
+          <tr><td><strong>lm-evaluation-harness</strong></td><td>EleutherAI</td><td>开源 / 200+ benchmark / 统一 prompt</td><td>EN</td></tr>
+          <tr><td><strong>OpenCompass（司南）</strong></td><td>上海 AI Lab</td><td>100+ bench / 中文强 / 报告权威</td><td>中英</td></tr>
+          <tr><td><strong>HELM</strong></td><td>Stanford CRFM</td><td>多维度（accuracy / robustness / bias）</td><td>EN</td></tr>
+          <tr><td><strong>DeepEval</strong></td><td>Confident AI</td><td>自定义指标 / RAG / Agent 评估</td><td>EN</td></tr>
+          <tr><td><strong>Ragas</strong></td><td>Exploding Gradients</td><td>专做 RAG 评估（faithfulness / relevance）</td><td>EN</td></tr>
+          <tr><td><strong>lm-studio / OpenLLM Leaderboard</strong></td><td>HuggingFace</td><td>公开榜单 / 实时更新</td><td>EN</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、业务落地：自定义评估集</h2>
+      <ul>
+        <li><strong>数据构造</strong>：从线上日志 / bad case 抽 500-5000 题，业务专家标注</li>
+        <li><strong>评估 prompt</strong>：和实际业务 prompt 一致，不要"评测 prompt 简化版"</li>
+        <li><strong>多维度</strong>：① 任务完成率（业务目标）② 事实准确率（幻觉）③ 风格（人设 / 品牌）④ 安全（合规 / 越狱）</li>
+        <li><strong>持续评估</strong>：每天 / 每周跑评测，跟踪回归</li>
+        <li><strong>LLM-as-Judge 校准</strong>：500 题人类标注 + judge 一致性 &gt; 80% 才放心用</li>
+        <li><strong>成本控制</strong>：评测用小模型（如 GPT-4o-mini）打分，大模型定期抽样</li>
+        <li><strong>报告</strong>：版本对比表 + 关键 bad case + 趋势图</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>十一、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：MMLU 是什么？怎么用？</h3>
+          <p>A：Massive Multitask Language Understanding，57 学科 4 选 1 题目（10K+），测综合学科知识。0-shot / 5-shot 跑分。GPT-4 88%、Llama-3 70B 79%、Claude 3.5 89%。局限：① 多选易饱和；② 数据污染；③ 不测推理 / 工具调用。</p>
+        </div>
+        <div>
+          <h3>Q2：HumanEval 为什么 90% 仍嫌低？</h3>
+          <p>A：HumanEval 仅 164 题，且 2022 起已被数据污染（公开题目被收进训练集）。生产中要用 BigCodeBench / LiveCodeBench / SWE-bench（真实工程任务，GPT-4o 33%、Claude 3.5 49%）。Code 评测应看仓库级 + 动态更新。</p>
+        </div>
+        <div>
+          <h3>Q3：Chatbot Arena 为什么是金标准？</h3>
+          <p>A：真实人类用户盲测，Elo 评分系统统计意义强，避免 LLM-as-Judge 偏置。局限：① 样本偏分布（英语主导、英文用户偏好）；② 中文场景看国内榜单（CompassRank、SuperCLUE）。</p>
+        </div>
+        <div>
+          <h3>Q4：LLM-as-Judge 有哪些偏置？</h3>
+          <p>A：① 位置偏置（A 总是赢）→ 随机化顺序；② 长度偏置（长答案赢）→ 提示忽略长度；③ 自我偏置（GPT-4 偏 GPT-4 风格）→ 用第三方 judge；④ 风格偏置（Markdown 赢）→ 提示忽略格式。解法：ensemble + 人类标注校准。</p>
+        </div>
+        <div>
+          <h3>Q5：CoT 触不触发影响多大？</h3>
+          <p>A：GSM8K：greedy 60% / zero-shot CoT 80% / R1 风格 95%。同一模型分差 10-35pp。生产中必须明确：① 评测是否允许 CoT；② 业务用 CoT 还是单次；③ 榜单分 = 实际部署分？</p>
+        </div>
+        <div>
+          <h3>Q6：怎么防止数据污染？</h3>
+          <p>A：① 用动态更新 benchmark（LiveCodeBench / MMLU-Pro / 实时刷新的）；② 检查训练集与 benchmark n-gram 重叠（&gt; 50% 视为污染）；③ 改写题目测试泛化（不变核心的同义改写）；④ 优先用 held-out 测试集（业务数据）。</p>
+        </div>
+        <div>
+          <h3>Q7：业务模型怎么评估？</h3>
+          <p>A：5 阶段流水线：① 离线 Bench（MMLU / IFEval）→ ② 内部 Eval（业务数据集 500+）→ ③ A/B（线上 1-5% 流量）→ ④ 监控（bad case / 用户反馈）→ ⑤ 反馈循环（bad case → 训练集）。关键：业务数据集 + LLM-Judge + 人类标注三者结合。</p>
+        </div>
+        <div>
+          <h3>Q8：SWE-bench 为什么重要？</h3>
+          <p>A：SWE-bench 测"修复 GitHub Issue"——真实仓库级 Python 代码工程任务，区分度高。GPT-4 33% / Claude 3.5 Sonnet 49% / R1 49%。比 HumanEval 难 10x，更能反映真实 Code Agent 能力。2024 后 Code 评测新标准。</p>
+        </div>
+        <div>
+          <h3>Q9：MMLU-Pro / MMLU-Redux 和 MMLU 区别？</h3>
+          <p>A：MMLU-Pro（2024）12K 题 + 10 选 1（不是 4 选），更难题 + 推理要求。Llama-3 70B 70% / GPT-4o 73% / Claude 3.5 78%。MMLU-Redux 是清洗版（去污染）。结论：MMLU 88% 已不算"高水平"，MMLU-Pro 80%+ 才是新基线。</p>
+        </div>
+        <div>
+          <h3>Q10：为什么榜单分高但业务表现差？</h3>
+          <p>A：① 分布偏移：bench 题目 ≠ 业务 query；② benchmark hacking：模型针对 bench 过拟合；③ 风格 ≠ 能力：LLM-Judge 被表面工程（Markdown / 长答案）骗；④ 任务复杂度低估：多步 / 工具调用 bench 难。解法：自定义业务评估集 + 真实 A/B + 用户反馈。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：大模型评估有 5 大类 benchmark：① 通用知识（MMLU / C-Eval）；② 数学推理（GSM8K / MATH / AIME）；③ 代码（HumanEval / LiveCodeBench / SWE-bench）；④ 人类偏好（MT-Bench / Chatbot Arena / IFEval）；⑤ Agent（AgentBench / GAIA / WebArena）。评测方法有 LLM-as-Judge、人类标注、A/B。常见陷阱：数据污染、Judge 偏置、超参不一致、榜单过拟合。生产中"5 阶段评估流水线"：离线 Bench → 内部 Eval → A/B → 监控 → 反馈循环。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（能力量化 / 横向比较 / 回归测试）→ 5 大类 Benchmark 全景 → 经典三件套（MMLU / GSM8K / HumanEval）→ Preference 类（MT-Bench / Arena）→ Code/Agent 评测（SWE-bench）→ LLM-as-Judge 与偏置 → 5 阶段评估流水线 → 8 大评测陷阱 → 主流框架（lm-eval-harness / OpenCompass）→ 业务落地。能讲清"为什么 HumanEval 90% 仍嫌低"、"Chatbot Arena 为什么金标准"、"为什么榜单分 ≠ 业务分"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道评估局限</h3>
+          <p>评估不是万能：① 数据污染（Bench 公开被收进训练集）；② Judge 偏置（LLM 评 LLM 有偏）；③ 能力 vs 风格（Markdown / 长答案 / 自信口吻骗分）；④ 分布偏移（Bench ≠ 业务）；⑤ 榜单过拟合（benchmark hacking）；⑥ 真实多步任务难（Agent / 工具调用 / 规划）。生产中必须"业务数据集 + LLM-Judge + 人类标注 + A/B"四件套。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：自研客服模型 GPT-4-judge 打分 8.5/10，上线后用户满意度 60% → 查 LLM-Judge 与人类不一致，定位是 Judge 偏"长 Markdown" → 重写 prompt 加"忽略格式"、A/B 顺序随机化、用业务数据集 200 题人类标注校准 → Judge 与人类一致性 65% → 85%，满意度 60% → 82%。讲清"评测 → 调查 → 修偏置 → 校准 → 上线"五步，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>Bench 选型</td><td>业务模型选什么 benchmark？</td><td>答"5 维度组合"：① 通用（IFEval / MT-Bench）保能力不掉；② 业务自定义数据集 500+ 测业务能力；③ 安全（AdvBench / JailbreakBench）测对齐；④ 复杂任务（SWE-bench / AgentBench）测推理；⑤ 真实用户反馈（A/B / 监控）测真实表现。</td></tr>
+          <tr><td>LLM-Judge</td><td>LLM-as-Judge 怎么防偏置？</td><td>答"4 手段"：① 随机化 A/B 顺序 + 多次平均；② ensemble（GPT-4 + Claude + Gemini 投票）；③ 提示"忽略长度 / 格式 / 风格"；④ 500+ 人类标注校准一致性 &gt; 80%。</td></tr>
+          <tr><td>数据污染</td><td>怎么防 benchmark 数据污染？</td><td>答"4 手段"：① 动态更新 benchmark（LiveCodeBench / MMLU-Pro）；② 训练集与 bench n-gram 检查；③ 改写题目测试泛化（同义改写分数差 &lt; 5% 为健康）；④ 业务数据 held-out 测试。</td></tr>
+          <tr><td>CoT 触发</td><td>CoT 是否触发表影响多大？</td><td>答"影响巨大"：GSM8K greedy 60% / CoT 80% / R1 风格 95%，分差 35pp。生产中必须明确：① 评测是否允许 CoT；② 部署用 greedy / CoT / Test-Time？ ③ 榜单分 ≠ 实际分。</td></tr>
+          <tr><td>Code 评测</td><td>代码模型选什么 benchmark？</td><td>答"4 层级"：① HumanEval / MBPP 基础（已饱和）；② BigCodeBench 复杂；③ LiveCodeBench 动态防污染；④ SWE-bench 仓库级（GPT-4 33% / Claude 3.5 49% / R1 49%）。生产中组合 BigCodeBench + LiveCodeBench + SWE-bench。</td></tr>
+          <tr><td>业务对齐</td><td>榜单分高但业务差为什么？</td><td>答"5 原因"：① 分布偏移；② benchmark hacking；③ 风格 vs 能力；④ 任务复杂度低估；⑤ 没接业务数据。解法：业务数据集 500+ + A/B + 人类标注 + 用户反馈循环。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：评估是 AI 产品 / 研发岗必问。面试允许说"我只了解经典 benchmark，未做业务自定义"，但要能讲清 5 大类 benchmark、LLM-as-Judge 偏置、8 大评测陷阱、5 阶段流水线。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>MMLU</td><td>57 学科 10K+ 题，4 选 1，测综合知识</td></tr>
+          <tr><td>MMLU-Pro</td><td>2024 升级版，10 选 1，更难，防饱和</td></tr>
+          <tr><td>GSM8K</td><td>小学数学 8K 题，2-8 步推理</td></tr>
+          <tr><td>MATH</td><td>高中竞赛数学，含代数几何</td></tr>
+          <tr><td>HumanEval</td><td>164 题 Python 函数生成，pass@k</td></tr>
+          <tr><td>MBPP</td><td>974 题基础 Python，pass@1</td></tr>
+          <tr><td>BigCodeBench</td><td>1140 题复杂 Python，139 库</td></tr>
+          <tr><td>LiveCodeBench</td><td>动态更新 LeetCode / AtCoder，防数据污染</td></tr>
+          <tr><td>SWE-bench</td><td>GitHub Issue 修复，仓库级，真实工程</td></tr>
+          <tr><td>MT-Bench</td><td>80 题 × 2 轮，GPT-4 judge 多轮对话</td></tr>
+          <tr><td>AlpacaEval</td><td>805 题，GPT-4 Turbo judge，win rate</td></tr>
+          <tr><td>Chatbot Arena</td><td>LMSYS 真实用户盲测，Elo 评分，金标准</td></tr>
+          <tr><td>Arena-Hard</td><td>Arena 难题 1K 子集，避免 judge 偏置</td></tr>
+          <tr><td>IFEval</td><td>Instruction Following 验证性指令</td></tr>
+          <tr><td>AgentBench</td><td>8 类环境 Agent 综合评测</td></tr>
+          <tr><td>GAIA</td><td>多步推理 + 工具调用，AI 助手基准</td></tr>
+          <tr><td>WebArena</td><td>真实 Web 任务（购物/订票）</td></tr>
+          <tr><td>TruthfulQA</td><td>真实性问答，测幻觉</td></tr>
+          <tr><td>HaluEval</td><td>幻觉评估</td></tr>
+          <tr><td>LLM-as-Judge</td><td>用 GPT-4 / Claude 等强模型当裁判打分</td></tr>
+          <tr><td>数据污染</td><td>Bench 题目被收进训练集</td></tr>
+          <tr><td>榜单过拟合</td><td>针对 benchmark 微调提升榜单分</td></tr>
+          <tr><td>OpenCompass</td><td>上海 AI Lab 评测框架，中文强</td></tr>
+          <tr><td>lm-evaluation-harness</td><td>EleutherAI 统一评测框架，200+ bench</td></tr>
+          <tr><td>HELM</td><td>Stanford 多维度评估（accuracy / robustness / bias）</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

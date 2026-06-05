@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Agent 架构与协作 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./mcp.html">MCP</a>
+    <a href="./a2a.html">A2A</a>
+    <a href="./router.html">Router</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · Agent 架构与协作</span>
+    <h1>Multi-Agent：架构 + 角色 + 通信 + 共识</h1>
+    <p class="lead">用专门子 Agent 分担复杂任务，Router 统一调度，Supervisor 仲裁冲突。本页把"为什么需要多 Agent → 5 类架构模式 → 6 类核心角色 → 3 类通信方式 → 4 种共识机制 → 3 框架对比 → 项目落地 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">Router</span><span class="pill">Supervisor</span><span class="pill">Planner</span><span class="pill">Critic</span><span class="pill">Shared Memory</span><span class="pill">AutoGen</span><span class="pill">CrewAI</span><span class="pill">LangGraph</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要多 Agent</h2>
+      <ul>
+        <li>单 Agent 上下文压力大（10+ 工具 / 多领域知识塞一个 prompt）</li>
+        <li>专业度不够（一个 Agent 难以精通所有任务）</li>
+        <li>错误风险集中（关键任务失败影响全流程）</li>
+        <li>无法并行（单 Agent 必须串行处理多任务）</li>
+        <li>审计与可解释性差（决策散在多步 thought 里）</li>
+      </ul>
+      <div class="callout">判断口诀：任务能拆成 ≥2 个"独立子任务"、每个子任务需要不同工具/知识/风格。简单 QA 单 Agent 就够；多步骤 / 多领域 / 多模态 / 需要审计考虑上 Multi-Agent。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、5 类核心架构模式</h2>
+      <table>
+        <thead><tr><th>模式</th><th>结构</th><th>协调机制</th><th>适用场景</th><th>代表实现</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Router</strong></td><td>1 Router + N Sub-Agent</td><td>入口分发</td><td>任务边界清晰</td><td>LangChain RouterChain</td></tr>
+          <tr><td><strong>Supervisor</strong></td><td>1 Supervisor + N Worker</td><td>中央协调 + 仲裁</td><td>需要全局视角</td><td>LangGraph Supervisor</td></tr>
+          <tr><td><strong>Debate</strong></td><td>N Agent 投票</td><td>多视角共识</td><td>高风险决策 / 评估</td><td>AutoGen GroupChat</td></tr>
+          <tr><td><strong>Handoff</strong></td><td>动态交接链</td><td>上下文传递</td><td>客服路由 / 多阶段</td><td>CrewAI Handoff</td></tr>
+          <tr><td><strong>Hierarchical</strong></td><td>树形 Manager-Worker</td><td>分层调度</td><td>复杂工作流</td><td>MetaGPT</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型经验：80% 场景 Router 够用；需要协调 + 仲裁用 Supervisor；高风险决策用 Debate；客服多阶段流转用 Handoff；复杂工作流用 Hierarchical。生产中常组合：Router 入口 + Handoff 子流程 + Supervisor 兜底仲裁。</div>
+    </article>
+
+    <article class="card full">
+      <h2>多 Agent 模式横向对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Router</th><th>Supervisor</th><th>Debate</th><th>Handoff</th><th>Hierarchical</th></tr></thead>
+        <tbody>
+          <tr><td>协调成本</td><td>低（一次分发）</td><td>中（持续监控）</td><td>高（多轮投票）</td><td>中（状态传递）</td><td>高（多层调度）</td></tr>
+          <tr><td>扩展性</td><td>高（加 Sub-Agent）</td><td>中（Supervisor 瓶颈）</td><td>中（投票成本）</td><td>高（动态加 Agent）</td><td>中（结构固定）</td></tr>
+          <tr><td>决策质量</td><td>中（依赖 Router）</td><td>高（全局视角）</td><td>高（多视角）</td><td>中（依赖前序）</td><td>高（分层共识）</td></tr>
+          <tr><td>容错性</td><td>中（Router 失败影响大）</td><td>高（可仲裁）</td><td>高（投票容错）</td><td>中（链式失败）</td><td>中（树形传递）</td></tr>
+          <tr><td>Token 成本</td><td>低</td><td>中</td><td>高（3x+）</td><td>中</td><td>中</td></tr>
+          <tr><td>适用阶段</td><td>简单任务分发</td><td>需要协调的复杂任务</td><td>评估 / 决策</td><td>客服 / 多阶段流程</td><td>复杂工作流</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>三、Router 架构图（最常见模式）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 520" width="100%" height="auto" role="img" aria-label="Multi-agent router architecture">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="490" y="20" width="200" height="60" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="50" text-anchor="middle" font-size="18" font-weight="700">User</text>
+          <text x="590" y="68" text-anchor="middle" font-size="12" fill="#475569">提问 / 任务</text>
+
+          <rect x="420" y="120" width="340" height="90" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="150" text-anchor="middle" font-size="18" font-weight="700">Router（核心调度器）</text>
+          <text x="590" y="172" text-anchor="middle" font-size="12" fill="#475569">规则路由 / LLM 路由</text>
+          <text x="590" y="192" text-anchor="middle" font-size="12" fill="#475569">分发任务到对应 Sub-Agent</text>
+
+          <line x1="590" y1="80" x2="590" y2="120" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+
+          <rect x="80" y="260" width="220" height="100" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="190" y="290" text-anchor="middle" font-size="16" font-weight="700">Design Agent</text>
+          <text x="190" y="312" text-anchor="middle" font-size="12" fill="#475569">图像生成 / 设计建议</text>
+          <text x="190" y="332" text-anchor="middle" font-size="12" fill="#475569">tools: sd_api, palette</text>
+
+          <rect x="480" y="260" width="220" height="100" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="290" text-anchor="middle" font-size="16" font-weight="700">Data Agent</text>
+          <text x="590" y="312" text-anchor="middle" font-size="12" fill="#475569">数据查询 / 报表</text>
+          <text x="590" y="332" text-anchor="middle" font-size="12" fill="#475569">tools: sql, bi_api</text>
+
+          <rect x="880" y="260" width="220" height="100" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="990" y="290" text-anchor="middle" font-size="16" font-weight="700">Service Agent</text>
+          <text x="990" y="312" text-anchor="middle" font-size="12" fill="#475569">售后 / 客服</text>
+          <text x="990" y="332" text-anchor="middle" font-size="12" fill="#475569">tools: kb, ticket</text>
+
+          <path d="M 540 210 Q 540 235 190 260" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <path d="M 590 210 L 590 260" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <path d="M 640 210 Q 640 235 990 260" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+
+          <rect x="80" y="410" width="1020" height="60" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+          <text x="590" y="436" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Shared Memory（共享状态）</text>
+          <text x="590" y="456" text-anchor="middle" font-size="12" fill="#475569">user_id · session · 中间结果 · 决策日志</text>
+
+          <line x1="190" y1="360" x2="190" y2="410" stroke="#93c5fd" stroke-width="2" stroke-dasharray="4 4"/>
+          <line x1="590" y1="360" x2="590" y2="410" stroke="#93c5fd" stroke-width="2" stroke-dasharray="4 4"/>
+          <line x1="990" y1="360" x2="990" y2="410" stroke="#93c5fd" stroke-width="2" stroke-dasharray="4 4"/>
+
+          <rect x="420" y="490" width="340" height="24" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="508" text-anchor="middle" font-size="12" fill="#0f172a">结果回传 → 合并 / 直接答复</text>
+        </svg>
+      </div>
+      <p class="muted">User 提问经 Router 分类后分发到对应 Sub-Agent 执行；Sub-Agent 共享 Shared Memory 读上下文；结果回传 Router 合并答复。各 Agent 独立 prompt、独立工具集，错误隔离。</p>
+    </article>
+
+    <article class="card">
+      <h2>四、6 类核心角色职责</h2>
+      <table>
+        <thead><tr><th>角色</th><th>职责</th><th>典型工具</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Planner</strong></td><td>拆任务、选路径、终止条件</td><td>CoT、ToT、Subgoal</td></tr>
+          <tr><td><strong>Researcher</strong></td><td>检索、查证、收集证据</td><td>Web Search、RAG</td></tr>
+          <tr><td><strong>Coder</strong></td><td>写代码、调试、跑测试</td><td>Code Interpreter、Shell</td></tr>
+          <tr><td><strong>Writer</strong></td><td>结构化输出、风格润色</td><td>LLM + 风格模板</td></tr>
+          <tr><td><strong>Critic</strong></td><td>审稿、纠错、给改进意见</td><td>Self-Critique、宪法评判</td></tr>
+          <tr><td><strong>Verifier</strong></td><td>事实核对、工具结果验证</td><td>规则 / 单元测试</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、3 类通信模式</h2>
+      <ul>
+        <li><strong>集中式 (Hub-and-Spoke)</strong>：所有 Agent 通过 Planner 中转，适合强结构任务</li>
+        <li><strong>点对点 (Peer-to-Peer)</strong>：Agent 直接互发消息，适合去中心化任务</li>
+        <li><strong>共享黑板 (Blackboard)</strong>：所有 Agent 读写共享 Memory，适合信息密集任务</li>
+      </ul>
+      <div class="callout">通信模式决定可扩展性：集中式易调试但 Planner 成瓶颈；点对点灵活但调试难；黑板适合"事实 + 推理"类任务（如多专家会诊）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>六、3 种主流框架对比（AutoGen / CrewAI / LangGraph）</h2>
+      <table>
+        <thead><tr><th>维度</th><th>AutoGen (Microsoft)</th><th>CrewAI</th><th>LangGraph (LangChain)</th></tr></thead>
+        <tbody>
+          <tr><td>抽象模型</td><td>Conversable Agent + GroupChat</td><td>Role + Task + Crew</td><td>State Graph + Node + Edge</td></tr>
+          <tr><td>通信</td><td>点对点 + GroupChat 协调</td><td>顺序 / 层级任务流</td><td>图状态流转</td></tr>
+          <tr><td>状态管理</td><td>每个 Agent 独立 history</td><td>Crew 共享 context</td><td>State 对象显式流转</td></tr>
+          <tr><td>循环支持</td><td>强（GroupChat 内任意轮）</td><td>弱（线性 task chain）</td><td>强（任意 back edge）</td></tr>
+          <tr><td>人介入</td><td>user_proxy_agent</td><td>需要外部包</td><td>Interrupt 机制</td></tr>
+          <tr><td>调试</td><td>中（消息流可看）</td><td>弱（黑盒）</td><td>强（LangSmith 集成）</td></tr>
+          <tr><td>适用</td><td>研究 / 探索性任务</td><td>业务流程化任务</td><td>复杂状态机 / 生产级</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型建议：研究/探索 → AutoGen（灵活、对话驱动）；业务流程化 → CrewAI（简单、声明式）；生产复杂状态机 → LangGraph（强状态控制、可观测）。国内业务多从 CrewAI / LangGraph 起步。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、4 种共识 / 仲裁机制</h2>
+      <ul>
+        <li><strong>投票 (Voting)</strong>：多 Agent 各自答，最后多数票胜出</li>
+        <li><strong>辩论 (Debate)</strong>：两个 Agent 正反辩论，Judge 判胜负</li>
+        <li><strong>迭代修订 (Revise)</strong>：Writer → Critic → Writer 循环到满意</li>
+        <li><strong>Leader 仲裁 (Hierarchical)</strong>：Leader Agent 收各 Agent 答案后决策</li>
+      </ul>
+      <div class="callout">实际中"Leader 仲裁 + Critic 修订"是最稳的组合：保留集中式可控，又有多视角反馈。</div>
+    </article>
+
+    <article class="card full">
+      <h2>八、典型角色拓扑（Planner 中心 + 6 类 Specialist）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 460" width="100%" height="auto" role="img" aria-label="Multi-agent roles">
+          <defs>
+            <marker id="arrow-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <ellipse cx="590" cy="230" rx="110" ry="60" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/>
+          <text x="590" y="225" text-anchor="middle" font-size="18" font-weight="700">Planner</text>
+          <text x="590" y="248" text-anchor="middle" font-size="12" fill="#475569">任务拆解 + 路由</text>
+
+          <rect x="80" y="60" width="180" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="170" y="90" text-anchor="middle" font-size="15" font-weight="700">Researcher</text>
+          <text x="170" y="110" text-anchor="middle" font-size="11" fill="#475569">检索 / 信息收集</text>
+
+          <rect x="80" y="180" width="180" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="170" y="210" text-anchor="middle" font-size="15" font-weight="700">Coder</text>
+          <text x="170" y="230" text-anchor="middle" font-size="11" fill="#475569">代码生成 + 调试</text>
+
+          <rect x="80" y="300" width="180" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="170" y="330" text-anchor="middle" font-size="15" font-weight="700">Writer</text>
+          <text x="170" y="350" text-anchor="middle" font-size="11" fill="#475569">文本创作 / 润色</text>
+
+          <rect x="920" y="60" width="180" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="1010" y="90" text-anchor="middle" font-size="15" font-weight="700">Critic</text>
+          <text x="1010" y="110" text-anchor="middle" font-size="11" fill="#475569">质量审查 / 反馈</text>
+
+          <rect x="920" y="180" width="180" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="1010" y="210" text-anchor="middle" font-size="15" font-weight="700">Verifier</text>
+          <text x="1010" y="230" text-anchor="middle" font-size="11" fill="#475569">事实 / 工具验证</text>
+
+          <rect x="920" y="300" width="180" height="70" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="1010" y="330" text-anchor="middle" font-size="15" font-weight="700">Memory</text>
+          <text x="1010" y="350" text-anchor="middle" font-size="11" fill="#475569">共享上下文 / 知识</text>
+
+          <ellipse cx="590" cy="420" rx="110" ry="40" fill="#eff6ff" stroke="#93c5fd" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="590" y="418" text-anchor="middle" font-size="15" font-weight="700">Leader / 仲裁</text>
+          <text x="590" y="438" text-anchor="middle" font-size="11" fill="#475569">冲突处理 / 终止决策</text>
+
+          <line x1="260" y1="95" x2="480" y2="200" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-ma)"/>
+          <line x1="260" y1="215" x2="480" y2="225" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-ma)"/>
+          <line x1="260" y1="335" x2="480" y2="255" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-ma)"/>
+          <line x1="700" y1="200" x2="920" y2="95" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-ma)"/>
+          <line x1="700" y1="225" x2="920" y2="215" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-ma)"/>
+          <line x1="700" y1="255" x2="920" y2="335" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-ma)"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>九、Router 路由策略</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>任务类型 → Sub-Agent 映射</strong></p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">任务规则表（关键词 + LLM 分类）
+┌──────────────────┬─────────────────┐
+│ 关键词 / 任务类型 │ 目标 Sub-Agent  │
+├──────────────────┼─────────────────┤
+│ 图像 / 设计 / 画  │ Design Agent    │
+│ 数据 / 报表 / SQL │ Data Agent      │
+│ 售后 / 退换 / 投诉│ Service Agent   │
+│ 订单 / 库存 / 物流│ Order Agent     │
+│ 默认 / 兜底       │ General Agent   │
+└──────────────────┴─────────────────┘</pre>
+        <p class="mathnote"><strong>两种路由实现</strong></p>
+        <p class="mathline">① 规则路由：关键词匹配 / 正则 / 决策表，零 LLM 成本（&lt;1ms）</p>
+        <p class="mathline">② LLM 路由：调用小模型（GPT-3.5 / Qwen-7B）做意图分类，准确率高但 ~200ms</p>
+        <p class="mathnote">生产经验：先规则路由（80% 场景命中），不确定时降级到 LLM 路由；置信度低时兜底到 General Agent。</p>
+        <p class="mathline">
+          <strong>Router 输出格式：</strong> route = Router.classify(user_input) → "design" | "data" | "service" | "general"
+        </p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>Sub-Agent 设计要点</h2>
+      <table>
+        <thead><tr><th>维度</th><th>设计建议</th><th>注意事项</th></tr></thead>
+        <tbody>
+          <tr><td>Prompt</td><td>独立 System Prompt，明确职责和工具</td><td>避免职责重叠</td></tr>
+          <tr><td>工具集</td><td>按领域裁剪（5-10 个工具）</td><td>不要把全部工具都给</td></tr>
+          <tr><td>上下文</td><td>独立 Conversation History + 共享 Memory</td><td>避免长上下文污染</td></tr>
+          <tr><td>模型</td><td>关键任务用大模型、辅助用小模型</td><td>成本和效果权衡</td></tr>
+          <tr><td>可观测性</td><td>每个 Agent 独立 trace_id + 日志</td><td>便于调试和优化</td></tr>
+          <tr><td>容错</td><td>单 Agent 失败时 Router 兜底</td><td>避免全链路崩</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>十、CrewAI 代码示例</h2>
+      <pre class="code">from crewai import Agent, Task, Crew
+
+researcher = Agent(
+  role="研究员",
+  goal="收集主题相关的事实和证据",
+  backstory="资深行业分析师",
+  tools=[search_tool, rag_tool]
+)
+
+writer = Agent(
+  role="撰稿人",
+  goal="基于研究结果撰写结构化报告",
+  backstory="擅长把复杂信息讲清楚的编辑"
+)
+
+critic = Agent(
+  role="审稿人",
+  goal="发现报告事实错误和结构问题",
+  backstory="严格的质量审查专家"
+)
+
+t1 = Task(description="研究 XX 主题", agent=researcher)
+t2 = Task(description="基于研究撰写报告", agent=writer)
+t3 = Task(description="审稿 + 反馈修订", agent=critic)
+
+crew = Crew(agents=[researcher, writer, critic],
+            tasks=[t1, t2, t3], verbose=True)
+crew.kickoff()</pre>
+    </article>
+
+    <article class="card">
+      <h2>决策冲突解决</h2>
+      <ul>
+        <li><code>优先级</code>：业务规则定义谁优先（如客服 Agent 优先于通用 Agent）</li>
+        <li><code>投票</code>：多 Agent 多数票决定（Debate 模式）</li>
+        <li><code>Supervisor 仲裁</code>：监控 Agent 看完整上下文后决定</li>
+        <li><code>置信度</code>：每个 Agent 输出置信度，取最高</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>通信方式选型</h2>
+      <ul>
+        <li><code>消息队列</code>（Redis Stream / Kafka）：异步、解耦、可扩展</li>
+        <li><code>共享状态</code>（MemGPT / 共享向量库）：低延迟、状态一致</li>
+        <li><code>直接调用</code>（HTTP / RPC）：同步、简单但耦合</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>十一、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：AI 数字员工多场景分流（设计 / 数据 / 客服）— Router 根据用户提问意图分类，分发到 Design / Data / Service 三个 Sub-Agent，Shared Memory 记录用户偏好跨场景复用</li>
+        <li><strong>假设场景</strong>：蕉内数字员工升级版 — 入口 Router 分类后，复杂任务交给 Supervisor 协调多 Agent 协作（如新品上市：Design 写文案 + Data 算库存 + Service 准备话术）</li>
+        <li><strong>简历表达</strong>：多 Agent 架构 / Router 设计 / 决策冲突解决 / 跨 Agent 共享记忆</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Router 设计</td>
+            <td>规则 + LLM 双层路由，置信度兜底</td>
+            <td>"设计 Router 双层分类（规则 + LLM），意图分类准确率 96%，P99 延迟 220ms"</td>
+          </tr>
+          <tr>
+            <td>Sub-Agent 拆分</td>
+            <td>按业务领域拆 5 个 Sub-Agent，工具集独立</td>
+            <td>"拆分 5 个领域 Agent，单 Agent 工具数从 18 降至 6，工具调用准确率提升 22%"</td>
+          </tr>
+          <tr>
+            <td>共享记忆</td>
+            <td>Shared Memory 跨 Agent 复用用户上下文</td>
+            <td>"实现 Shared Memory 复用用户画像，跨场景召回延迟从 800ms 降至 50ms"</td>
+          </tr>
+          <tr>
+            <td>冲突仲裁</td>
+            <td>Supervisor Agent 看全局做最终决策</td>
+            <td>"引入 Supervisor 仲裁机制，决策冲突率从 12% 降至 1.8%"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"为什么需要多 Agent → 5 类模式 → 6 类角色 → 3 类通信 → 3 框架对比 → 4 种共识 → Router/冲突/调试"七段说清楚，再补真实数据（准确率、延迟、QPS），立刻超过 80% 候选人。</div>
+    </article>
+
+    <article class="card full">
+      <h2>十二、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：单 Agent 什么时候不够用？</h3>
+          <p>A：四个信号：<code>任务超过 10 步</code>（上下文爆炸）、<code>跨多个领域</code>（设计 + 数据 + 客服一锅端）、<code>错误成本高</code>（关键任务失败影响业务）、<code>需要并行</code>（多任务并发）。任一信号明显时考虑多 Agent。</p>
+        </div>
+        <div>
+          <h3>Q2：Multi-Agent 比单 Agent 强在哪？</h3>
+          <p>A：3 个核心收益：① 角色分工让每个 Agent 只需"专精"——可换用更小模型、prompt 更短、效果更稳；② 错误隔离——一个 Agent 错不会拖垮全局；③ 视角多样——多个 Critic 提供不同反馈。但代价是通信开销、调试难度、token 成本线性增长。</p>
+        </div>
+        <div>
+          <h3>Q3：Router 怎么设计？</h3>
+          <p>A：两种实现：<strong>规则路由</strong>（关键词 / 正则 / 决策表，零 LLM 成本、&lt;1ms、规则易维护）、<strong>LLM 路由</strong>（用小模型做意图分类，准确率高、~200ms、需考虑成本）。生产中常组合：先规则 80% 命中、不确定降级到 LLM、置信度低兜底到 General Agent。</p>
+        </div>
+        <div>
+          <h3>Q4：Agent 间决策冲突怎么办？</h3>
+          <p>A：四种机制：<code>优先级</code>（业务规则）、<code>投票</code>（多 Agent 多数票）、<code>Supervisor 仲裁</code>（看全局后决定）、<code>置信度</code>（取最高）。生产经验：优先级 + 置信度组合兜底，高风险场景用 Supervisor 仲裁。</p>
+        </div>
+        <div>
+          <h3>Q5：AutoGen / CrewAI / LangGraph 选哪个？</h3>
+          <p>A：研究/探索 → AutoGen（灵活、对话驱动）；业务流程化 → CrewAI（简单、声明式）；生产复杂状态机 → LangGraph（强状态控制、可观测）。国内业务多从 CrewAI / LangGraph 起步，AutoGen 多用于研究项目。</p>
+        </div>
+        <div>
+          <h3>Q6：Multi-Agent 怎么调试？</h3>
+          <p>A：3 个工具：① 消息 trace（每条消息谁发谁收 + 完整内容）；② 各 Agent 独立 eval（每个角色单独看完成率、正确率）；③ 失败 case 分类（通信失败 / 任务失败 / 协调失败）。LangGraph + LangSmith 是目前最完善的调试栈。</p>
+        </div>
+        <div>
+          <h3>Q7：Multi-Agent token 成本怎么控？</h3>
+          <p>A：4 个手段：① 给每个 Agent 设 token 配额和单步上限；② 共享 context 摘要而非全文；③ 简单步骤用小模型（Haiku）；④ 并行调用减少总时长。生产中 1 个 5-Agent 任务的 token 成本是单 Agent 的 3-8 倍常见。</p>
+        </div>
+        <div>
+          <h3>Q8：Multi-Agent 死循环怎么办？</h3>
+          <p>A：4 层防御：① Planner 设定最大轮次；② Critic 检测"重复内容 / 反复争论"时强制终止；③ Leader Agent 有终止权；④ 全局超时（按 wall time）。LangGraph 用 max_iterations、AutoGen 用 is_termination_msg。</p>
+        </div>
+        <div>
+          <h3>Q9：Multi-Agent 评估怎么搞？</h3>
+          <p>A：3 层：① 端到端：最终输出质量（人工 + LLM-as-Judge）；② 过程：每步是否合理、各 Agent 完成率；③ 通信：消息数、平均轮次、deadlock 率。和单 Agent 不同，必须监控"谁和谁说话"和"为什么停"。</p>
+        </div>
+        <div>
+          <h3>Q10：怎么避免"领导独大"反模式？</h3>
+          <p>A：典型反模式：Planner 越来越像万能胶水，把所有任务都自己干。解法：① Planner 只做拆解和路由，不做内容生成；② 各 Agent 有强系统 prompt 限定职责；③ 加 Critic 监控 Planner 是否越权；④ 定期 review Planner 决策。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：多 Agent 架构用 Router 把任务分发给专业 Sub-Agent，降低单 Agent 上下文压力、隔离错误。常见 5 类模式：Router（分发）、Supervisor（协调）、Debate（投票）、Handoff（动态交接）、Hierarchical（分层）。6 类角色：Planner / Researcher / Coder / Writer / Critic / Verifier。3 类通信：集中式 / 点对点 / 黑板。3 框架：AutoGen（研究）、CrewAI（业务流）、LangGraph（生产状态机）。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从单 Agent 痛点 → 多 Agent 架构 → 5 类模式对比 → 6 类角色职责 → 3 类通信方式 → 3 框架对比 → 4 种共识机制 → 实际项目落地 → 4 类典型问题（成本 / 死循环 / 调试 / 集权）→ 评估方法。能讲清"为什么 Leader 仲裁 + Critic 修订最稳"、"为什么 AutoGen 不适合生产状态机"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道多 Agent 的局限</h3>
+          <p>多 Agent 不是银弹：token 成本高（多轮通信，3-8x）、延迟增加（多次 LLM 调用）、调试复杂（决策分散）、可能出现"死锁"（Agent 间互等）、"领导独大"（Planner 包揽所有任务）。建议结合"独立上下文 + 压缩中间结果 + 小模型分工 + 优雅降级"四件套缓解。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"为什么从单 Agent 切到 Multi-Agent"——比如客服 Agent 早期单 Agent 既要查订单、又要回答政策、又要写工单，prompt 越加越长、效果下降；拆成 Researcher + Writer + Critic 后，每个 Agent 系统 prompt 控制在 200 token 内，整体完成率 +20%、token 成本 -30%。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>架构选型</td><td>什么时候用多 Agent？</td><td>答"四个信号"：任务超 10 步、跨多个领域、错误成本高、需要并行。任一明显时考虑多 Agent；否则单 Agent + 好工具更稳。多 Agent 不等于更好，要看场景。</td></tr>
+          <tr><td>Router 设计</td><td>Router 怎么实现？</td><td>答"双层路由"：① 规则路由（关键词 / 决策表，&lt;1ms 命中 80%）；② LLM 路由（小模型分类，~200ms 兜底）。生产中加置信度阈值和兜底 Agent。强调规则先行 + LLM 补盲。</td></tr>
+          <tr><td>冲突解决</td><td>Sub-Agent 决策冲突怎么办？</td><td>答"四种机制"：① 优先级（业务规则）；② 投票（多 Agent 多数票）；③ Supervisor 仲裁（看全局）；④ 置信度（取最高）。生产经验：优先级 + 置信度组合兜底，高风险场景用 Supervisor。</td></tr>
+          <tr><td>通信协议</td><td>Agent 间怎么通信？</td><td>答"按场景选"：异步解耦用 Redis Stream / Kafka；低延迟状态共享用 MemGPT / 共享向量库；同步简单用 HTTP / RPC。生产组合：Redis Stream + 共享 Memory。</td></tr>
+          <tr><td>框架选型</td><td>AutoGen / CrewAI / LangGraph 怎么选？</td><td>答"按场景"：研究/探索 AutoGen（对话驱动灵活）；业务流程化 CrewAI（声明式简单）；生产复杂状态机 LangGraph（强状态控制 + LangSmith 可观测）。</td></tr>
+          <tr><td>调试实践</td><td>多 Agent 怎么调试？</td><td>答"全链路 trace + 决策快照"：用 LangSmith / LangGraph 可视化决策流；每个 Agent 独立 logger；Router 选择、Agent 输入输出存快照；失败 case 单独标注分析。关键：trace_id 贯穿全链路。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：多 Agent 架构是面试常考的高阶话题，面试允许说"这块我了解架构但生产经验有限"，但要能讲清楚模式对比、Router 设计、冲突解决 + 给出项目设计。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Multi-Agent</td><td>多个专精 Agent 协作完成一个任务</td></tr>
+          <tr><td>Router</td><td>任务分发 Agent，根据意图分类到对应 Sub-Agent</td></tr>
+          <tr><td>Sub-Agent</td><td>专项执行 Agent，独立 prompt + 工具集</td></tr>
+          <tr><td>Supervisor</td><td>协调 + 仲裁 Agent，看全局做最终决策</td></tr>
+          <tr><td>Debate</td><td>多 Agent 投票模式，适合高风险决策</td></tr>
+          <tr><td>Handoff</td><td>动态交接模式，Agent 间传递上下文</td></tr>
+          <tr><td>Hierarchical</td><td>分层 Manager-Worker 结构，复杂工作流</td></tr>
+          <tr><td>Planner</td><td>拆任务、选路径、设终止条件的核心 Agent</td></tr>
+          <tr><td>Critic</td><td>审稿、纠错、给改进意见的 Agent</td></tr>
+          <tr><td>Verifier</td><td>事实核对、工具结果验证的 Agent</td></tr>
+          <tr><td>Hub-and-Spoke</td><td>集中式通信，所有消息经 Planner 中转</td></tr>
+          <tr><td>Peer-to-Peer</td><td>点对点通信，Agent 直接互发</td></tr>
+          <tr><td>Blackboard</td><td>共享黑板，Agent 读写共享 Memory</td></tr>
+          <tr><td>Voting</td><td>多 Agent 投票，多数决</td></tr>
+          <tr><td>Shared Memory</td><td>跨 Agent 共享的用户上下文 / 中间结果</td></tr>
+          <tr><td>规则路由</td><td>关键词 / 正则匹配，零 LLM 成本、&lt;1ms</td></tr>
+          <tr><td>LLM 路由</td><td>用小模型做意图分类，~200ms、准确率高</td></tr>
+          <tr><td>置信度兜底</td><td>分类置信度低时降级到 General Agent</td></tr>
+          <tr><td>MemGPT</td><td>Agent 共享记忆框架，跨会话保留上下文</td></tr>
+          <tr><td>全链路 Trace</td><td>trace_id 贯穿 Router + Sub-Agent，便于调试</td></tr>
+          <tr><td>AutoGen</td><td>Microsoft 主导，对话驱动 Multi-Agent 框架</td></tr>
+          <tr><td>CrewAI</td><td>Role/Task/Crew 抽象的业务流框架</td></tr>
+          <tr><td>LangGraph</td><td>LangChain 出的状态机 Multi-Agent 框架</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

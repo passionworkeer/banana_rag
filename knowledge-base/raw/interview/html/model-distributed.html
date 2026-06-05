@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>分布式部署知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./llm-cache.html">大模型缓存</a>
+    <a href="./llm-tuning.html">大模型调优</a>
+    <a href="./kv-cache.html">KV Cache</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">学习资源 · 推理优化</span>
+    <h1>模型分布式部署</h1>
+    <p class="lead">vLLM / SGLang / PagedAttention / TP/PP/DP — 提高 TPS 的核心方法。</p>
+    <div class="pillrow">
+      <span class="pill">vLLM</span><span class="pill">SGLang</span><span class="pill">PagedAttention</span><span class="pill">Tensor Parallel</span><span class="pill">TPS</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、推理优化技术栈</h2>
+      <ul>
+        <li><strong>推理瓶颈</strong>：
+          <ul>
+            <li><strong>显存</strong>：KV Cache 占大头（7B 模型 + seq 4k + batch 32 ≈ 32GB）</li>
+            <li><strong>计算</strong>：GEMM 算力（FP16 矩阵乘）和 attention 计算（decode 阶段 O(seq_len)）</li>
+            <li><strong>带宽</strong>：HBM 带宽是 decode 阶段瓶颈（每 token 要读 14GB+ 权重）</li>
+          </ul>
+        </li>
+        <li><strong>Continuous Batching（连续批处理）</strong>：
+          <ul>
+            <li>传统 Static Batching：等最慢请求完成才返回（GPU 空转）</li>
+            <li>Continuous Batching：动态拼批，新请求插队到当前 batch 空位，迭代级调度</li>
+            <li>效果：GPU 利用率从 30% 提升到 70%+，吞吐量翻倍</li>
+          </ul>
+        </li>
+        <li><strong>PagedAttention（vLLM 核心）</strong>：
+          <ul>
+            <li>原理：把 KV Cache 分成固定大小页（block），按需分配，类似 OS 虚拟内存分页</li>
+            <li>效果：显存碎片从 60%+ 降到 &lt;5%，batch size 可扩大 4-24x</li>
+            <li>对应论文：vLLM SOSP 2023</li>
+          </ul>
+        </li>
+        <li><strong>SGLang RadixAttention</strong>：
+          <ul>
+            <li>原理：基于前缀树（Radix Tree）复用多请求共享的 KV 段</li>
+            <li>优势：复杂 prompt 模板（few-shot / 工具描述）天然复用，命中率 30-70%</li>
+            <li>对应论文：SGLang NSDI 2024</li>
+          </ul>
+        </li>
+        <li><strong>三种并行策略</strong>：
+          <ul>
+            <li><strong>Tensor Parallel (TP)</strong>：层内切分到多卡（多头注意力切分头、MLP 切分列），需要卡间通信（NCCL）</li>
+            <li><strong>Pipeline Parallel (PP)</strong>：按层切分到多卡（前 K 层卡 A，后 L 层卡 B），微批次流水</li>
+            <li><strong>Data Parallel (DP)</strong>：多副本并行（同一模型跑在不同请求上），无通信</li>
+          </ul>
+        </li>
+        <li><strong>框架选型</strong>：vLLM（通用首选）、SGLang（复杂 prompt 优选）、TensorRT-LLM（极致性能）、LMDeploy（轻量）</li>
+      </ul>
+      <table>
+        <thead><tr><th>技术</th><th>优化目标</th><th>提升</th><th>代价</th><th>代表</th></tr></thead>
+        <tbody>
+          <tr><td>Continuous Batching</td><td>GPU 利用率</td><td>2-3x 吞吐</td><td>调度复杂</td><td>vLLM / TGI</td></tr>
+          <tr><td>PagedAttention</td><td>显存碎片</td><td>4-24x batch</td><td>页表管理</td><td>vLLM</td></tr>
+          <tr><td>RadixAttention</td><td>前缀复用</td><td>2-5x prefix</td><td>内存换 CPU</td><td>SGLang</td></tr>
+          <tr><td>Tensor Parallel</td><td>单卡显存</td><td>N 卡均摊</td><td>卡间通信</td><td>Megatron-LM</td></tr>
+          <tr><td>Speculative Decoding</td><td>decode 速度</td><td>2-3x 加速</td><td>草稿模型成本</td><td>Medusa / EAGLE</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>三种并行策略对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Tensor Parallel (TP)</th><th>Pipeline Parallel (PP)</th><th>Data Parallel (DP)</th></tr></thead>
+        <tbody>
+          <tr><td>切分维度</td><td>层内（头 / 列）</td><td>层间（K 层 / 卡）</td><td>请求（每副本独立）</td></tr>
+          <tr><td>卡间通信</td><td>高（每层都通信）</td><td>中（点对点）</td><td>无（独立计算）</td></tr>
+          <tr><td>通信带宽</td><td>NVLink 必备</td><td>PCIe / IB 可</td><td>无</td></tr>
+          <tr><td>适用规模</td><td>单机 2-8 卡</td><td>跨机 2-32 卡</td><td>任意副本数</td></tr>
+          <tr><td>延迟</td><td>略增（通信）</td><td>增加（bubble）</td><td>不变</td></tr>
+          <tr><td>吞吐</td><td>线性扩展（理想）</td><td>次线性（bubble）</td><td>线性扩展</td></tr>
+          <tr><td>典型用法</td><td>70B+ 模型单机</td><td>175B 模型跨机</td><td>请求量大可水平扩展</td></tr>
+          <tr><td>代表</td><td>Megatron-LM TP=8</td><td>PipeDream / PP=4</td><td>vLLM 多副本 + LB</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">实战经验：单模型 7B-13B 用 TP=1 单卡即可；70B 用 TP=4（单节点 8 卡 A100）；175B+ 用 TP=8 + PP=2 跨机。DP 永远可叠加（多副本 + Load Balancer）。跨机用 NVLink 走 InfiniBand 避免带宽瓶颈。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、推理流水线</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Inference pipeline">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Prompt</text>
+          <text x="260" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Tokenizer</text>
+          <text x="450" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">TP×4 推理</text>
+          <text x="640" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Scheduler</text>
+          <text x="820" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Batched Decode</text>
+          <text x="1020" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Detokenizer</text>
+
+          <rect x="20" y="60" width="120" height="64" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="80" y="88" text-anchor="middle" font-size="13" font-weight="700">用户输入</text>
+          <text x="80" y="108" text-anchor="middle" font-size="11" fill="#475569">~512 tokens</text>
+
+          <rect x="200" y="60" width="120" height="64" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="260" y="88" text-anchor="middle" font-size="13" font-weight="700">Tokenizer</text>
+          <text x="260" y="108" text-anchor="middle" font-size="11" fill="#475569">BPE 分词</text>
+
+          <rect x="340" y="40" width="220" height="100" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="450" y="68" text-anchor="middle" font-size="13" font-weight="700">TP×4 推理</text>
+          <text x="450" y="88" text-anchor="middle" font-size="11" fill="#475569">Prefill（并行）</text>
+          <text x="450" y="106" text-anchor="middle" font-size="11" fill="#475569">KV Cache 写入</text>
+          <text x="450" y="124" text-anchor="middle" font-size="11" fill="#475569">4 卡 NCCL 通信</text>
+
+          <rect x="580" y="60" width="120" height="64" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="640" y="88" text-anchor="middle" font-size="13" font-weight="700">Scheduler</text>
+          <text x="640" y="108" text-anchor="middle" font-size="11" fill="#475569">动态拼批</text>
+
+          <rect x="720" y="40" width="200" height="100" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="820" y="68" text-anchor="middle" font-size="13" font-weight="700">Batched Decode</text>
+          <text x="820" y="88" text-anchor="middle" font-size="11" fill="#475569">逐 token 生成</text>
+          <text x="820" y="106" text-anchor="middle" font-size="11" fill="#475569">Continuous Batching</text>
+          <text x="820" y="124" text-anchor="middle" font-size="11" fill="#475569">PagedAttention</text>
+
+          <rect x="940" y="60" width="160" height="64" rx="12" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="1020" y="88" text-anchor="middle" font-size="13" font-weight="700">Detokenizer</text>
+          <text x="1020" y="108" text-anchor="middle" font-size="11" fill="#475569">流式输出</text>
+
+          <line x1="140" y1="92" x2="200" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="320" y1="92" x2="340" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="560" y1="92" x2="580" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="700" y1="92" x2="720" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="920" y1="92" x2="940" y2="92" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <rect x="20" y="180" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="160" y="205" text-anchor="middle" font-size="12" font-weight="600">Prefill 阶段：~50ms</text>
+          <text x="160" y="225" text-anchor="middle" font-size="11" fill="#475569">并行算所有 prompt token</text>
+
+          <rect x="320" y="180" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="460" y="205" text-anchor="middle" font-size="12" font-weight="600">Decode 阶段：~30ms/token</text>
+          <text x="460" y="225" text-anchor="middle" font-size="11" fill="#475569">受 HBM 带宽限制</text>
+
+          <rect x="620" y="180" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="760" y="205" text-anchor="middle" font-size="12" font-weight="600">End-to-End：~800ms (256 tok)</text>
+          <text x="760" y="225" text-anchor="middle" font-size="11" fill="#475569">TTFT 50ms + TPOT 30ms</text>
+
+          <text x="590" y="290" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">关键指标：TTFT（首 token 延迟）、TPOT（每 token 延迟）、TPS（每秒 token 数）</text>
+        </svg>
+      </div>
+      <p class="muted">推理分 Prefill（处理 prompt，并行）和 Decode（逐 token 生成，受 HBM 带宽限制）两个阶段。PagedAttention 减少显存碎片，Continuous Batching 提升 GPU 利用率，TP 把单卡放不下的模型切到多卡。三件套叠加是工业界标配。</p>
+    </article>
+
+    <article class="card">
+      <h2>三、TPS 计算</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\mathrm{TPS} = \tfrac{\mathrm{batch\_size} \times \mathrm{seq\_len}}{\mathrm{decode\_time}} \quad \text{（每 GPU 每秒生成 token 数）}$$</p>
+        <p class="mathnote"><strong>单卡 TPS</strong>：用 batch_size、生成总 token 数、解码总时间计算。7B + A100 + batch 32 + seq 1024，TPOT 30ms 时 TPS = 32 × 1024 / (1024 × 0.03) ≈ 1067 tok/s。</p>
+        <p class="mathline" style="margin-top:14px">$$\mathrm{TPS}_{\text{end2end}} = \tfrac{\mathrm{total\_output\_tokens}}{\mathrm{wall\_clock\_time}} \quad \text{（含 Prefill）}$$</p>
+        <p class="mathnote">端到端 TPS 还要除以 Prefill 时间和排队时间。生产监控看这个指标更真实。8 卡 A100 + vLLM 部署 70B 模型，端到端 TPS 通常 3000-5000 tok/s。</p>
+        <p class="mathline" style="margin-top:14px">$$\mathrm{TTFT} \,\text{（首 token 延迟）} \approx \mathrm{Prefill\_time} \approx \mathrm{prompt\_len} \times \mathrm{step\_time}$$</p>
+        <p class="mathnote">用户感知的"打字机启动"时间。1000 token prompt 在 70B 模型上约 200-500ms。优化方向：Chunked Prefill、FlashAttention、量化。</p>
+        <p class="mathline" style="margin-top:14px">$$\mathrm{TPOT} \,\text{（每 token 间隔）} \approx \mathrm{decode\_step\_time}$$</p>
+        <p class="mathnote">用户感知的"打字机速度"。理想 20-30ms/token（流畅），&gt;100ms 用户明显卡顿。受 HBM 带宽限制，模型越大 TPOT 越长。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、消息格式</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>Request</strong>（Client → Server）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_products",
+    "arguments": { "keyword": "袜子" }
+  }
+}</pre>
+        <p class="mathnote"><strong>Response</strong>（Server → Client）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": { "items": [...] }
+}</pre>
+        <p class="mathnote"><strong>Error</strong>（参数缺失 / 工具不存在）</p>
+        <pre style="margin:0 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": { "code": -32602, "message": "keyword is required" }
+}</pre>
+        <p class="mathnote"><strong>Notification</strong>（Server 主动推送，无需回复）</p>
+        <pre style="margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#0f172a;white-space:pre-wrap;word-break:break-all">{
+  "jsonrpc": "2.0",
+  "method": "notifications/resources/updated",
+  "params": { "uri": "file:///orders/2026-06-03.json" }
+}</pre>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>消息字段速查</h2>
+      <table>
+        <thead><tr><th>指标</th><th>含义</th><th>目标值</th><th>影响</th></tr></thead>
+        <tbody>
+          <tr><td>TTFT</td><td>Time To First Token</td><td>&lt; 200ms</td><td>用户感知"启动"</td></tr>
+          <tr><td>TPOT</td><td>Time Per Output Token</td><td>20-50ms</td><td>用户感知"打字速度"</td></tr>
+          <tr><td>TPS</td><td>Tokens Per Second</td><td>&gt; 2000</td><td>系统吞吐</td></tr>
+          <tr><td>QPS</td><td>Queries Per Second</td><td>看业务</td><td>并发能力</td></tr>
+          <tr><td>GPU 利用率</td><td>SM 活跃占比</td><td>&gt; 60%</td><td>算力浪费指标</td></tr>
+          <tr><td>显存占用</td><td>KV Cache + 权重</td><td>&lt; 90%</td><td>OOM 风险</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：小蕉 AI 服务 1500+ 用户 / 6w+ 问答（vLLM TP=4 部署 Qwen-7B，P99 延迟 1.2s，端到端 TPS 3500）</li>
+        <li><strong>假设场景</strong>：蕉内数字员工高并发场景（白天峰谷 50 QPS，凌晨 5 QPS，弹性扩缩容 + Continuous Batching 应对峰值）</li>
+        <li><strong>简历表达</strong>：推理部署 / TPS 优化 / 分布式推理 / PagedAttention 调优</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>推理引擎选型</td>
+            <td>对比 vLLM / TGI / TensorRT-LLM，选 vLLM</td>
+            <td>"主导推理引擎选型，QPS 50+ 部署上线，P99 1.2s"</td>
+          </tr>
+          <tr>
+            <td>PagedAttention 调优</td>
+            <td>调 block_size / max_num_seqs / gpu_memory_utilization</td>
+            <td>"PagedAttention 参数调优，吞吐量提升 3.2x"</td>
+          </tr>
+          <tr>
+            <td>TP 分布式</td>
+            <td>4 卡 TP 部署 70B 模型，NCCL 通信优化</td>
+            <td>"70B 模型 TP=4 部署，单卡 P99 延迟从 3s 降到 800ms"</td>
+          </tr>
+          <tr>
+            <td>Continuous Batching</td>
+            <td>开启动态拼批 + 取消策略，QPS 提升</td>
+            <td>"Continuous Batching 改造，GPU 利用率从 35% 提升到 78%"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"瓶颈分析 → Continuous Batching → PagedAttention → TP/PP 切分"四段说清楚，再带具体数字（TPS / P99 / GPU 利用率），立刻与只用过 OpenAI API 的人拉开差距。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：PagedAttention 为什么能省显存？</h3>
+          <p>A：把 KV Cache 分成固定大小页（block 16-128 token），按需分配，类似 OS 虚拟内存分页。传统方式 KV Cache 连续分配（按最大 seq_len 预分配），碎片率 60%+；PagedAttention 复用 block，碎片降到 &lt;5%，batch size 可扩大 4-24x。是 vLLM 论文 SOSP 2023 核心贡献。</p>
+        </div>
+        <div>
+          <h3>Q2：vLLM 和 SGLang 选哪个？</h3>
+          <p>A：通用选 vLLM（成熟稳定，文档全，社区活跃）；复杂 prompt 模板（多轮对话 / 工具调用 / few-shot 长示例）选 SGLang（RadixAttention 前缀复用命中率 30-70%，比 vLLM prefix caching 更激进）。中文场景两者都支持，RAG / Agent 系统优先 SGLang，纯文本生成 vLLM 已足够。</p>
+        </div>
+        <div>
+          <h3>Q3：TP/PP/DP 怎么组合？</h3>
+          <p>A：单机多卡优先 TP（NVLink 快、通信低）；单卡放不下（70B+）用 TP=8 跨机；超大模型（175B+）用 TP=8 + PP=2 跨机；DP 永远可叠加（多副本 + LB）。常见组合：13B 用 TP=1、70B 用 TP=4、175B 用 TP=8 + PP=2、3 副本 DP = 24 卡部署。</p>
+        </div>
+        <div>
+          <h3>Q4：多机推理通信瓶颈？</h3>
+          <p>A：避免跨机 TP（带宽掉到 1/10），跨机用 PP+TP 或纯 DP。硬件上用 NVLink（单机 600GB/s）+ InfiniBand（跨机 200Gbps）+ RoCE 替代 TCP/IP。NCCL 调优：开启 <code>NCCL_IB_HCA</code>、<code>NCCL_SOCKET_IFNAME</code> 绑定网卡，监控 <code>nccl-tests</code> 带宽。</p>
+        </div>
+        <div>
+          <h3>Q5：怎么测 TPS？</h3>
+          <p>A：用 <code>vllm bench serve</code> / <code>genai-benchmark</code> 工具。设置：固定 prompt 长度（如 512）+ 输出长度（如 256）+ 并发数（1/4/16/64），跑 5 分钟取平均值。关键指标：TPS、TPOT、TTFT、显存峰值、GPU 利用率。生产监控加 <code>prometheus_client</code> 实时采集。</p>
+        </div>
+        <div>
+          <h3>Q6：Continuous Batching 怎么实现的？</h3>
+          <p>A：迭代级调度。每生成 1 个 token 后，调度器看是否有新请求在等、是否有请求已完成（碰到 EOS）。完成的请求让出 slot，新请求插入到当前 batch 的空 slot。不再等整批完成才返回，单请求延迟看完成时刻的 P99。实现关键：KV Cache 按请求分块管理（配合 PagedAttention）。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>选型决策清单</h2>
+      <div class="qa">
+        <div>
+          <h3>选 vLLM 的场景</h3>
+          <p>通用文本生成、首次部署推理引擎、文档全社区大、需要稳定 PagedAttention 优化。默认首选，Qwen / Llama / ChatGLM 等主流模型都支持。生产案例丰富。</p>
+        </div>
+        <div>
+          <h3>选 SGLang 的场景</h3>
+          <p>复杂 prompt 模板（多轮 / 工具 / few-shot 长示例占比高）、追求 RadixAttention 前缀复用、Agent / RAG 场景。SGLang 在结构化输出（JSON / grammar）方面也更强。</p>
+        </div>
+        <div>
+          <h3>选 TensorRT-LLM 的场景</h3>
+          <p>NVIDIA 硬件极优化（kernel fusion + INT8/FP8 量化）、追求单卡极限 TPS（比 vLLM 快 1.5-2x）、可接受复杂编译配置（需要先 build engine）。大厂生产首选。</p>
+        </div>
+        <div>
+          <h3>选 LMDeploy 的场景</h3>
+          <p>轻量部署、TurboMind 引擎对国内模型（Qwen / InternLM）优化好、Pythonic API 易集成。中小规模项目首选。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>学习路径与资源</h2>
+      <table>
+        <thead><tr><th>阶段</th><th>内容</th><th>推荐资源</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td>入门</td><td>理解 LLM 推理 Prefill / Decode</td><td>Hugging Face Generation 教程、vLLM Quickstart</td><td>能本地启动 vLLM 服务</td></tr>
+          <tr><td>进阶</td><td>PagedAttention 论文与 vLLM 源码</td><td>vLLM SOSP 2023 论文、vLLM GitHub Wiki</td><td>能解释 PagedAttention 原理</td></tr>
+          <tr><td>实战</td><td>TP/PP/DP 配置 + 性能调优</td><td>Megatron-LM 论文、NCCL 官方文档</td><td>能部署多卡分布式</td></tr>
+          <tr><td>压测</td><td>vllm bench / genai-benchmark</td><td>vLLM 性能调优 wiki、<code>genai-perf</code></td><td>能跑 TPS / P99 报告</td></tr>
+          <tr><td>监控</td><td>Prometheus + Grafana 看板</td><td>vLLM metrics 端点、DCGM exporter</td><td>能搭推理监控体系</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">一句话总结：分布式部署的核心是用更贵的硬件换更高的吞吐。原则：先优化单卡（PagedAttention / Continuous Batching），再加多卡（TP/PP/DP），最后用监控持续调优。70B+ 模型必上 TP。</div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

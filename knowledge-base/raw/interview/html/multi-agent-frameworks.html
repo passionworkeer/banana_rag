@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Agent 框架生态 知识页</title>
+  <style>
+    :root{
+      --bg:#faf7ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e2d8f4;
+      --accent:#6d28d9;
+      --accent-soft:#ede4fd;
+      --accent-soft-2:#f5eefe;
+      --shadow:0 10px 30px rgba(109,40,217,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#f5eefe;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./multi-agent.html">Multi-Agent 架构</a>
+    <a href="./langchain.html">LangChain</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./mcp.html">MCP</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · 多智能体框架生态</span>
+    <h1>Multi-Agent 框架：10 大生态对比 + 选型</h1>
+    <p class="lead">上一页讲"为什么需要多 Agent、5 类架构模式"；本页专攻"具体用什么框架实现"——AutoGen 的对话驱动、CrewAI 的角色化流程、MetaGPT 的软件公司组织、ChatDev 的 ChatChain 等 10 大框架全景对比，附实战代码、选型决策、面试 FAQ。</p>
+    <div class="pillrow">
+      <span class="pill">AutoGen</span><span class="pill">CrewAI</span><span class="pill">MetaGPT</span><span class="pill">ChatDev</span><span class="pill">Camel</span><span class="pill">OpenAgents</span><span class="pill">TaskWeaver</span><span class="pill">AutoGPT</span><span class="pill">SuperAGI</span><span class="pill">LangGraph</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要专门的 Multi-Agent 框架</h2>
+      <ul>
+        <li><strong>multi-agent.html 讲架构模式</strong>（Router / Supervisor / Debate / Handoff / Hierarchical），那一层是"设计模式"。</li>
+        <li><strong>框架层</strong>解决：把对话流转、角色定义、状态共享、消息总线、终止条件——这些共性代码封装好，让你只写业务。</li>
+        <li>手撸 LangChain AgentLoop 也能做多 Agent，但通信 / 状态 / 工具调用每个项目都重写一遍。</li>
+        <li>专用框架把"角色 + 任务 + 流程"标准化：<code>Role</code> / <code>Agent</code> / <code>Crew</code> / <code>GroupChat</code>，约定大于配置。</li>
+        <li>生态贡献可复用 Toolset、Memory、Observability（LangSmith、Arize、MLflow 等）。</li>
+      </ul>
+      <div class="callout">判断口诀：<strong>1~3 个 Agent 的简单编排</strong>用 LangGraph 写图；<strong>≥3 个角色 + 流程化任务</strong>用 CrewAI；<strong>研究/对话驱动探索</strong>用 AutoGen；<strong>模拟组织生产软件</strong>用 MetaGPT / ChatDev。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、10 大框架全景对比表</h2>
+      <table>
+        <thead><tr><th>框架</th><th>抽象模型</th><th>通信机制</th><th>状态管理</th><th>循环控制</th><th>最佳适用</th></tr></thead>
+        <tbody>
+          <tr><td><strong>AutoGen</strong></td><td>ConversableAgent</td><td>消息总线 / GroupChat</td><td>对话历史即状态</td><td>Reply 终止 / max_round</td><td>研究 / 对话探索 / 工具调用</td></tr>
+          <tr><td><strong>CrewAI</strong></td><td>Role + Task + Crew</td><td>任务委派 / Sequential</td><td>Task output 链式</td><td>Process 完成 / 条件分支</td><td>业务流自动化 / 内容生产</td></tr>
+          <tr><td><strong>MetaGPT</strong></td><td>Role (SDE/PM/QA)</td><td>发布订阅 + 共享文档</td><td>MessagePool + 文档</td><td>订阅触发 / SOP 完成</td><td>软件公司模拟 / 代码生成</td></tr>
+          <tr><td><strong>ChatDev</strong></td><td>Phase + Role</td><td>ChatChain 阶段化</td><td>阶段产物传递</td><td>Phase 切换</td><td>教学 / 小型软件全流程</td></tr>
+          <tr><td><strong>Camel</strong></td><td>Role-Playing 双 Agent</td><td>Inception Prompt 角色</td><td>对话 history</td><td>max_msg / 终止 token</td><td>研究 / 数据生成 / 博弈</td></tr>
+          <tr><td><strong>OpenAgents</strong></td><td>Tool-Centric Agent</td><td>插件调用 / Web 检索</td><td>无状态 + 会话</td><td>单任务完成</td><td>真实 Web / 数据 / 插件应用</td></tr>
+          <tr><td><strong>TaskWeaver</strong></td><td>Planner + Coder</td><td>代码片段 + 状态变量</td><td>强类型 session 状态</td><td>规划终止 / 异常恢复</td><td>数据分析 / 复杂工具链</td></tr>
+          <tr><td><strong>AutoGPT / BabyAGI</strong></td><td>Self-Loop + TaskList</td><td>任务队列自循环</td><td>Vector DB 长期记忆</td><td>目标完成自判</td><td>早期实验 / 自主任务</td></tr>
+          <tr><td><strong>SuperAGI</strong></td><td>Agent + Tool Marketplace</td><td>工具市场 + GUI</td><td>DB 持久化 + 向量库</td><td>目标 / 步数终止</td><td>自主 Agent 平台 / SaaS</td></tr>
+          <tr><td><strong>LangGraph</strong>（基准）</td><td>StateGraph Node/Edge</td><td>边条件 / Send API</td><td>TypedDict State</td><td>图遍历 / interrupt</td><td>底层编排 / 复杂状态机</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">分层视角：<strong>LangGraph / LangChain</strong>是底层（构建块），<strong>CrewAI / AutoGen</strong>是上层（约定范式），<strong>MetaGPT / ChatDev</strong>是垂直应用（模拟组织）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>三、AutoGen GroupChat 时序图</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 540" width="100%" height="auto" role="img" aria-label="AutoGen GroupChat sequence">
+          <defs>
+            <marker id="arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#6d28d9"></path>
+            </marker>
+          </defs>
+
+          <line x1="120" y1="60" x2="120" y2="510" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <line x1="340" y1="60" x2="340" y2="510" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <line x1="560" y1="60" x2="560" y2="510" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <line x1="780" y1="60" x2="780" y2="510" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <line x1="1000" y1="60" x2="1000" y2="510" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+          <rect x="60" y="30" width="120" height="40" rx="10" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="120" y="55" text-anchor="middle" font-size="14" font-weight="700">User</text>
+
+          <rect x="280" y="30" width="120" height="40" rx="10" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="340" y="55" text-anchor="middle" font-size="14" font-weight="700">GroupChatManager</text>
+
+          <rect x="500" y="30" width="120" height="40" rx="10" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="560" y="55" text-anchor="middle" font-size="14" font-weight="700">Coder</text>
+
+          <rect x="720" y="30" width="120" height="40" rx="10" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="780" y="55" text-anchor="middle" font-size="14" font-weight="700">Reviewer</text>
+
+          <rect x="940" y="30" width="120" height="40" rx="10" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="1000" y="55" text-anchor="middle" font-size="14" font-weight="700">PM</text>
+
+          <line x1="130" y1="100" x2="330" y2="100" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="230" y="92" text-anchor="middle" font-size="12" fill="#0f172a">1. 发起任务</text>
+
+          <line x1="350" y1="140" x2="550" y2="140" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="450" y="132" text-anchor="middle" font-size="12" fill="#0f172a">2. 选 Coder（speaker_selection）</text>
+
+          <line x1="570" y1="180" x2="350" y2="180" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="460" y="172" text-anchor="middle" font-size="12" fill="#0f172a">3. 代码片段</text>
+
+          <line x1="350" y1="220" x2="770" y2="220" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="560" y="212" text-anchor="middle" font-size="12" fill="#0f172a">4. 选 Reviewer</text>
+
+          <line x1="790" y1="260" x2="350" y2="260" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="570" y="252" text-anchor="middle" font-size="12" fill="#0f172a">5. 评审意见</text>
+
+          <line x1="350" y1="300" x2="990" y2="300" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="670" y="292" text-anchor="middle" font-size="12" fill="#0f172a">6. 选 PM 拍板</text>
+
+          <line x1="1010" y1="340" x2="130" y2="340" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <text x="570" y="332" text-anchor="middle" font-size="12" fill="#0f172a">7. 最终结果回传</text>
+
+          <rect x="60" y="400" width="1020" height="90" rx="14" fill="#f5eefe" stroke="#a78bfa" stroke-width="2"/>
+          <text x="570" y="425" text-anchor="middle" font-size="14" font-weight="700">GroupChat 内部机制</text>
+          <text x="570" y="448" text-anchor="middle" font-size="12" fill="#0f172a">speaker_selection_method: auto / round_robin / manual</text>
+          <text x="570" y="468" text-anchor="middle" font-size="12" fill="#0f172a">max_round: 10 | allow_repeat_speaker: False | 终止条件：is_termination_msg</text>
+          <text x="570" y="488" text-anchor="middle" font-size="12" fill="#0f172a">所有消息进入 groupchat.messages，UserProxyAgent 决定 Human-in-the-Loop 介入</text>
+        </svg>
+      </div>
+      <p class="muted">User 发起任务 → GroupChatManager 选下一发言人（LLM 决定 / 轮询）→ 各 Agent 依次回复 → 评审 / 拍板 → 终止条件满足 → 回传 User。GroupChatManager 是隐性 Supervisor。</p>
+    </article>
+
+    <article class="card">
+      <h2>四、CrewAI：Role + Task + Crew</h2>
+      <p>三大核心对象：<strong>Role</strong>（人设 + 工具 + 目标）、<strong>Task</strong>（具体工作 + 期望产出 + 上下文依赖）、<strong>Crew</strong>（团队 = 角色集合 + 任务集合 + 执行流程）。</p>
+      <pre class="code"><code>from crewai import Agent, Task, Crew, Process
+
+researcher = Agent(
+  role="Research Analyst",
+  goal="挖掘 {topic} 的关键事实",
+  backstory="10 年行业研究经验，擅长信息整合",
+  tools=[search_tool, scrape_tool],
+  verbose=True,
+)
+writer = Agent(
+  role="Tech Writer",
+  goal="把研究产出写成可发布文章",
+  backstory="深度技术作者，擅长结构化表达",
+  tools=[md_tool],
+)
+
+t1 = Task(description="搜索并整理 {topic} 的 5 个关键点",
+         expected_output="Markdown 要点清单", agent=researcher)
+t2 = Task(description="基于 t1 要点撰写 1500 字长文",
+         expected_output="完整 Markdown 文章", agent=writer,
+         context=[t1])  # 链式依赖
+
+crew = Crew(agents=[researcher, writer],
+            tasks=[t1, t2],
+            process=Process.sequential,
+            verbose=2)
+result = crew.kickoff(inputs={"topic": "PagedAttention"})
+</code></pre>
+    </article>
+
+    <article class="card">
+      <h2>五、CrewAI Process 流程（SVG）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 580 320" width="100%" height="auto" role="img" aria-label="CrewAI Process">
+          <defs>
+            <marker id="arrow-c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#6d28d9"></path>
+            </marker>
+          </defs>
+          <rect x="180" y="10" width="220" height="44" rx="12" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="290" y="38" text-anchor="middle" font-size="14" font-weight="700">Crew.kickoff()</text>
+
+          <line x1="290" y1="54" x2="290" y2="90" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-c)"/>
+
+          <rect x="120" y="90" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="200" y="112" text-anchor="middle" font-size="13" font-weight="700">Sequential</text>
+          <text x="200" y="130" text-anchor="middle" font-size="11" fill="#475569">Task1 → Task2 → Task3</text>
+
+          <rect x="300" y="90" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="380" y="112" text-anchor="middle" font-size="13" font-weight="700">Hierarchical</text>
+          <text x="380" y="130" text-anchor="middle" font-size="11" fill="#475569">Manager 自动委派</text>
+
+          <line x1="200" y1="140" x2="120" y2="180" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-c)"/>
+          <line x1="380" y1="140" x2="340" y2="180" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-c)"/>
+
+          <rect x="40" y="180" width="160" height="44" rx="10" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="120" y="207" text-anchor="middle" font-size="12" font-weight="700">T1 → T2 → T3</text>
+          <rect x="260" y="180" width="160" height="44" rx="10" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="340" y="207" text-anchor="middle" font-size="12" font-weight="700">Manager 派发</text>
+          <rect x="440" y="180" width="120" height="44" rx="10" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="500" y="207" text-anchor="middle" font-size="12" font-weight="700">Worker</text>
+
+          <line x1="200" y1="224" x2="200" y2="260" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-c)"/>
+          <line x1="340" y1="224" x2="340" y2="260" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-c)"/>
+          <line x1="500" y1="224" x2="500" y2="260" stroke="#6d28d9" stroke-width="2" marker-end="url(#arrow-c)"/>
+
+          <rect x="100" y="260" width="380" height="40" rx="10" fill="#f5eefe" stroke="#a78bfa" stroke-width="2"/>
+          <text x="290" y="285" text-anchor="middle" font-size="13" font-weight="700">CrewOutput（最终结果）</text>
+        </svg>
+      </div>
+      <p class="muted"><strong>Sequential</strong>：按任务列表顺序执行，<code>context</code> 显式声明依赖；<strong>Hierarchical</strong>：内置 Manager Agent 动态委派任务给 Agent，适合需要协调的复杂工作流。</p>
+    </article>
+
+    <article class="card">
+      <h2>六、MetaGPT 软件公司组织结构</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 580 460" width="100%" height="auto" role="img" aria-label="MetaGPT org">
+          <rect x="200" y="10" width="180" height="50" rx="12" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="290" y="33" text-anchor="middle" font-size="14" font-weight="700">ProductManager</text>
+          <text x="290" y="50" text-anchor="middle" font-size="11" fill="#475569">PRD / 需求拆解</text>
+
+          <rect x="20" y="100" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="100" y="123" text-anchor="middle" font-size="13" font-weight="700">Architect</text>
+          <text x="100" y="140" text-anchor="middle" font-size="11" fill="#475569">系统设计</text>
+
+          <rect x="210" y="100" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="290" y="123" text-anchor="middle" font-size="13" font-weight="700">ProjectManager</text>
+          <text x="290" y="140" text-anchor="middle" font-size="11" fill="#475569">任务分配</text>
+
+          <rect x="400" y="100" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="480" y="123" text-anchor="middle" font-size="13" font-weight="700">Engineer</text>
+          <text x="480" y="140" text-anchor="middle" font-size="11" fill="#475569">代码生成</text>
+
+          <rect x="20" y="200" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="100" y="223" text-anchor="middle" font-size="13" font-weight="700">QE</text>
+          <text x="100" y="240" text-anchor="middle" font-size="11" fill="#475569">测试用例</text>
+
+          <rect x="210" y="200" width="160" height="50" rx="12" fill="#fff" stroke="#6d28d9" stroke-width="2"/>
+          <text x="290" y="223" text-anchor="middle" font-size="13" font-weight="700">Reviewer</text>
+          <text x="290" y="240" text-anchor="middle" font-size="11" fill="#475569">代码审查</text>
+
+          <line x1="240" y1="60" x2="100" y2="100" stroke="#6d28d9" stroke-width="1.5"/>
+          <line x1="290" y1="60" x2="290" y2="100" stroke="#6d28d9" stroke-width="1.5"/>
+          <line x1="340" y1="60" x2="480" y2="100" stroke="#6d28d9" stroke-width="1.5"/>
+
+          <rect x="100" y="300" width="380" height="60" rx="12" fill="#f5eefe" stroke="#a78bfa" stroke-width="2"/>
+          <text x="290" y="324" text-anchor="middle" font-size="13" font-weight="700">MessagePool（发布订阅）</text>
+          <text x="290" y="346" text-anchor="middle" font-size="11" fill="#0f172a">架构师订阅 PRD → 工程师订阅 API 设计 → 评审订阅代码</text>
+
+          <rect x="60" y="390" width="460" height="50" rx="12" fill="#ede4fd" stroke="#6d28d9" stroke-width="2"/>
+          <text x="290" y="413" text-anchor="middle" font-size="13" font-weight="700">代码仓库 + 文档产物</text>
+          <text x="290" y="432" text-anchor="middle" font-size="11" fill="#475569">PR / API 文档 / 测试报告 / SOP 流程</text>
+        </svg>
+      </div>
+      <p class="muted">SOP（标准作业流程）驱动：PM 写 PRD → Architect 设计 → PM 分配任务 → Engineer 编码 → QE 写测试 → Reviewer 审查。所有产物进 MessagePool，订阅者自动拉取。</p>
+    </article>
+
+    <article class="card">
+      <h2>七、AutoGen 实战代码</h2>
+      <pre class="code"><code>from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
+
+llm_cfg = {"config_list": [{"model": "gpt-4o"}]}
+
+coder = AssistantAgent("Coder",
+  llm_config=llm_cfg,
+  system_message="你是 Python 工程师，输出可执行代码。")
+reviewer = AssistantAgent("Reviewer",
+  llm_config=llm_cfg,
+  system_message="你是高级架构师，评审代码并提出改进。")
+pm = AssistantAgent("PM",
+  llm_config=llm_cfg,
+  system_message="你是 PM，决定是否接受产出，TERMINATE 表示通过。")
+
+user = UserProxyAgent("User",
+  human_input_mode="TERMINATE",  # 关键节点才问
+  code_execution_config={"work_dir": "out"})
+
+chat = GroupChat(agents=[user, coder, reviewer, pm],
+  messages=[], max_round=12,
+  speaker_selection_method="auto",
+  allow_repeat_speaker=False)
+
+manager = GroupChatManager(groupchat=chat, llm_config=llm_cfg)
+user.initiate_chat(manager,
+  message="写一个 PagedAttention 简化版 demo（≤80 行）")
+</code></pre>
+    </article>
+
+    <article class="card">
+      <h2>八、CrewAI + LangChain 工具集成</h2>
+      <pre class="code"><code>from langchain.tools import tool
+from crewai import Agent
+
+@tool("search")
+def search(q: str) -> str:
+    """搜索关键词，返回前 3 条结果摘要"""
+    # 实际接入 SerpAPI / Tavily
+    return f"结果：{q}"
+
+researcher = Agent(
+  role="Researcher",
+  goal="找到 {topic} 的最新论文",
+  backstory="学术搜索专家",
+  tools=[search],          # LangChain tool 直接复用
+  allow_delegation=False,  # 是否可把任务转交
+  max_iter=5,
+)
+</code></pre>
+      <p class="muted">CrewAI 工具层复用 LangChain 的 <code>BaseTool</code> 生态，零迁移成本。</p>
+    </article>
+
+    <article class="card full">
+      <h2>九、Camel / ChatDev / OpenAgents 速览</h2>
+      <table>
+        <thead><tr><th>框架</th><th>核心机制</th><th>招牌场景</th><th>关键代码片段</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Camel</strong></td><td>Inception Prompt 角色分配 + 双 Agent 自聊</td><td>博弈研究 / 大规模数据合成</td><td><code>AI_User(role), AI_Assistant(role).chat()</code></td></tr>
+          <tr><td><strong>ChatDev</strong></td><td>ChatChain 阶段化：Design → Code → Test</td><td>教学用小型软件开发</td><td><code>ChatChain(['Design', 'Coding', 'Review'])</code></td></tr>
+          <tr><td><strong>OpenAgents</strong></td><td>三类预制 Agent：Data / Web / Plugins</td><td>真实 Web 任务 + 工具调用</td><td>Web Agent 内置 Chrome 抓取</td></tr>
+          <tr><td><strong>TaskWeaver</strong></td><td>Planner 拆解 → CodeWeaver 写 Python 执行</td><td>数据分析 / 表格问答</td><td><code>TaskWeaverAgent(session).run("统计销售")</code></td></tr>
+          <tr><td><strong>AutoGPT / BabyAGI</strong></td><td>目标自循环 + 任务队列</td><td>早期自主任务实验</td><td><code>while: create_tasks() → execute() → prioritize()</code></td></tr>
+          <tr><td><strong>SuperAGI</strong></td><td>GUI + 工具市场 + 容器执行</td><td>SaaS 自主 Agent 平台</td><td>提供 Docker 隔离 + Web 控制台</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、10 条面试 FAQ</h2>
+      <div class="qa">
+        <div><h3>1. AutoGen 和 CrewAI 区别？</h3><p>AutoGen 是<strong>对话驱动</strong>（消息总线 + GroupChatManager 选下一发言人），适合研究 / 工具探索 / 自由对话；CrewAI 是<strong>流程驱动</strong>（Task 链 + Sequential/Hierarchical），适合业务流自动化、内容生产线。</p></div>
+        <div><h3>2. MetaGPT 适合什么场景？</h3><p>模拟<strong>软件公司组织</strong>自动生产代码（PRD → 设计 → 实现 → 测试），适合教学 / 快速生成小型工具 / 论文复现，但成本高、速度慢，复杂业务慎用。</p></div>
+        <div><h3>3. AutoGPT 还能用吗？</h3><p>能用但<strong>不是生产首选</strong>。自循环模式易陷入循环、token 浪费大；现在生产里更多用 LangGraph / CrewAI 的受控流程。可作"自主 Agent 概念演进"的史料讲解。</p></div>
+        <div><h3>4. LangGraph 和这些框架什么关系？</h3><p>LangGraph 是<strong>底层图编排</strong>，CrewAI / AutoGen 内部循环或复杂状态切换会用 LangGraph 重写（如 CrewAI 的 Hierarchical 后端）。</p></div>
+        <div><h3>5. 怎么选？研究 / 业务 / 复杂状态机</h3><p>研究 / 工具探索选 AutoGen；业务流（客服 / 报告 / 营销）选 CrewAI；需要精细状态 / 中断 / 并行分支选 LangGraph；模拟组织选 MetaGPT。</p></div>
+        <div><h3>6. Hierarchical vs Sequential 怎么选？</h3><p>任务有<strong>明确依赖链</strong>用 Sequential（更可控、可调试）；任务<strong>需要动态分配</strong>用 Hierarchical（Manager Agent 决定谁做什么，更灵活但成本高、调试难）。</p></div>
+        <div><h3>7. Multi-Agent 框架的代价？</h3><p>Token 成本 3-10x 单 Agent（每步都过 LLM）、延迟叠加、调试困难（哪个 Agent 出错难定位）、容易陷入循环。<strong>80% 场景单 Agent + 工具就够</strong>。</p></div>
+        <div><h3>8. 怎么避免多 Agent 死循环？</h3><p>设<strong>max_round / max_iter</strong>、<strong>is_termination_msg</strong> 显式终止 token、<strong>speaker_selection</strong> 限制候选、引入人类审批 Human-in-the-Loop、循环检测器（消息去重）。</p></div>
+        <div><h3>9. 状态共享怎么做？</h3><p>三种方式：①<strong>消息历史</strong>（AutoGen 风格，简洁但无结构）；②<strong>共享文档 / 内存</strong>（MetaGPT MessagePool，CrewAI Task context）；③<strong>外部存储</strong>（Redis / Vector DB，跨会话持久化）。</p></div>
+        <div><h3>10. 多 Agent 系统的可观测性？</h3><p>用 <strong>LangSmith / Arize / MLflow</strong> 跟踪每步消息；记录 Speaker、Token、耗时、工具调用；为每条消息打 trace_id 串联；OpenTelemetry 标准化导出。</p></div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>十一、回答模板（30 秒版）</h2>
+      <div class="callout">
+        <strong>问：</strong>"Multi-Agent 框架怎么选？"<br>
+        <strong>答：</strong>"先看<strong>任务是否真要多 Agent</strong>——80% 场景 LangGraph 单图就够。确定要多 Agent 后按场景选：<strong>研究 / 工具探索</strong>用 AutoGen，对话驱动灵活；<strong>业务流自动化</strong>用 CrewAI，Role + Task 约定清晰；<strong>复杂状态机 / 精细控制</strong>用 LangGraph，TypedDict State + interrupt；<strong>模拟软件公司</strong>用 MetaGPT 组织 SOP。生产里我现在倾向于<strong>CrewAI 做编排 + LangGraph 做底层</strong>，配合 LangSmith 做 trace，平衡开发效率和可观测性。"
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>十二、追问方向表</h2>
+      <table>
+        <thead><tr><th>维度</th><th>可能被追问</th><th>应对要点</th></tr></thead>
+        <tbody>
+          <tr><td>通信</td><td>GroupChat 怎么选下一发言人？</td><td>auto（LLM 决策）/ round_robin / manual / 定制函数</td></tr>
+          <tr><td>状态</td><td>CrewAI Task 之间怎么传数据？</td><td><code>context=[prev_task]</code> + <code>output_pydantic</code> 强类型</td></tr>
+          <tr><td>终止</td><td>怎么防止 Agent 无限循环？</td><td>max_round + termination token + 循环检测 + HITL</td></tr>
+          <tr><td>成本</td><td>多 Agent token 怎么优化？</td><td>小模型做工具调用、大模型做规划、缓存 + 重用</td></tr>
+          <tr><td>对比</td><td>AutoGen v0.2 / v0.4 区别？</td><td>v0.4 重写为 Actor Model，支持分布式部署</td></tr>
+          <tr><td>工程</td><td>CrewAI 是否支持流式输出？</td><td>支持 <code>step_callback</code> + <code>stream=True</code></td></tr>
+          <tr><td>安全</td><td>代码执行 Agent 怎么隔离？</td><td>Docker 沙箱 / E2B / Modal / Firejail</td></tr>
+          <tr><td>可观测</td><td>怎么 trace 多 Agent 调用？</td><td>LangSmith、Arize Phoenix、OpenTelemetry 标准化</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十三、概念速查表（15+ 条）</h2>
+      <table>
+        <thead><tr><th>术语</th><th>一句话定义</th><th>所属框架</th></tr></thead>
+        <tbody>
+          <tr><td>ConversableAgent</td><td>可对话的 Agent 基类，能 send / receive 消息</td><td>AutoGen</td></tr>
+          <tr><td>UserProxyAgent</td><td>代表人类，可执行代码、可中断问问题</td><td>AutoGen</td></tr>
+          <tr><td>GroupChat</td><td>多 Agent 共享消息池，按策略选发言人</td><td>AutoGen</td></tr>
+          <tr><td>GroupChatManager</td><td>GroupChat 的协调器，决定谁接下来说</td><td>AutoGen</td></tr>
+          <tr><td>Role</td><td>角色定义：goal + backstory + tools</td><td>CrewAI</td></tr>
+          <tr><td>Task</td><td>具体工作：description + expected_output + agent</td><td>CrewAI</td></tr>
+          <tr><td>Process</td><td>执行流程：Sequential / Hierarchical</td><td>CrewAI</td></tr>
+          <tr><td>Crew</td><td>团队 = agents + tasks + process</td><td>CrewAI</td></tr>
+          <tr><td>MessagePool</td><td>发布订阅 + 共享文档存储</td><td>MetaGPT</td></tr>
+          <tr><td>SOP</td><td>Standard Operating Procedure，标准作业流程</td><td>MetaGPT</td></tr>
+          <tr><td>ChatChain</td><td>阶段化对话链：Design → Code → Test</td><td>ChatDev</td></tr>
+          <tr><td>Inception Prompt</td><td>角色分配提示词（"你是 X，你应该 Y"）</td><td>Camel</td></tr>
+          <tr><td>RolePlaying</td><td>双 Agent 角色扮演，AI-User / AI-Assistant</td><td>Camel</td></tr>
+          <tr><td>TaskList</td><td>自循环 Agent 的任务队列 + 优先级</td><td>BabyAGI / AutoGPT</td></tr>
+          <tr><td>CodeWeaver</td><td>把规划转为可执行 Python 的 Agent</td><td>TaskWeaver</td></tr>
+          <tr><td>is_termination_msg</td><td>消息终止条件检测函数</td><td>AutoGen</td></tr>
+          <tr><td>allow_delegation</td><td>是否允许 Agent 把任务转交他人</td><td>CrewAI</td></tr>
+          <tr><td>context=[t1]</td><td>声明本 Task 依赖前序 Task 输出</td><td>CrewAI</td></tr>
+          <tr><td>max_iter</td><td>Agent 单任务最大循环次数</td><td>CrewAI</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

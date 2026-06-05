@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KV Cache 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./kv-cache.html">KV Cache</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · 推理优化</span>
+    <h1>KV Cache</h1>
+    <p class="lead">Transformer 推理加速 — 缓存已计算的 K / V，避免每步重新计算全序列 attention，把自回归生成的复杂度从 O(L²) 降到 O(L)。</p>
+    <div class="pillrow">
+      <span class="pill">Attention</span><span class="pill">Paged</span><span class="pill">Memory</span><span class="pill">Throughput</span><span class="pill">MQA/GQA</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、KV Cache 为什么需要</h2>
+      <ul>
+        <li><strong>问题：重复计算严重</strong>
+          <ul>
+            <li>自回归生成每步只新增 1 个 token，但 attention 要算新 token 对全序列的 attention score</li>
+            <li>如果不缓存：每步重算全序列 attention，复杂度 O(L²)，L=2048 时已经 4M 次运算</li>
+            <li>大量浪费：历史的 K / V 其实从未变，每步都重算了一遍</li>
+          </ul>
+        </li>
+        <li><strong>核心做法</strong>
+          <ul>
+            <li>把历史的 K / V 矩阵缓存下来（按层 / 按头存）</li>
+            <li>新 token 只算自己的 Q（向量），与缓存的 K 做 attention，节省矩阵乘法</li>
+            <li>算完后再把自己的 K / V 追加到缓存末尾，给下一步用</li>
+            <li>复杂度从 O(L²) 降到 O(L)，推理速度提升 5-10x</li>
+          </ul>
+        </li>
+        <li><strong>显存代价</strong>
+          <ul>
+            <li>每层、每头、每个已生成 token 都要存一组 K 和 V 矩阵</li>
+            <li>长序列 + 大模型下 KV Cache 显存会成主要瓶颈（甚至超过模型权重）</li>
+            <li>例：LLaMA-7B fp16 推理 L=2048 约 1GB，L=8192 约 4GB</li>
+          </ul>
+        </li>
+        <li><strong>优化方向</strong>：
+          <ul>
+            <li><strong>Multi-Query Attention (MQA)</strong>：所有 head 共享同一组 K / V（KV 容量 ÷ 头数）</li>
+            <li><strong>Grouped Query Attention (GQA)</strong>：分组共享（如 8 头 Q 共享 2 组 K / V）</li>
+            <li><strong>PagedAttention (vLLM)</strong>：把 KV 分成固定大小页（block）按需分配，消除碎片</li>
+            <li><strong>FlashAttention</strong>：在线计算 K / V，分块加载到 SRAM，显著降显存</li>
+            <li><strong>KV 压缩 / 稀疏</strong>：H2O / StreamingLLM 保留重要 token、淘汰次要 token</li>
+          </ul>
+        </li>
+      </ul>
+      <table>
+        <thead><tr><th>方案</th><th>KV 显存节省</th><th>效果损失</th><th>复杂度</th><th>代表实现</th></tr></thead>
+        <tbody>
+          <tr><td>标准 MHA</td><td>基准</td><td>无</td><td>低</td><td>原始 Transformer</td></tr>
+          <tr><td>MQA（多查询）</td><td>~Nx（N=头数）</td><td>轻微</td><td>低</td><td>PaLM</td></tr>
+          <tr><td>GQA（分组查询）</td><td>~Nx（组数小）</td><td>几乎无</td><td>中</td><td>LLaMA-2 / Mistral</td></tr>
+          <tr><td>PagedAttention</td><td>碎片 → 0</td><td>无</td><td>中</td><td>vLLM</td></tr>
+          <tr><td>FlashAttention</td><td>~10x</td><td>无（精确）</td><td>中</td><td>Flash-Attn 库</td></tr>
+          <tr><td>KV 压缩（H2O）</td><td>~5x</td><td>轻微</td><td>中</td><td>H2O 算法</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>优化方案对比</h2>
+      <table>
+        <thead><tr><th>方案</th><th>核心思路</th><th>适用阶段</th><th>是否需要重新训练</th><th>典型场景</th></tr></thead>
+        <tbody>
+          <tr><td><strong>标准 KV Cache</strong></td><td>缓存历史 K / V，省 O(L²) → O(L)</td><td>推理</td><td>否</td><td>所有自回归生成</td></tr>
+          <tr><td><strong>MQA</strong></td><td>所有 head 共享 1 组 K / V</td><td>训练 + 推理</td><td>是</td><td>边缘部署、吞吐量优先</td></tr>
+          <tr><td><strong>GQA</strong></td><td>分组共享 K / V（如 8Q:1KV）</td><td>训练 + 推理</td><td>是</td><td>兼顾质量与速度</td></tr>
+          <tr><td><strong>PagedAttention</strong></td><td>KV 分页管理（块表映射）</td><td>推理服务</td><td>否</td><td>vLLM 高并发服务</td></tr>
+          <tr><td><strong>FlashAttention</strong></td><td>在线计算 + SRAM 分块</td><td>训练 + 推理</td><td>否</td><td>训练加速、长序列</td></tr>
+          <tr><td><strong>KV 量化（INT8/INT4）</strong></td><td>KV 矩阵低精度存储</td><td>推理</td><td>否</td><td>显存紧张场景</td></tr>
+          <tr><td><strong>KV 淘汰（H2O / StreamingLLM）</strong></td><td>按注意力分数淘汰低分 token</td><td>推理</td><td>否</td><td>超长上下文</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型经验：默认 PagedAttention + FlashAttention 组合（vLLM + Flash-Attn 库），显存紧张加 KV 量化，吞吐量优先考虑 MQA / GQA 预训练模型。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、KV Cache 时序</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 460" width="100%" height="auto" role="img" aria-label="KV Cache timeline">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="180" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Step 1</text>
+          <text x="590" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Step 2</text>
+          <text x="1000" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Step 3</text>
+
+          <rect x="60" y="60" width="240" height="50" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="180" y="92" text-anchor="middle" font-size="14" font-weight="700">KV Cache：[K1, V1]</text>
+
+          <rect x="60" y="130" width="240" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="180" y="155" text-anchor="middle" font-size="14" font-weight="700">Q2（新 token）</text>
+          <text x="180" y="173" text-anchor="middle" font-size="12" fill="#475569">算 Q2 · K1 → score → V1 加权</text>
+          <line x1="180" y1="180" x2="180" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <rect x="460" y="60" width="260" height="50" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="92" text-anchor="middle" font-size="14" font-weight="700">KV Cache：[K1, K2, V1, V2]</text>
+
+          <rect x="460" y="130" width="260" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="155" text-anchor="middle" font-size="14" font-weight="700">Q3（新 token）</text>
+          <text x="590" y="173" text-anchor="middle" font-size="12" fill="#475569">Q3 · [K1,K2] → scores → [V1,V2] 加权</text>
+          <line x1="590" y1="180" x2="590" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <rect x="880" y="60" width="260" height="50" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="1010" y="92" text-anchor="middle" font-size="14" font-weight="700">KV Cache：[K1..K3, V1..V3]</text>
+
+          <rect x="880" y="130" width="260" height="50" rx="10" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="1010" y="155" text-anchor="middle" font-size="14" font-weight="700">Q4（新 token）</text>
+          <text x="1010" y="173" text-anchor="middle" font-size="12" fill="#475569">Q4 · [K1..K3] → scores → [V1..V3] 加权</text>
+          <line x1="1010" y1="180" x2="1010" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <text x="180" y="250" text-anchor="middle" font-size="12" fill="#475569">算完后把 K2, V2 追加进缓存</text>
+          <text x="590" y="250" text-anchor="middle" font-size="12" fill="#475569">追加 K3, V3</text>
+          <text x="1010" y="250" text-anchor="middle" font-size="12" fill="#475569">追加 K4, V4</text>
+
+          <rect x="60" y="290" width="1080" height="60" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+          <text x="600" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">复杂度对比</text>
+          <text x="600" y="338" text-anchor="middle" font-size="13" fill="#475569">无 KV Cache：每步 O(L²) | 有 KV Cache：每步 O(L) — 整体加速 5-10x</text>
+
+          <text x="600" y="400" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">关键点：历史的 K / V 不再重算，新 token 只算 1 个 Q 向量</text>
+          <text x="600" y="422" text-anchor="middle" font-size="12" fill="#475569">代价：每步多一次 cache append，每 token 多 2 × head_dim × num_layers × num_kv_heads 显存</text>
+        </svg>
+      </div>
+      <p class="muted">每步推理只需算新 token 的 Q 矩阵（向量），与缓存的 K 矩阵做 attention 后用 V 加权。算完把新 K / V 追加到缓存。显存增长线性、计算量线性。</p>
+    </article>
+
+    <article class="card">
+      <h2>PagedAttention 分页</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 320" width="100%" height="auto" role="img" aria-label="PagedAttention">
+          <defs>
+            <marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" font-size="14" font-weight="700" fill="#0f172a">请求 A</text>
+          <text x="320" y="30" font-size="14" font-weight="700" fill="#0f172a">请求 B</text>
+          <text x="560" y="30" font-size="14" font-weight="700" fill="#0f172a">请求 C</text>
+
+          <rect x="60" y="60" width="180" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="150" y="86" text-anchor="middle" font-size="13" font-weight="600">Seq A: block 1, 2, 5</text>
+
+          <rect x="60" y="120" width="180" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="150" y="146" text-anchor="middle" font-size="13" font-weight="600">Seq A: block 1, 2, 5, 8</text>
+
+          <rect x="300" y="60" width="180" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="390" y="86" text-anchor="middle" font-size="13" font-weight="600">Seq B: block 3, 6</text>
+
+          <rect x="300" y="120" width="180" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="390" y="146" text-anchor="middle" font-size="13" font-weight="600">Seq B: block 3, 6, 9</text>
+
+          <rect x="540" y="60" width="180" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="630" y="86" text-anchor="middle" font-size="13" font-weight="600">Seq C: block 4, 7</text>
+
+          <rect x="540" y="120" width="180" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="630" y="146" text-anchor="middle" font-size="13" font-weight="600">Seq C: block 4, 7, 10</text>
+
+          <rect x="800" y="40" width="340" height="200" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="970" y="65" text-anchor="middle" font-size="14" font-weight="700">KV Block Pool</text>
+
+          <g font-size="11" font-weight="600" fill="#0f172a">
+            <rect x="820" y="80" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="850" y="103" text-anchor="middle">block 1</text>
+            <rect x="890" y="80" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="920" y="103" text-anchor="middle">block 2</text>
+            <rect x="960" y="80" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="990" y="103" text-anchor="middle">block 3</text>
+            <rect x="1030" y="80" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="1060" y="103" text-anchor="middle">block 4</text>
+            <rect x="820" y="125" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="850" y="148" text-anchor="middle">block 5</text>
+            <rect x="890" y="125" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="920" y="148" text-anchor="middle">block 6</text>
+            <rect x="960" y="125" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="990" y="148" text-anchor="middle">block 7</text>
+            <rect x="1030" y="125" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="1060" y="148" text-anchor="middle">block 8</text>
+            <rect x="820" y="170" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="850" y="193" text-anchor="middle">block 9</text>
+            <rect x="890" y="170" width="60" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/><text x="920" y="193" text-anchor="middle">block 10</text>
+            <rect x="960" y="170" width="60" height="36" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/><text x="990" y="193" text-anchor="middle" fill="#94a3b8">free</text>
+            <rect x="1030" y="170" width="60" height="36" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/><text x="1060" y="193" text-anchor="middle" fill="#94a3b8">free</text>
+          </g>
+
+          <text x="600" y="280" text-anchor="middle" font-size="13" fill="#475569">每个序列维护一个"块表"（block table），按需分配物理 block → 显存利用率 ~95%</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、KV Cache 显存</h2>
+      <div class="mathbox">
+        <p class="mathline">
+          <strong>单序列显存：</strong> Memory = 2 × L × d × n_layers × dtype_bytes
+        </p>
+        <p class="mathline">
+          <strong>MQA / GQA 时：</strong> Memory = 2 × L × head_dim × n_kv_heads × n_layers × dtype_bytes
+        </p>
+        <p class="mathline">
+          <strong>变量含义：</strong> L=序列长度, d=隐藏维, n_layers=层数, dtype_bytes=2(fp16)/1(int8)
+        </p>
+        <p class="mathline">
+          <strong>例（LLaMA-7B, fp16, L=2048）：</strong>
+        </p>
+        <p class="mathnote">2 × 2048 × 4096 × 32 × 2 / 1024³ ≈ 1.0 GB / 序列</p>
+        <p class="mathnote">L=8192 时约 4 GB / 序列，batch=8 时总占用 32 GB（KV 已超过模型权重 14GB）。</p>
+        <p class="mathnote">LLaMA-2-70B 同条件约 5 GB / 序列（fp16），多 batch 部署时显存压力极大。生产经验：vLLM + PagedAttention + INT8 量化是常见组合。</p>
+        <p class="mathline">
+          <strong>吞吐量提升：</strong> With KV Cache: 5-10x vs Without
+        </p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>显存瓶颈分析</h2>
+      <table>
+        <thead><tr><th>模型规模</th><th>权重显存（fp16）</th><th>KV / 序列（L=2048）</th><th>batch=8 KV 总占用</th><th>瓶颈</th></tr></thead>
+        <tbody>
+          <tr><td>7B</td><td>14GB</td><td>~1.0GB</td><td>8GB</td><td>权重</td></tr>
+          <tr><td>13B</td><td>26GB</td><td>~1.6GB</td><td>13GB</td><td>权重 + KV</td></tr>
+          <tr><td>70B</td><td>140GB</td><td>~5.0GB</td><td>40GB</td><td>权重 + KV</td></tr>
+          <tr><td>7B + INT4</td><td>4GB</td><td>~1.0GB</td><td>8GB</td><td>KV</td></tr>
+          <tr><td>7B + GQA-8</td><td>14GB</td><td>~0.13GB</td><td>1GB</td><td>权重</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：生图 Web 端长 prompt 推理（Stable Diffusion + LLM 改写 prompt），启用 KV Cache 后单请求延迟从 800ms 降到 180ms，吞吐量提升 4x</li>
+        <li><strong>假设场景</strong>：蕉内 AI 客服长对话 — 启用 vLLM 部署 + PagedAttention，多用户并发会话显存利用率从 30% 提升到 90%，单卡 QPS 从 5 提升到 18</li>
+        <li><strong>简历表达</strong>：推理性能 / 显存优化 / vLLM 实践 / PagedAttention / 长上下文支持</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>推理加速</td>
+            <td>启用 KV Cache + FlashAttention</td>
+            <td>"通过 KV Cache 优化，推理延迟从 800ms 降至 180ms，吞吐量提升 4 倍"</td>
+          </tr>
+          <tr>
+            <td>显存优化</td>
+            <td>引入 vLLM PagedAttention</td>
+            <td>"用 vLLM 改造推理服务，显存利用率从 30% 提升到 90%，单卡 QPS 提升 3.6 倍"</td>
+          </tr>
+          <tr>
+            <td>长上下文</td>
+            <td>KV 量化（INT8）+ 滑动窗口</td>
+            <td>"INT8 量化 KV Cache 后单卡支持 32K 上下文，成本降低 50%"</td>
+          </tr>
+          <tr>
+            <td>选型</td>
+            <td>GQA 模型 + 预分配</td>
+            <td>"选用 LLaMA-2-70B-GQA 替代原始 MHA，KV 显存降至 1/8"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"为什么需要 KV Cache → 显存公式 → 优化路径（Paged / Flash / MQA / GQA）→ 实际收益"四段说清楚，再补具体数字（QPS、显存、延迟），立刻超过 80% 候选人。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：KV Cache 显存怎么算？</h3>
+          <p>A：<code>2 × L × d × n_layers × dtype_bytes</code>（MHA）；<code>2 × L × head_dim × n_kv_heads × n_layers × dtype_bytes</code>（MQA/GQA）。例：LLaMA-7B fp16 L=2048 约 1GB；L=8192 约 4GB。生产用 vLLM 实际占用可通过 nvidia-smi 观察。</p>
+        </div>
+        <div>
+          <h3>Q2：PagedAttention 怎么省显存？</h3>
+          <p>A：把 KV 切成固定大小页（block，如 16 token / block），按需分配，序列用"块表"（block table）记录物理块号。好处是 <code>碎片接近 0</code>（传统连续分配浪费 30-50%）、<code>支持非连续物理布局</code>、<code>多请求共享空闲块</code>。vLLM 的核心创新。</p>
+        </div>
+        <div>
+          <h3>Q3：MQA 和 GQA 区别？</h3>
+          <p>A：<strong>MQA</strong>（Multi-Query Attention）：所有 head 共享 1 组 K / V，KV 容量 ÷ N（N=头数）。<strong>GQA</strong>（Grouped Query Attention）：分组共享，N 个 Q 头对应 G 个 K / V 头（如 8Q:2KV）。GQA 是 MHA 和 MQA 的折中，效果接近 MHA、显存接近 MQA，LLaMA-2 / Mistral 都用 GQA。</p>
+        </div>
+        <div>
+          <h3>Q4：长上下文 KV Cache 满了怎么办？</h3>
+          <p>A：四种方案：<code>滑动窗口</code>（只保留最近 K 个 token 的 KV）、<code>稀疏 attention</code>（Longformer / BigBird 模式）、<code>KV 压缩</code>（H2O 按分数淘汰）、<code>KV 量化</code>（INT8 / INT4 存）。生产经验：先用 PagedAttention + 量化兜底，超长上下文再上稀疏。</p>
+        </div>
+        <div>
+          <h3>Q5：KV Cache 和 Prompt Cache 区别？</h3>
+          <p>A：<strong>KV Cache</strong>是 token 级别的张量缓存（每步追加 K / V，向量级），<strong>Prompt Cache</strong>是请求级别的完整前缀复用（字符串 / token 序列级）。Prompt Cache 命中时直接复用预计算的 KV 块，省去 prefill 阶段。Anthropic / OpenAI 都提供 Prompt Cache 能力。</p>
+        </div>
+        <div>
+          <h3>Q6：Beam Search 时 KV Cache 怎么管理？</h3>
+          <p>A：每个 beam 独立维护一份 KV Cache（结构相同、内容不同）；前缀共享的部分用 <code>Tree Attention</code> 共享 KV 块（vLLM 支持）。代价是 beam 数量 × 单 beam KV 显存，beam=5 时 5 倍占用。</p>
+        </div>
+        <div>
+          <h3>Q7：什么时候不需要 KV Cache？</h3>
+          <p>A：三种情况：<code>非自回归任务</code>（一次性 Encoder 推理）、<code>小 batch + 短序列</code>（缓存收益不显）、<code>训练阶段</code>（整序列前向，不需要增量）。KV Cache 只在自回归解码阶段有意义。</p>
+        </div>
+        <div>
+          <h3>Q8：KV Cache 怎么调试？</h3>
+          <p>A：用 <code>nvidia-smi</code> 看显存是否与理论值一致；用 <code>torch.cuda.memory_summary()</code> 看分配 / 缓存比例；用 <code>kv cache profiler</code> 工具看每请求峰值；异常大时检查是否有 beam search 复制、是否有 prompt 超长未拦截。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：KV Cache 是 Transformer 自回归推理的标配优化，缓存历史的 K / V 矩阵让新 token 只算自己的 Q，复杂度从 O(L²) 降到 O(L)、加速 5-10x。代价是 KV 显存随序列线性增长，催生了 PagedAttention（vLLM）、FlashAttention、MQA/GQA 等优化方向。生产用 vLLM + FlashAttn + INT8 量化是常见组合。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从自回归的重复计算问题 → KV Cache 基本做法 → 显存公式 → 优化路径（Paged / Flash / MQA / GQA / 量化）→ 实际项目收益，逐层展开。最后落到你们模型的 QPS / 显存 / 延迟数据。有真实数据能立刻拉开差距。</p>
+        </div>
+        <div>
+          <h3>加分：知道 KV Cache 的局限</h3>
+          <p>KV Cache 不是银弹：长序列显存爆炸、beam search 占用翻倍、跨请求无法直接共享、抢占 / 中断时缓存重建。建议结合"PagedAttention 减少碎片 + 量化降显存 + Prefix Cache 跨请求共享"三件套缓解。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次踩坑</h3>
+          <p>比如：beam=5 时显存爆了（5 倍 KV）；长 prompt prefill 阶段 OOM（prefill 也要算 KV）；PagedAttention block size 设太小导致块表太大；GQA 模型用错 attention 实现导致索引错位。讲一次具体排查过程，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>基础原理</td><td>为什么 KV Cache 能省计算？</td><td>答"自回归的局部性"：每步只新增 1 个 token，历史的 K / V 已固定无需重算；attention 矩阵里只有最后一行是新的，其余可缓存。抓住"局部性 + 增量"。</td></tr>
+          <tr><td>显存计算</td><td>7B 模型 L=2048 KV 显存多大？</td><td>答"约 1GB"：2 × 2048 × 4096 × 32 × 2B / 1024³ ≈ 1GB。强调 LLaMA 用 GQA 后实际是 1/8 ≈ 128MB。再追问 MQA / GQA 区别。</td></tr>
+          <tr><td>优化路径</td><td>vLLM 为什么快？</td><td>答"PagedAttention + 连续批处理"：KV 分页消除碎片、动态 batch 把等待中的请求塞进 GPU 空隙、Prefix Cache 共享前缀。三个组合起来 QPS 提升 10x+。</td></tr>
+          <tr><td>工程实践</td><td>怎么选 KV 量化精度？</td><td>答"按显存 / 质量权衡"：INT8 几乎无质量损失（推荐默认）；INT4 显存再省 50% 但质量轻微降；FP8（Hopper）新硬件支持好。生产经验：先 INT8，效果不够再降。</td></tr>
+          <tr><td>进阶</td><td>FlashAttention 和 KV Cache 关系？</td><td>答"互补"：FlashAttention 是 kernel 层优化（不存中间 attention 矩阵），KV Cache 是张量层缓存（保留 K / V）。两者可叠加用：FlashAttention 算 attention 块、KV Cache 跨步存 K / V。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：KV Cache 是推理优化的核心话题，面试允许说"这块我了解原理但生产经验有限"，但要能讲清楚复杂度收益、显存公式、主流优化 + 给出项目设计。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>KV Cache</td><td>缓存历史 K / V 矩阵，自回归推理加速 5-10x</td></tr>
+          <tr><td>MQA</td><td>Multi-Query Attention，所有 head 共享一组 K / V</td></tr>
+          <tr><td>GQA</td><td>Grouped Query Attention，分组共享 K / V，效果接近 MHA</td></tr>
+          <tr><td>PagedAttention</td><td>vLLM 的 KV 分页管理，碎片接近 0</td></tr>
+          <tr><td>FlashAttention</td><td>kernel 层优化，online softmax + SRAM 分块</td></tr>
+          <tr><td>Prefix Cache</td><td>跨请求共享 prompt 前缀的 KV 缓存</td></tr>
+          <tr><td>KV 量化</td><td>KV 矩阵 INT8 / INT4 存储，节省显存</td></tr>
+          <tr><td>KV 淘汰（H2O）</td><td>按 attention 分数淘汰低贡献 token 的 KV</td></tr>
+          <tr><td>StreamingLLM</td><td>保留首尾 token + 滑动窗口，支持无限长生成</td></tr>
+          <tr><td>Tree Attention</td><td>Beam Search 时共享前缀的 KV 树形管理</td></tr>
+          <tr><td>Continuous Batching</td><td>vLLM 的动态批处理，GPU 利用率显著提升</td></tr>
+          <tr><td>Prefill 阶段</td><td>处理完整 prompt（首步全序列），与 Decode 阶段分开</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

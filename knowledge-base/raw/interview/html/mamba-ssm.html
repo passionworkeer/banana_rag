@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mamba / SSM / RWKV 知识页</title>
+  <style>
+    :root{
+      --bg:#f3faf6;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#cfe6d6;
+      --accent:#059669;
+      --accent-soft:#d1fae5;
+      --accent-soft-2:#ecfdf5;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#ecfdf5);border:1px solid #a7e6c2;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#ecfdf5;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./kv-cache.html">KV Cache</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./long-context.html">长上下文</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">架构范式 · 非 Transformer</span>
+    <h1>Mamba / SSM / RWKV：线性注意力的复兴</h1>
+    <p class="lead">Transformer 的二次方复杂度是长上下文的硬伤。Mamba（Mamba1/Mamba2）、RWKV、RetNet、Hyena、xLSTM 等"线性注意力 / 状态空间模型（SSM）"用 O(N) 复杂度和常数显存做到了百万级上下文，且推理时不需要 KV Cache。本页把"动机 → 原理 → 5 大家族对比 → 与 Transformer 的 trade-off → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">SSM</span><span class="pill">Selective Scan</span><span class="pill">Linear Attention</span><span class="pill">RWKV</span><span class="pill">RetNet</span><span class="pill">Jamba</span><span class="pill">Falcon Mamba</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要"非 Transformer"架构</h2>
+      <ul>
+        <li><strong>复杂度</strong>：Transformer 自注意力的时间和显存都是 O(N²)，N 是序列长度。100K context 显存就吃紧</li>
+        <li><strong>推理 KV Cache</strong>：每生成一个 token 要保存所有历史的 K/V，长对话成本线性爆炸</li>
+        <li><strong>长上下文效率</strong>：RULER / NIAH 评测显示 Transformer 实际有效长度远小于标称窗口（Lost in the Middle）</li>
+        <li><strong>训练成本</strong>：长序列训练 GPU 利用率低，FlashAttention / Ring Attention 只是缓解</li>
+        <li><strong>线性架构目标</strong>：O(N) 训练复杂度 + O(1) 推理每步 + 长上下文不掉点</li>
+      </ul>
+      <div class="callout">2023-2025 是"线性架构复兴年"：Mamba（2023.12）→ Mamba2（2024.5）→ Jamba（2024.3，AI21 混合 Mamba+Attention）→ Falcon Mamba（2024.8，纯 Mamba 7B 超越同尺寸 Transformer）→ RWKV-7（2025）→ Zamba2（2025，混合）。这条线在 2025-2026 持续被工程化推进。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、状态空间模型（SSM）基础</h2>
+      <p>SSM 是一类古老的时序模型（控制论 / 数字信号处理），核心是把输入映射到一维隐藏状态，再从状态读出输出。Mamba 的创新是把它"输入依赖"地引入 LLM。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>连续时间 SSM</strong></p>
+        <p class="mathline">h'(t) = A · h(t) + B · x(t)</p>
+        <p class="mathline">y(t) = C · h(t) + D · x(t)</p>
+        <p class="mathnote"><strong>离散化（Zero-Order Hold, Δt 步长）</strong></p>
+        <p class="mathline">Ā = exp(Δ · A),  B̄ = (Δ · A)⁻¹ (exp(Δ · A) − I) · Δ · B</p>
+        <p class="mathline">h<sub>t</sub> = Ā · h<sub>t-1</sub> + B̄ · x<sub>t</sub>,   y<sub>t</sub> = C · h<sub>t</sub></p>
+        <p class="mathnote"><strong>核心结论</strong>：当 (A, B, C, Δ) 与输入无关时，SSM 可用卷积计算（O(N log N)）或线性递推（O(N)）。但这是线性时不变系统，记忆有限，模型表达力弱。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>三、Mamba 的核心创新：Selective Scan（S6）</h2>
+      <p>Mamba 1（Albert Gu & Tri Dao, 2023.12）把 SSM 的参数 (B, C, Δ) 改成"输入依赖"，让模型可以根据当前 token 决定保留还是遗忘信息——这把 SSM 从"线性时不变"变成"输入相关"，获得了接近注意力的表达力。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>Selective State Space</strong></p>
+        <p class="mathline">B<sub>t</sub> = Linear<sub>B</sub>(x<sub>t</sub>),   C<sub>t</sub> = Linear<sub>C</sub>(x<sub>t</sub>),   Δ<sub>t</sub> = softplus(Linear<sub>Δ</sub>(x<sub>t</sub>))</p>
+        <p class="mathline">h<sub>t</sub> = exp(Δ<sub>t</sub> · A) · h<sub>t-1</sub> + Δ<sub>t</sub> · B<sub>t</sub> · x<sub>t</sub></p>
+        <p class="mathline">y<sub>t</sub> = C<sub>t</sub> · h<sub>t</sub></p>
+        <p class="mathnote">关键点：Δ<sub>t</sub>（步长）由当前 token 决定 → "重要 token 用小步长仔细读，无关 token 用大步长快速过"。Mamba2（2024.5）证明 S6 等价于一种结构化掩码注意力（State Space Duality, SSD），把 selective scan 用矩阵乘法高效实现，训练速度提升 2-8x。</p>
+      </div>
+      <div class="callout">记忆口诀："Mamba = SSM + 输入依赖的 (B, C, Δ) + 硬件感知的并行扫描"。Mamba2 的贡献是发现 S6 与注意力有数学对偶（SSD），可以用 GPU 并行化大幅加速。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、Mamba 块 vs Transformer 块结构对比</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 540" width="100%" height="auto" role="img" aria-label="Mamba block vs Transformer block">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"></path>
+            </marker>
+          </defs>
+
+          <text x="280" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Transformer Block</text>
+          <text x="900" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Mamba Block (S6)</text>
+
+          <!-- Transformer -->
+          <rect x="100" y="60" width="360" height="50" rx="12" fill="#fff" stroke="#059669" stroke-width="2"/>
+          <text x="280" y="90" text-anchor="middle" font-size="14" font-weight="700">Input x</text>
+
+          <rect x="100" y="130" width="360" height="50" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+          <text x="280" y="160" text-anchor="middle" font-size="14" font-weight="700">LayerNorm</text>
+
+          <rect x="100" y="200" width="360" height="60" rx="12" fill="#d1fae5" stroke="#059669" stroke-width="3"/>
+          <text x="280" y="226" text-anchor="middle" font-size="14" font-weight="700">Multi-Head Attention</text>
+          <text x="280" y="246" text-anchor="middle" font-size="11" fill="#475569">O(N²) time + O(N²) memory (with KV cache)</text>
+
+          <rect x="100" y="280" width="360" height="50" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+          <text x="280" y="310" text-anchor="middle" font-size="14" font-weight="700">LayerNorm</text>
+
+          <rect x="100" y="350" width="360" height="50" rx="12" fill="#d1fae5" stroke="#059669" stroke-width="3"/>
+          <text x="280" y="380" text-anchor="middle" font-size="14" font-weight="700">FFN (MLP)</text>
+
+          <rect x="100" y="420" width="360" height="50" rx="12" fill="#fff" stroke="#059669" stroke-width="2"/>
+          <text x="280" y="450" text-anchor="middle" font-size="14" font-weight="700">Output</text>
+
+          <line x1="280" y1="110" x2="280" y2="130" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="280" y1="180" x2="280" y2="200" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="280" y1="260" x2="280" y2="280" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="280" y1="330" x2="280" y2="350" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="280" y1="400" x2="280" y2="420" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <!-- Mamba -->
+          <rect x="720" y="60" width="360" height="50" rx="12" fill="#fff" stroke="#059669" stroke-width="2"/>
+          <text x="900" y="90" text-anchor="middle" font-size="14" font-weight="700">Input x</text>
+
+          <rect x="720" y="130" width="360" height="50" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+          <text x="900" y="160" text-anchor="middle" font-size="14" font-weight="700">LayerNorm</text>
+
+          <rect x="720" y="200" width="360" height="60" rx="12" fill="#d1fae5" stroke="#059669" stroke-width="3"/>
+          <text x="900" y="226" text-anchor="middle" font-size="14" font-weight="700">SSM + Selective Scan (S6)</text>
+          <text x="900" y="246" text-anchor="middle" font-size="11" fill="#475569">O(N) time + O(1) memory per step</text>
+
+          <rect x="720" y="280" width="360" height="50" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+          <text x="900" y="310" text-anchor="middle" font-size="14" font-weight="700">LayerNorm</text>
+
+          <rect x="720" y="350" width="360" height="50" rx="12" fill="#d1fae5" stroke="#059669" stroke-width="3"/>
+          <text x="900" y="380" text-anchor="middle" font-size="14" font-weight="700">FFN (MLP)</text>
+
+          <rect x="720" y="420" width="360" height="50" rx="12" fill="#fff" stroke="#059669" stroke-width="2"/>
+          <text x="900" y="450" text-anchor="middle" font-size="14" font-weight="700">Output</text>
+
+          <line x1="900" y1="110" x2="900" y2="130" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="900" y1="180" x2="900" y2="200" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="900" y1="260" x2="900" y2="280" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="900" y1="330" x2="900" y2="350" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+          <line x1="900" y1="400" x2="900" y2="420" stroke="#059669" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <text x="590" y="510" text-anchor="middle" font-size="12" fill="#475569">结构几乎一致：LN → 主算子（Attention vs SSM-S6）→ 残差 → LN → FFN → 残差</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>五、复杂度与显存对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Transformer</th><th>Mamba / SSM</th></tr></thead>
+        <tbody>
+          <tr><td>训练复杂度</td><td>O(N²)</td><td>O(N)</td></tr>
+          <tr><td>训练显存</td><td>O(N²)（attention matrix）</td><td>O(N)（hidden state）</td></tr>
+          <tr><td>推理每步</td><td>O(1) per token（KV Cache 复用）</td><td>O(1) per token（state 复用）</td></tr>
+          <tr><td>推理总显存</td><td>O(N) KV Cache</td><td>O(1) 固定 state</td></tr>
+          <tr><td>并行训练</td><td>天然并行</td><td>Mamba1 需 parallel scan；Mamba2 用 SSD 并行</td></tr>
+          <tr><td>长上下文</td><td>受 KV 限制，Lost in the Middle</td><td>理论上 1M+，实际有效需评测</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最关键差异：推理时 Mamba 不需要 KV Cache，固定 state 大小 → 适合超长上下文 streaming 生成。代价是 Mamba1 训练时需要 sequential scan（O(N) 但难并行），Mamba2 用 SSD 解决了这个痛点。</div>
+    </article>
+
+    <article class="card">
+      <h2>六、5 大"非 Transformer"家族</h2>
+      <table>
+        <thead><tr><th>家族</th><th>代表模型</th><th>核心机制</th><th>代表公司/时间</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Mamba (S4/S5/S6)</strong></td><td>Mamba-1 / Mamba-2 / Falcon Mamba 7B / Codestral Mamba</td><td>输入依赖的 SSM，选择性扫描</td><td>Albert Gu & Tri Dao / 2023.12-2024.5；Mistral 7B 团队 2024.7</td></tr>
+          <tr><td><strong>RWKV</strong></td><td>RWKV-5 / RWKV-6 / RWKV-7 (Goose)</td><td>线性 attention + 衰减（time-decay）</td><td>Bo Peng / BlinkDL / 2023-2025</td></tr>
+          <tr><td><strong>RetNet (Retention)</strong></td><td>RetNet / ABC Param × Mamba2 解释</td><td>多尺度衰减 + 显式递推 + 并行三合一</td><td>Microsoft / 2023.7</td></tr>
+          <tr><td><strong>Hyena / H3 / StripedHyena</td><td>Hyena / H3 / Evo (DNA 模型)</td><td>长卷积 + 门控，替代注意力</td><td>Stanford / 2023-2024</td></tr>
+          <tr><td><strong>xLSTM</strong></td><td>xLSTM 7B</td><td>改良 LSTM（sLSTM + mLSTM）+ 矩阵记忆</td><td>Sepp Hochreiter / 2024.5</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>七、混合架构（Hybrid）</h2>
+      <p>实践发现"全 SSM"在 in-context 检索（ICR）类任务上弱于 Attention，于是出现"Attention + SSM 混合"方案：</p>
+      <ul>
+        <li><strong>Jamba（AI21, 2024.3）</strong>：8B（52B 总参数 / 12B 激活），每 8 层 1 层 Attention，其余 7 层 Mamba</li>
+        <li><strong>Zamba / Zamba2（Zyphra, 2024-2025）</strong>：7B，每 6 层 1 层共享 Attention block</li>
+        <li><strong>Falcon Mamba（TTT lab, 2024.8）</strong>：纯 Mamba 7B，首次证明纯 SSM 在多项任务上可与同尺寸 Transformer 持平</li>
+        <li><strong>Granite Hybrid（IBM, 2024）</strong>：Mamba2 + 2 层 Attention 块</li>
+        <li><strong>Bamba（IBM, 2025）</strong>：9B 参数纯 Mamba2，与 Llama-3 持平</li>
+      </ul>
+      <div class="callout">混合方案的好处：① Attention 补 ICR / 复制任务；② SSM 主干保线性效率；③ 平衡显存和长上下文。生产中"7-8 层 Mamba + 1 层 Attention"是常见配置。</div>
+    </article>
+
+    <article class="card full">
+      <h2>八、RWKV 速解（线性注意力 + 衰减）</h2>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>核心公式（Time-Mix + Channel-Mix）</strong></p>
+        <p class="mathline">wkv<sub>t</sub> = (r<sub>t</sub> · k<sub>t</sub>)<sup>T</sup> v<sub>t</sub> + exp(−w) · wkv<sub>t-1</sub></p>
+        <p class="mathline">output<sub>t</sub> = (o<sub>t</sub> · wkv<sub>t</sub>) / (o<sub>t</sub> · a<sub>t</sub>)</p>
+        <p class="mathnote">其中 a<sub>t</sub> = r<sub>t</sub> · k<sub>t</sub> + exp(−w) · a<sub>t-1</sub>，w 是可学习的 time-decay（标量）。</p>
+        <p class="mathnote"><strong>特点</strong>：训练时等价线性注意力（O(N) 并行），推理时等价 RNN（O(1) 每步），没有 KV Cache。RWKV-7 引入"动态递推 + 通用 delta 规则"，表达力大幅提升。</p>
+        <p class="mathnote"><strong>与 Mamba 区别</strong>：RWKV 显式维护 running scalar decay；Mamba 用矩阵 A + 选择性步长 Δ。两者数学上都是线性注意力变体。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>九、与 Transformer 的 Trade-off</h2>
+      <table>
+        <thead><tr><th>维度</th><th>Transformer</th><th>Mamba / SSM / RWKV</th><th>胜出</th></tr></thead>
+        <tbody>
+          <tr><td>短文本质量（&lt;4K）</td><td>成熟、生态强</td><td>略弱或持平</td><td>Transformer（生态）</td></tr>
+          <tr><td>长上下文（&gt;128K）</td><td>KV 爆炸、Lost in the Middle</td><td>O(1) state，线性扩展</td><td>SSM 类</td></tr>
+          <tr><td>训练吞吐（长序列）</td><td>O(N²) FLOPs</td><td>O(N) FLOPs</td><td>SSM 类</td></tr>
+          <tr><td>推理吞吐（长上下文）</td><td>受 KV 限制</td><td>无 KV，O(1) 每步</td><td>SSM 类</td></tr>
+          <tr><td>In-context Retrieval（ICR）</td><td>强（任意位置取信息）</td><td>弱（state 容量有限）</td><td>Transformer</td></tr>
+          <tr><td>训练并行性</td><td>天然并行</td><td>Mamba1 需 parallel scan；Mamba2 OK</td><td>Transformer（容易）</td></tr>
+          <tr><td>硬件优化生态</td><td>FlashAttn / vLLM / TensorRT 全套</td><td>需自研 kernel（Mamba 团队提供 mamba-ssm / causal-conv1d）</td><td>Transformer</td></tr>
+          <tr><td>可控可解释</td><td>注意力权重可视化</td><td>state 不直观，解释性弱</td><td>Transformer</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">结论：2025-2026 没有"SSM 完全替代 Transformer"，混合架构是主流。SSM 在长上下文 / 高吞吐 / 低显存场景有显著优势；Transformer 在 ICR / 工具调用 / 短文本质量仍领先。生产选型：短上下文 + 高质量 → Transformer；长上下文 + 高吞吐 → SSM/混合。</div>
+    </article>
+
+    <article class="card full">
+      <h2>十、关键论文 / 模型时间线</h2>
+      <table>
+        <thead><tr><th>时间</th><th>工作</th><th>贡献</th></tr></thead>
+        <tbody>
+          <tr><td>2021</td><td>S4（Structured State Space）</td><td>高效 SSM 计算，提出 HiPPO 初始化</td></tr>
+          <tr><td>2022</td><td>H3</td><td>长卷积 + 门控，逼近 Transformer 效果</td></tr>
+          <tr><td>2023.5</td><td>RetNet（Microsoft）</td><td>Retention 机制，三种推理范式</td></tr>
+          <tr><td>2023.7</td><td>RWKV-5</td><td>Goose 架构，工程化大幅提升</td></tr>
+          <tr><td>2023.12</td><td>Mamba-1</td><td>Selective Scan (S6)，输入依赖 SSM</td></tr>
+          <tr><td>2024.3</td><td>Jamba（AI21）</td><td>首个开源 Mamba+Attention 混合（12B/52B）</td></tr>
+          <tr><td>2024.5</td><td>Mamba-2 + SSD 对偶</td><td>发现 S6 与注意力数学对偶，训练 2-8x 加速</td></tr>
+          <tr><td>2024.5</td><td>xLSTM（Sepp Hochreiter）</td><td>改良 LSTM，可与 Transformer 持平</td></tr>
+          <tr><td>2024.7</td><td>Codestral Mamba（Mistral）</td><td>首个生产级 Mamba 代码模型</td></tr>
+          <tr><td>2024.8</td><td>Falcon Mamba 7B（TTT lab）</td><td>纯 Mamba 击败同尺寸 Transformer</td></tr>
+          <tr><td>2024</td><td>Zamba / Zamba2（Zyphra）</td><td>7B 共享 Attention 块混合</td></tr>
+          <tr><td>2024</td><td>Bamba（IBM）</td><td>9B 纯 Mamba2，与 Llama-3 持平</td></tr>
+          <tr><td>2025</td><td>RWKV-7 (Goose)</td><td>动态递推，表达力追平 Mamba2</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十一、项目落地 / 业务场景</h2>
+      <ul>
+        <li><strong>超长文档分析</strong>：法律合同 100K+、代码库全量理解、学术论文综述——SSM 不爆 KV，streaming 推理快</li>
+        <li><strong>边缘部署 / 端侧</strong>：Mamba 7B 单卡可跑、state 固定 → 移动端 / 嵌入式友好</li>
+        <li><strong>高 QPS 推理服务</strong>：无 KV Cache → 显存省、长尾请求成本低、TTFT 短</li>
+        <li><strong>DNA / 蛋白质序列建模</strong>：Evo（Hyena 类）、Caduceus（Mamba 双向）—— 序列天然百万级</li>
+        <li><strong>代码补全</strong>：Codestral Mamba 7B、Falcon Mamba 7B 在 HumanEval 与同尺寸 Transformer 持平</li>
+      </ul>
+      <table>
+        <thead><tr><th>场景</th><th>推荐架构</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>短对话 ChatBot（&lt;8K）</td><td>Transformer（Llama / Qwen）</td><td>生态成熟、ICR 强</td></tr>
+          <tr><td>长文档 RAG（&gt;100K）</td><td>Jamba / Zamba 混合 / Mamba2</td><td>无 KV、state 固定</td></tr>
+          <tr><td>代码补全（4-32K）</td><td>Codestral Mamba / Transformer</td><td>看工具调用需求</td></tr>
+          <tr><td>DNA / 蛋白建模</td><td>Evo / Caduceus（Hyena / Mamba）</td><td>百万级序列</td></tr>
+          <tr><td>流式语音 / 视频</td><td>Mamba2 / RWKV</td><td>低延迟、O(1) 推理</td></tr>
+          <tr><td>高 QPS 客服</td><td>Mamba / 混合</td><td>节省 KV 显存</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十二、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Mamba 的核心思想是什么？</h3>
+          <p>A：把 SSM 的参数 (B, C, Δ) 改成"输入依赖"，让模型按当前 token 决定保留 / 遗忘什么。Mamba1 用 selective scan 串行实现，Mamba2 发现 S6 与注意力有 SSD 对偶，可用矩阵乘法并行训练。表达力追平 Transformer，复杂度 O(N)。</p>
+        </div>
+        <div>
+          <h3>Q2：Mamba 为什么不需要 KV Cache？</h3>
+          <p>A：因为 SSM 是递推计算：每步只需维护固定大小 state h<sub>t</sub>（与上下文长度无关）。不需要保存历史的 K/V，推理时显存 O(1) per step。代价是单步 state 容量有限，ICR 任务弱于 Attention。</p>
+        </div>
+        <div>
+          <h3>Q3：Mamba 1 和 Mamba 2 区别？</h3>
+          <p>A：Mamba1（2023.12）用 selective scan（parallel scan 算法，难并行）。Mamba2（2024.5）发现 S6 与结构化掩码注意力有 SSD（State Space Duality）数学对偶，可用 matmul 训练，吞吐提升 2-8x，硬件实现友好。两者数学表达力等价。</p>
+        </div>
+        <div>
+          <h3>Q4：Mamba 和 RWKV 区别？</h3>
+          <p>A：两者都是线性注意力变体，O(N) 训练 + O(1) 推理。RWKV 显式维护 running scalar decay（time-decay w），每步把过去信息按 w 衰减；Mamba 用矩阵 A + 动态步长 Δ 决定保留 / 遗忘。RWKV-7 引入 delta rule 后表达力追平 Mamba2。</p>
+        </div>
+        <div>
+          <h3>Q5：Mamba 在哪些任务上弱于 Transformer？</h3>
+          <p>A：主要是 In-Context Retrieval（ICR）类任务——需要"从历史任意位置精确提取信息"。如 NIAH（大海捞针）、多 key-value 查找、复杂复制任务。原因：state 容量有限，无法像 Attention 那样动态查全表。混合架构（Jamba、Zamba）通过插入 Attention 层缓解。</p>
+        </div>
+        <div>
+          <h3>Q6：为什么 2024-2025 出现混合架构？</h3>
+          <p>A：纯 SSM 在 ICR / 工具调用上弱于纯 Attention；纯 Transformer 在长上下文显存吃紧。混合方案用 Attention 补 ICR，SSM 主干保线性效率。Jamba（1:8 比例）、Zamba2（1:6）效果最佳。</p>
+        </div>
+        <div>
+          <h3>Q7：Mamba 训练为何能 O(N)？</h3>
+          <p>A：依赖 parallel scan 算法（Blelloch scan）把串行递推并行化。Mamba2 用 SSD 对偶直接用 matmul，更快。显存 O(N) 因为只需保存序列长度的 hidden state，不用保存 N² 的 attention matrix。</p>
+        </div>
+        <div>
+          <h3>Q8：实际生产用什么？</h3>
+          <p>A：2025-2026 主流是"混合 + 量化"。Codestral Mamba 7B、Mistral Large 3（混合）、Jamba 1.5 Large、Zamba2 7B。纯 SSM 模型少（Falcon Mamba 7B 是个标志），实际部署常配合 PagedAttention、Speculative Decoding、量化（AWQ/GPTQ）一起用。</p>
+        </div>
+        <div>
+          <h3>Q9：Mamba 怎么 fine-tune？</h3>
+          <p>A：和 Transformer 一样，SFT / DPO / LoRA 通用。但注意：① LoRA 适配 Mamba 块需要同时改 SSM 和 FFN；② 状态初始化需从头训练，不直接继承预训练 state；③ DPO 在 Mamba 上同样有效（参考 Zamba-DPO 实验）。</p>
+        </div>
+        <div>
+          <h3>Q10：Mamba 有什么硬件坑？</h3>
+          <p>A：① selective scan 的 custom kernel 难优化（causal-conv1d / mamba-ssm 库）；② 不直接支持 FlashAttention 等标准工具；③ vLLM / TensorRT-LLM 早期不支持 Mamba，2024 后逐步支持；④ 量化路径不成熟（AWQ 在 Mamba 上需适配）。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：Mamba / SSM / RWKV 是"非 Transformer"线性架构，目标是用 O(N) 训练 + O(1) 推理取代 Transformer 的 O(N²)。Mamba 的核心是把 SSM 参数改成输入依赖（selective scan），获得接近注意力的表达力；Mamba2 发现与注意力有 SSD 对偶，训练并行化。混合架构（Jamba / Zamba / Bamba）补 ICR 短板，是 2025-2026 主流。适合长上下文、端侧、高 QPS 场景。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从 Transformer 复杂度痛点 → SSM 基础公式 → Mamba selective scan 创新 → Mamba1 vs Mamba2 (SSD) → 5 大家族对比 → 混合架构 (Jamba / Zamba) → 与 Transformer 的 trade-off → 落地选型。能讲清"为什么 Mamba 不需要 KV Cache"、"Mamba 2 SSD 对偶为什么重要"、"ICR 任务为何弱"，立刻显得有真研究。</p>
+        </div>
+        <div>
+          <h3>加分：知道 Mamba 局限</h3>
+          <p>Mamba 不是银弹：① ICR / 工具调用 / 复制任务弱于 Attention；② 训练需 parallel scan，硬件生态不成熟（vLLM / TensorRT 早期不支持）；③ 量化路径需重新适配；④ 解释性差（state 不像 attention 权重直观）；⑤ 上下文再长，state 大小固定，模型容量有限。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：用 Mamba 替换 Transformer 训练 RAG 模型，发现 NIAH 评测从 95% 掉到 60%（ICR 短板）；加 1 层 Attention 块后回到 92%；混合比例 1:8 在 GPU 显存和效果间最平衡。讲清"理论 → 评测 → 调比例"三步，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>原理</td><td>Selective Scan 怎么"输入依赖"？</td><td>答"3 个动态参数"：B<sub>t</sub>、C<sub>t</sub>、Δ<sub>t</sub> 都由当前 token 通过 Linear + softplus 投影得到。Δ<sub>t</sub> 决定步长（重要 token 小步长，无关 token 大步长），实现内容感知。</td></tr>
+          <tr><td>复杂度</td><td>Mamba 为什么 O(N)？</td><td>答"递推 + parallel scan"：每步 h<sub>t</sub> = A · h<sub>t-1</sub> + B · x<sub>t</sub>，是线性递推；用 Blelloch scan 并行化后整体 O(N)。相比 Attention 的 O(N²) attention matrix，省 N 倍显存和 FLOPs。</td></tr>
+          <tr><td>KV Cache</td><td>Mamba 推理为什么不要 KV Cache？</td><td>答"state 复用"：Mamba 每步维护固定大小 state h<sub>t</sub>（如 dim=16），不存历史 K/V。Attention 必须存全部历史 K/V 用于 query 查表，O(N) 显存。SSM 是 RNN 式递推，O(1) 每步。</td></tr>
+          <tr><td>vs Transformer</td><td>Mamba 哪些任务弱于 Transformer？</td><td>答"ICR 类"：大海捞针（NIAH）、多 key-value 查找、精确复制、工具调用密集。原因：state 容量有限，无法像 Attention 那样动态查全表。混合架构补。</td></tr>
+          <tr><td>混合架构</td><td>Jamba 怎么混合？</td><td>答"层间混合"：每 8 层 1 层 Attention（用于 ICR），其余 7 层 Mamba（保线性效率）。还有"块内混合"（Jamba 块 = Attention + Mamba + FFN）。经验：1:6 到 1:8 比例最常见。</td></tr>
+          <tr><td>工程</td><td>Mamba 怎么部署？</td><td>答"专用 kernel + 量化"：用 mamba-ssm / causal-conv1d 库提供 CUDA kernel；量化需自研（AWQ 在 Mamba 上需适配）。vLLM 0.5+ 支持 Mamba 推理，TensorRT-LLM 2025 起支持。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：Mamba / SSM / RWKV 是 2024-2026 面试加分项。面试允许说"我只了解原理，未深入部署"，但要能讲清 selective scan 创新、SSD 对偶、与 Attention 的 trade-off、混合架构趋势。诚实 + 思路清晰 &gt; 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>SSM</td><td>状态空间模型，h' = Ah + Bx, y = Ch，连续 → 离散后递推</td></tr>
+          <tr><td>S4 / S5 / S6</td><td>SSM 演化版本，S6 = Mamba 的 selective scan</td></tr>
+          <tr><td>Mamba-1</td><td>Albert Gu & Tri Dao 2023.12，输入依赖 SSM + selective scan</td></tr>
+          <tr><td>Mamba-2</td><td>2024.5，SSD 对偶（与注意力数学等价），并行 matmul 训练</td></tr>
+          <tr><td>Selective Scan</td><td>Mamba 核心，Δ<sub>t</sub> 输入依赖决定步长</td></tr>
+          <tr><td>RWKV</td><td>线性注意力 + time-decay，Bo Peng 团队，2023-2025 v5/v6/v7</td></tr>
+          <tr><td>RetNet</td><td>Microsoft 2023.7，retention 机制，多尺度衰减</td></tr>
+          <tr><td>Hyena / H3</td><td>长卷积 + 门控替代注意力，Stanford 2023</td></tr>
+          <tr><td>xLSTM</td><td>Sepp Hochreiter 2024.5，改良 LSTM，矩阵记忆</td></tr>
+          <tr><td>SSD 对偶</td><td>State Space Duality，Mamba2 与结构化掩码注意力的数学等价</td></tr>
+          <tr><td>Jamba</td><td>AI21 2024.3，8B / 52B，Mamba+Attention 1:8 混合</td></tr>
+          <tr><td>Falcon Mamba</td><td>TTT lab 2024.8，7B 纯 Mamba，击败同尺寸 Transformer</td></tr>
+          <tr><td>Codestral Mamba</td><td>Mistral 2024.7，7B 纯 Mamba 代码模型</td></tr>
+          <tr><td>ICR</td><td>In-Context Retrieval，SSM 短板，需 Attention 补</td></tr>
+          <tr><td>Parallel Scan</td><td>Blelloch scan，O(N) 串行递推并行化算法</td></tr>
+          <tr><td>state</td><td>Mamba 维护的固定大小隐藏状态，O(1) 显存</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

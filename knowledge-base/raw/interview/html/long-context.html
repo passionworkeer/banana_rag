@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>长上下文工程 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./kv-cache.html">KV Cache</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./rag.html">RAG</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">推理部署 · 长文本</span>
+    <h1>长上下文工程：把 4K 推到 128K / 1M 的全套技术</h1>
+    <p class="lead">从 4K 到 128K 再到 1M 上下文，挑战不止"显存够不够"——位置编码外推、注意力退化、中间信息丢失、推理成本 4 段增长。本页讲清 RoPE 插值、YaRN、LongLoRA、滑动窗口、渐进压缩、Needle-in-Haystack 评测，构成完整长上下文技术栈。</p>
+    <div class="pillrow">
+      <span class="pill">RoPE</span><span class="pill">Position Interpolation</span><span class="pill">YaRN</span><span class="pill">LongLoRA</span><span class="pill">Sliding Window</span><span class="pill">Needle-in-Haystack</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、长上下文的 4 重挑战</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 280" width="100%" height="auto" role="img" aria-label="Long context challenges">
+          <defs>
+            <marker id="arrow-lc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="270" height="200" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="175" y="70" text-anchor="middle" font-size="16" font-weight="700">① 位置编码</text>
+          <text x="175" y="95" text-anchor="middle" font-size="12" fill="#475569">训练时只见过 4K，推理时给 128K</text>
+          <text x="50" y="125" font-size="11">RoPE 外推失效</text>
+          <text x="50" y="145" font-size="11">需要 PI / YaRN</text>
+          <text x="50" y="170" font-size="11" fill="#7c3aed">解：位置插值</text>
+
+          <rect x="320" y="40" width="270" height="200" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="455" y="70" text-anchor="middle" font-size="16" font-weight="700">② 注意力退化</text>
+          <text x="455" y="95" text-anchor="middle" font-size="12" fill="#475569">长 context 下 attention 散</text>
+          <text x="330" y="125" font-size="11">"Lost in the Middle"</text>
+          <text x="330" y="145" font-size="11">中间 token 关注度低</text>
+          <text x="330" y="170" font-size="11" fill="#7c3aed">解：注意力 sink + 检索</text>
+
+          <rect x="600" y="40" width="270" height="200" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="735" y="70" text-anchor="middle" font-size="16" font-weight="700">③ 计算成本</text>
+          <text x="735" y="95" text-anchor="middle" font-size="12" fill="#475569">attention O(N²)</text>
+          <text x="610" y="125" font-size="11">128K 注意力 4x 算力</text>
+          <text x="610" y="145" font-size="11">KV Cache 巨大</text>
+          <text x="610" y="170" font-size="11" fill="#7c3aed">解：FlashAttn / 稀疏 / 量化</text>
+
+          <rect x="880" y="40" width="260" height="200" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1010" y="70" text-anchor="middle" font-size="16" font-weight="700">④ 评估</text>
+          <text x="1010" y="95" text-anchor="middle" font-size="12" fill="#475569">能"塞进去"≠能"用起来"</text>
+          <text x="890" y="125" font-size="11">Needle-in-Haystack</text>
+          <text x="890" y="145" font-size="11">长程依赖任务</text>
+          <text x="890" y="170" font-size="11" fill="#7c3aed">解：多维度评测</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、RoPE 位置编码</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\mathrm{RoPE}(q, m) = R(m \cdot \theta) \cdot q$$</p>
+        <p class="mathline">R(θ) = 旋转矩阵</p>
+        <p class="mathline">$$\theta_{i} = 10000^{-2i/d}$$</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">m = token 位置</p>
+        <p class="mathline">训练时 $m \in [0, L_{\text{train}}]$</p>
+        <p class="mathline">推理时 $m \in [0, L_{\text{infer}}]$</p>
+        <p class="mathline">$L_{\text{infer}} > L_{\text{train}} \;\Rightarrow\;$ 外推</p>
+        <p class="mathline">外推后高频位置编码出现"未见过的角度"</p>
+        <p class="mathnote">RoPE 优势：相对位置、相邻距离敏感、长度泛化。但直接外推到远超训练长度会失效。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、Position Interpolation（PI）</h2>
+      <div class="mathbox">
+        <p class="mathline">核心思想：把超长位置"压缩"到训练时见过的范围</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">$$m' = m \cdot \tfrac{L_{\text{train}}}{L_{\text{infer}}}$$</p>
+        <p class="mathline">$$R(m' \cdot \theta) = R(m \cdot \theta \cdot \text{scale})$$</p>
+        <p class="mathline">$$\text{scale} = \tfrac{L_{\text{train}}}{L_{\text{infer}}}$$</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">例：L_train=4K, L_infer=32K</p>
+        <p class="mathline">scale = 1/8</p>
+        <p class="mathline">所有位置编码角度 × 1/8</p>
+        <p class="mathnote">优点：4K 训练好的模型可推到 32K，仅需 ~1K 步微调。缺点：高频信息略损。</p>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、YaRN（Yet another RoPE extensioN）</h2>
+      <div class="callout">YaRN = NTK-aware 部分 PI + attention 温度调整。保留高频、压缩低频。</div>
+      <div class="mathbox">
+        <p class="mathline">对 RoPE 不同频率分量用不同 scale：</p>
+        <p class="mathline">· 高频（短距离）：不变，保留局部信息</p>
+        <p class="mathline">· 低频（长距离）：用 PI 压缩</p>
+        <p class="mathline">· 临界频率：ramp function 平滑过渡</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">额外：attention logits 除以温度 t</p>
+        <p class="mathline">$$t = 0.1 \cdot \ln(L_{\text{infer}} / L_{\text{train}}) + 1$$</p>
+        <p class="mathnote">效果：4K 训练模型无需微调直接推 128K，效果接近从头训练 128K 模型。Llama-3 / Qwen-2.5 都用 YaRN 思想。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>五、LongLoRA / 滑动窗口 / 渐进压缩</h2>
+      <ul>
+        <li><strong>LongLoRA</strong>：训练时用 shift sparse attention 模拟长注意力，比全 attention 训练省 2-3x 显存</li>
+        <li><strong>Sliding Window</strong>：Mistral 风格，每层只看固定窗口（4K-8K），但多层叠加等效长程</li>
+        <li><strong>Attention Sink</strong>：StreamingLLM 思想，前 4 个 token 永远保留，注意力"锚"在头</li>
+        <li><strong>渐进压缩</strong>：长 context 旧部分做摘要 / 压缩，保留关键信息</li>
+        <li><strong>Memory Bank</strong>：把超长 context 存外部 KV 库，按需 retrieve</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、Needle-in-Haystack 评测</h2>
+      <p>把"关键事实"插入到长文本的不同位置，看模型能否准确 retrieve：</p>
+      <ul>
+        <li>深度（Depth）：needle 在文本中的相对位置 0-100%</li>
+        <li>长度（Context Length）：4K / 8K / 16K / 32K / 64K / 128K</li>
+        <li>评测：模型 recall 准确率，画成热力图（绿=全对，红=错）</li>
+      </ul>
+      <div class="callout">"Lost in the Middle"现象：针放在 50% 位置时 recall 显著低于 0% 或 100%。这是 LLM 的固有缺陷，需要 prompt 设计（"请特别关注中间内容"）或检索增强缓解。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、长上下文实战决策</h2>
+      <table>
+        <thead><tr><th>场景</th><th>推荐方案</th><th>成本</th></tr></thead>
+        <tbody>
+          <tr><td>4K-8K 上下文</td><td>原生训练长度</td><td>基线</td></tr>
+          <tr><td>8K-32K</td><td>PI / YaRN + 1K 步微调</td><td>+5% 训练成本</td></tr>
+          <tr><td>32K-128K</td><td>YaRN 完整方案 + 长程微调</td><td>+15-30% 训练成本</td></tr>
+          <tr><td>128K-1M</td><td>LongLoRA + 稀疏注意力 + 压缩 + 检索混合</td><td>工程复杂度高</td></tr>
+          <tr><td>超长文档 RAG</td><td>分块 + 检索 + 重排 + 短 context</td><td>成本可控</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>八、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：RoPE 为什么比绝对位置编码更易扩展？</h3>
+          <p>A：RoPE 把位置信息编码为"旋转向量角度"，是相对位置性质。相对位置泛化能力更强（短距离关系可迁移到长距离）。绝对位置编码在未见过的位置上是"完全陌生"的 embedding。</p>
+        </div>
+        <div>
+          <h3>Q2：PI 和 YaRN 区别？</h3>
+          <p>A：PI（Position Interpolation）对所有 RoPE 频率用相同 scale 压缩，简单但损失高频信息。YaRN 只压缩低频、保留高频，再加 attention 温度调整。YaRN 效果更好，是目前主流。</p>
+        </div>
+        <div>
+          <h3>Q3：Lost in the Middle 怎么缓解？</h3>
+          <p>A：4 个手段：① RAG 检索 + 重排序，把关键信息放在 context 头尾；② prompt 显式提示"中间段落也有重要信息"；③ 多 chunk 并行召回投票；④ StreamingLLM 注意力 sink 保留"头尾"信号。</p>
+        </div>
+        <div>
+          <h3>Q4：长上下文推理成本怎么控？</h3>
+          <p>A：5 个手段：① FlashAttention IO 优化；② KV Cache 量化（INT4/INT8）；③ Sliding Window 限制 attention 范围；④ 渐进压缩 / 摘要；⑤ RAG 替代部分 context 注入。128K 实测可比朴素 4x-8x 加速。</p>
+        </div>
+        <div>
+          <h3>Q5：Mamba / SSM 真能替代 Transformer 长上下文？</h3>
+          <p>A：部分场景。Mamba 的状态空间模型 O(1) 推理 / O(N) 训练，长序列优势明显。但 Mamba 在"精确检索"任务上比 Transformer 弱（Mamba-2 / Jamba 混合架构在追赶）。生产上 128K+ context 仍是 Transformer 为主 + 各种 trick。</p>
+        </div>
+        <div>
+          <h3>Q6：怎么评估长上下文真的"工作"？</h3>
+          <p>A：4 个层面：① Needle-in-Haystack（基本 retrieval）；② 多跳问答（需要综合多处信息）；③ 长程依赖（位置 N 的 token 引用位置 M 的事实）；④ RULER 基准（综合 13 种长 context 任务）。单看 NIAH 容易被"hacked"——简单 regex 也能命中。</p>
+        </div>
+        <div>
+          <h3>Q7：长 context 训练数据怎么准备？</h3>
+          <p>A：3 步：① 收集长文档（书籍 / 长报告 / 代码仓库）；② 续写式训练（按 chunk 切，loss 算全段）；③ 混合短长数据（防遗忘）。LongLoRA / Long-Context 论文都有具体 recipe。</p>
+        </div>
+        <div>
+          <h3>Q8：为什么 1M context 至今没普及？</h3>
+          <p>A：3 个核心困难：① 训练成本指数涨（高质量长程数据稀缺）；② 推理成本高（KV Cache 巨大）；③ 评估困难（1M 真用起来的场景少）。多数"宣称支持 1M"的模型实际 64K 后效果明显掉。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>九、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>长上下文工程 = 4 重挑战（位置编码 / 注意力退化 / 计算成本 / 评估）+ 4 大技术（RoPE 插值 / YaRN / 滑动窗口 / 稀疏注意力）。PI 和 YaRN 让 4K 模型可推 128K；LongLoRA / StreamingLLM 解决注意力退化；NIAH 是评测基准但不够，需多跳问答。生产上 32K+ 多用 RAG 替代纯长 context。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（4K 够用吗？长文档 / 长视频 / 多轮对话）→ RoPE 原理 → PI / YaRN 解决位置外推 → Lost in the Middle 现象 → FlashAttention + 稀疏 + 滑动窗口解决成本 → 4 层评估（NIAH / 多跳 / 长程 / RULER）→ 实战决策树。能讲清"为什么 YaRN 优于朴素 PI"、"为什么 1M context 至今没普及"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"4K → 32K 上下文扩展"——比如 Llama-2-7B 用 YaRN 推 32K：① 准备 5K 条 32K 长程 QA 微调数据；② YaRN 缩放 scale=1/8；③ 1 epoch 训练；④ NIAH 评测 0%-100% depth 全 95%+；⑤ 推理 KV Cache 用 INT4 量化省一半显存。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>长上下文不是银弹：① 真用起来的场景少（多数是 RAG 替代）；② 1M 上下文至今没广泛普及；③ NIAH 评测容易被 hack；④ Lost in the Middle 是固有缺陷。诚实说"32K-128K 是甜区，超出后 RAG + 短 context 更经济"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>RoPE</td><td>Rotary Position Embedding，旋转位置编码</td></tr>
+          <tr><td>PI</td><td>Position Interpolation，所有频率同 scale 压缩</td></tr>
+          <tr><td>YaRN</td><td>NTK-aware 部分 PI + 温度调整，主流方案</td></tr>
+          <tr><td>LongLoRA</td><td>shift sparse attention 训长上下文，2-3x 省显存</td></tr>
+          <tr><td>Sliding Window</td><td>Mistral 风格，每层看固定窗口</td></tr>
+          <tr><td>Attention Sink</td><td>StreamingLLM 保留前 4 token 当锚</td></tr>
+          <tr><td>Lost in Middle</td><td>中间位置信息关注度低的固有缺陷</td></tr>
+          <tr><td>NIAH</td><td>Needle-in-a-Haystack，长 context 基础评测</td></tr>
+          <tr><td>RULER</td><td>综合 13 种长 context 任务的评测基准</td></tr>
+          <tr><td>NTK-aware</td><td>区分 RoPE 频率分量，对不同分量用不同策略</td></tr>
+          <tr><td>渐进压缩</td><td>长 context 旧部分做摘要 / 压缩</td></tr>
+          <tr><td>Mamba / SSM</td><td>状态空间模型，O(1) 推理但精确检索弱</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

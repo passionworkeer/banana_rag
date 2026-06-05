@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent 记忆 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./mcp.html">MCP</a>
+    <a href="./memory.html">Memory</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">面试首期 · Agent 架构</span>
+    <h1>Agent 记忆</h1>
+    <p class="lead">短期 / 长期记忆机制，让模型在长对话中保留用户偏好和历史上下文。记忆分层 + 压缩策略 + 冲突更新是面试三大重点。</p>
+    <div class="pillrow">
+      <span class="pill">Working Memory</span><span class="pill">Episodic</span><span class="pill">Semantic</span><span class="pill">Compression</span><span class="pill">Conflict</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Agent 记忆分层</h2>
+      <ul>
+        <li><strong>四层记忆模型</strong>（类比人脑）：
+          <ul>
+            <li><code>Working Memory</code>（工作记忆）：当前对话上下文，存于 prompt / 上下文窗口</li>
+            <li><code>Episodic Memory</code>（情景记忆）：过去发生的事件序列，存于向量库 + 时间戳</li>
+            <li><code>Semantic Memory</code>（语义记忆）：事实性知识、用户偏好、领域概念，长期持久化</li>
+            <li><code>Procedural Memory</code>（程序记忆）：技能与流程，由模型权重 + 提示模板承载</li>
+          </ul>
+        </li>
+        <li><strong>短期 vs 长期</strong>：
+          <ul>
+            <li>短期：放在 prompt 上下文窗口内，访问快但窗口有限（4k-200k token）</li>
+            <li>长期：放在向量数据库 / KV 存储 / 文件系统，访问需检索但容量大</li>
+            <li>分层策略：高频偏好 → 短期、累计事实 → 长期，检索时按场景混合</li>
+          </ul>
+        </li>
+        <li><strong>压缩策略</strong>（解决上下文爆炸）：
+          <ul>
+            <li><strong>摘要</strong>：用 LLM 把 N 段对话压缩成 1 段摘要（保留率 5-10 倍）</li>
+            <li><strong>抽取</strong>：用规则或模型从对话中抽取关键事实（user_prefs、events）</li>
+            <li><strong>滑动窗口</strong>：保留最近 K 轮 + 长期摘要（最简单但容易丢早期信息）</li>
+            <li><strong>分层压缩</strong>：旧对话→摘要、摘要→更高层摘要，递归降采样</li>
+          </ul>
+        </li>
+        <li><strong>冲突更新</strong>（同一条记忆被改写怎么办）：
+          <ul>
+            <li><strong>时间戳</strong>：记忆条目带 last_updated 字段，新覆盖旧</li>
+            <li><strong>版本号</strong>：同 key 多版本共存，检索时取最新</li>
+            <li><strong>显式覆盖</strong>：用户说"我改了地址"→ 触发 LLM 删除旧 + 写入新</li>
+            <li><strong>冲突标记</strong>：检测到矛盾时给用户确认（"你之前说 A，现在是 B，要保留哪个？"）</li>
+          </ul>
+        </li>
+      </ul>
+      <table>
+        <thead><tr><th>层级</th><th>存储位置</th><th>生命周期</th><th>典型用途</th><th>类比</th></tr></thead>
+        <tbody>
+          <tr><td><code>Working</code></td><td>LLM 上下文窗口</td><td>当前会话</td><td>最近 K 轮对话</td><td>RAM 内存</td></tr>
+          <tr><td><code>Episodic</code></td><td>向量库 + 时间戳</td><td>周 / 月</td><td>历史问题、用户路径</td><td>事件日志</td></tr>
+          <tr><td><code>Semantic</code></td><td>KV / 关系库</td><td>长期 / 永久</td><td>用户偏好、领域知识</td><td>长期记忆</td></tr>
+          <tr><td><code>Procedural</code></td><td>模型权重 + Prompt</td><td>迭代升级</td><td>工具使用流程、思考模式</td><td>肌肉记忆</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>压缩策略对比</h2>
+      <table>
+        <thead><tr><th>策略</th><th>实现方式</th><th>压缩比</th><th>信息损失</th><th>适用场景</th></tr></thead>
+        <tbody>
+          <tr><td><strong>滑动窗口</strong></td><td>只保留最近 K 轮</td><td>1/N</td><td>高（早期信息全丢）</td><td>闲聊、短任务</td></tr>
+          <tr><td><strong>摘要压缩</strong></td><td>LLM 总结成 N 段</td><td>5-10x</td><td>中（细节被概括）</td><td>长客服、咨询会话</td></tr>
+          <tr><td><strong>事实抽取</strong></td><td>正则 / LLM 抽结构化字段</td><td>10-50x</td><td>低（只保留关键事实）</td><td>用户画像、订单场景</td></tr>
+          <tr><td><strong>分层递归</strong></td><td>旧摘要再压缩成更短摘要</td><td>20-100x</td><td>中（语义近似）</td><td>跨周 / 跨月会话</td></tr>
+          <tr><td><strong>向量化召回</strong></td><td>全程不压缩，按相关性检索</td><td>1（按需取）</td><td>极低</td><td>知识库对话、RAG 增强</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型经验：优先 <code>事实抽取 + 向量化召回</code> 组合，关键事实结构化、对话原文向量化；实在丢上下文时再叠加摘要压缩，滑动窗口作为兜底。</div>
+    </article>
+
+    <article class="card">
+      <h2>二、记忆架构</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 460" width="100%" height="auto" role="img" aria-label="Agent memory architecture">
+          <defs>
+            <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <rect x="490" y="20" width="200" height="64" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="50" text-anchor="middle" font-size="18" font-weight="700">User</text>
+          <text x="590" y="70" text-anchor="middle" font-size="12" fill="#475569">输入 + 反馈</text>
+
+          <rect x="420" y="130" width="340" height="110" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="590" y="160" text-anchor="middle" font-size="18" font-weight="700">Agent</text>
+          <text x="590" y="184" text-anchor="middle" font-size="12" fill="#475569">LLM + 推理 + 工具调用</text>
+          <rect x="450" y="194" width="280" height="34" rx="10" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="590" y="216" text-anchor="middle" font-size="13" font-weight="600">Working Memory（上下文窗口）</text>
+
+          <line x1="590" y1="84" x2="590" y2="130" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-m)"/>
+
+          <rect x="60" y="290" width="240" height="80" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+          <text x="180" y="318" text-anchor="middle" font-size="16" font-weight="700">Episodic</text>
+          <text x="180" y="340" text-anchor="middle" font-size="12" fill="#475569">事件序列 + 时间戳</text>
+          <text x="180" y="358" text-anchor="middle" font-size="12" fill="#475569">"上周问过 XX"</text>
+
+          <rect x="350" y="290" width="240" height="80" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+          <text x="470" y="318" text-anchor="middle" font-size="16" font-weight="700">Semantic</text>
+          <text x="470" y="340" text-anchor="middle" font-size="12" fill="#475569">事实 / 偏好 / 知识</text>
+          <text x="470" y="358" text-anchor="middle" font-size="12" fill="#475569">"身高 175cm、喜欢蓝色"</text>
+
+          <rect x="640" y="290" width="240" height="80" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+          <text x="760" y="318" text-anchor="middle" font-size="16" font-weight="700">Procedural</text>
+          <text x="760" y="340" text-anchor="middle" font-size="12" fill="#475569">流程 / 工具 / 技能</text>
+          <text x="760" y="358" text-anchor="middle" font-size="12" fill="#475569">"先查库存 → 再下单"</text>
+
+          <rect x="930" y="290" width="200" height="80" rx="14" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+          <text x="1030" y="318" text-anchor="middle" font-size="16" font-weight="700">Vector DB</text>
+          <text x="1030" y="340" text-anchor="middle" font-size="12" fill="#475569">Episodic / Semantic</text>
+          <text x="1030" y="358" text-anchor="middle" font-size="12" fill="#475569">嵌入式存储</text>
+
+          <path d="M 530 240 Q 530 270 180 290" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <path d="M 590 240 L 590 270 L 470 270 L 470 290" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <path d="M 650 240 Q 650 270 760 290" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-m)"/>
+          <line x1="470" y1="330" x2="930" y2="330" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-m)"/>
+
+          <text x="590" y="410" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">记忆写入路径</text>
+          <text x="590" y="430" text-anchor="middle" font-size="12" fill="#475569">Working 满了 → 摘要压缩 → 写入 Episodic / Semantic</text>
+        </svg>
+      </div>
+      <p class="muted">Agent 持 Working Memory 跑实时对话；溢出或会话结束后通过 LLM 抽取写入 Episodic（事件流）和 Semantic（事实库），再 Embedding 落到 Vector DB。下次会话开始时按需召回拼回上下文。</p>
+    </article>
+
+    <article class="card">
+      <h2>记忆读写时序</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Memory read-write sequence">
+          <defs>
+            <marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"></path>
+            </marker>
+          </defs>
+
+          <text x="80" y="30" font-size="14" font-weight="700" fill="#0f172a">User</text>
+          <text x="320" y="30" font-size="14" font-weight="700" fill="#0f172a">Agent</text>
+          <text x="600" y="30" font-size="14" font-weight="700" fill="#0f172a">Memory Mgr</text>
+          <text x="880" y="30" font-size="14" font-weight="700" fill="#0f172a">Vector DB</text>
+
+          <line x1="80" y1="50" x2="80" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="320" y1="50" x2="320" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="600" y1="50" x2="600" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+          <line x1="880" y1="50" x2="880" y2="340" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+
+          <line x1="320" y1="80" x2="600" y2="80" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="72" text-anchor="middle" font-size="12" fill="#0f172a">① 新会话开始：拉取历史</text>
+
+          <line x1="600" y1="110" x2="880" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="740" y="102" text-anchor="middle" font-size="12" fill="#0f172a">② query(user_id, scene) → top-K</text>
+
+          <line x1="880" y1="140" x2="600" y2="140" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="740" y="132" text-anchor="middle" font-size="12" fill="#0f172a">③ 返回相关记忆</text>
+
+          <line x1="600" y1="170" x2="320" y2="170" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="162" text-anchor="middle" font-size="12" fill="#0f172a">④ 拼到 System Prompt</text>
+
+          <line x1="80" y1="200" x2="80" y2="220" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="80" y="240" font-size="12" fill="#475569" text-anchor="middle">User 提问</text>
+
+          <line x1="80" y1="260" x2="320" y2="260" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <line x1="320" y1="290" x2="600" y2="290" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="460" y="282" text-anchor="middle" font-size="12" fill="#0f172a">⑤ 对话结束 → 触发记忆更新</text>
+
+          <line x1="600" y1="320" x2="880" y2="320" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="740" y="312" text-anchor="middle" font-size="12" fill="#0f172a">⑥ upsert(memories)</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>三、记忆压缩率</h2>
+      <div class="mathbox">
+        <p class="mathline">$$\mathrm{compression\_ratio} = \frac{\text{原始对话 token 数}}{\text{压缩后 token 数}}$$</p>
+        <p class="mathline">典型值：摘要压缩 5-10x、事实抽取 10-50x、滑动窗口 ≈ N/总轮次</p>
+        <p class="mathnote">例：1 段 30 轮客服对话 ≈ 6000 token，LLM 摘要后 ≈ 800 token，压缩比 7.5x；进一步结构化抽取 user_prefs + order_history 可压到 200 token 内，比 30x。</p>
+        <p class="mathnote">Trade-off：压缩比越高 → 上下文越省 → 但细节可能丢失。生产经验是先做"事实抽取"保关键信息，再叠加"摘要"补充语境，避免只压不抽导致失真。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>记忆操作原子化</h2>
+      <table>
+        <thead><tr><th>操作</th><th>API</th><th>幂等性</th><th>典型场景</th></tr></thead>
+        <tbody>
+          <tr><td>读</td><td><code>recall(user_id, query, top_k)</code></td><td>幂等</td><td>会话开场注入历史</td></tr>
+          <tr><td>写</td><td><code>upsert(memory)</code></td><td>幂等（key 唯一）</td><td>抽取新事实入库</td></tr>
+          <tr><td>删</td><td><code>delete(memory_id)</code></td><td>幂等</td><td>用户撤回 / 隐私删除</td></tr>
+          <tr><td>改</td><td><code>update(memory_id, new_value)</code></td><td>幂等</td><td>偏好变更</td></tr>
+          <tr><td>合并</td><td><code>merge(mem_a, mem_b)</code></td><td>非幂等</td><td>去重 + 抽象</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、项目落地</h2>
+      <ul>
+        <li><strong>蕉内实际</strong>：AI 数字员工员工偏好记忆 — 短期 Working 保留当前会话上下文（最近 10 轮），长期 Vector DB 保留员工角色 / 部门 / 历史提问偏好；写入前用 LLM 抽取结构化字段，避免长对话爆窗。</li>
+        <li><strong>假设场景</strong>：客服 Agent 跨会话记住用户购买历史 — 用户第一次说"我身高 180 喜欢黑色"，第二次开新会话时 Agent 自动召回偏好并主动推荐，省去重复描述。</li>
+        <li><strong>简历表达</strong>：记忆架构设计 / 长期 / 短期分层 / 压缩策略 / 冲突更新机制。</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（可写进简历）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>短期 Working</td>
+            <td>消息队列 + 滑动窗口 + 摘要落盘</td>
+            <td>"设计 Working Memory 容量控制和摘要策略，单会话 token 成本降低 60%"</td>
+          </tr>
+          <tr>
+            <td>长期 Semantic</td>
+            <td>事实抽取 → 向量化 → Vector DB</td>
+            <td>"搭建用户偏好长期记忆系统，新会话开场召回准确率 92%"</td>
+          </tr>
+          <tr>
+            <td>冲突治理</td>
+            <td>时间戳 + 版本号 + 用户确认</td>
+            <td>"实现记忆冲突检测与人工确认机制，记忆错误率从 8% 降至 1.5%"</td>
+          </tr>
+          <tr>
+            <td>多用户隔离</td>
+            <td>用户 ID 命名空间 + 独立 collection</td>
+            <td>"建立按 user_id 隔离的向量命名空间，杜绝越权召回"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">面试建议：把"四层记忆 → 短期 / 长期划分 → 压缩策略 → 冲突更新 → 多用户隔离"五段说清楚，就能覆盖 90% 追问。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：短期和长期记忆怎么划分？</h3>
+          <p>A：按数据生命周期和访问频次。短期在上下文窗口（秒级 / 当前会话）、长期在持久化存储（天级 / 跨会话）；高频热数据用短期、低频冷数据用长期，检索时按场景拼回。</p>
+        </div>
+        <div>
+          <h3>Q2：记忆冲突怎么办？</h3>
+          <p>A：三种机制叠加：<code>时间戳</code>（last_updated 字段）实现新覆盖旧、<code>版本号</code>实现同 key 多版本共存、<code>显式覆盖</code>由用户话语触发 LLM 删除旧 + 写入新。检测到矛盾时优先向用户确认。</p>
+        </div>
+        <div>
+          <h3>Q3：上下文窗口有限怎么压缩？</h3>
+          <p>A：四种策略叠加：<code>摘要</code>（LLM 压缩，5-10x）、<code>抽取</code>（结构化关键事实，10-50x）、<code>滑动窗口</code>（保留最近 K 轮，1/N）、<code>分层递归</code>（旧摘要再压缩，20-100x）。生产经验是先抽后压，保关键信息。</p>
+        </div>
+        <div>
+          <h3>Q4：和 RAG 区别？</h3>
+          <p>A：记忆是会话级个性化（user_id 维度、按场景召回），RAG 是知识库检索（文档级、全局共享）。记忆偏"用户私人上下文"，RAG 偏"领域公共知识"，生产系统通常同时使用：RAG 注入知识、Memory 注入偏好。</p>
+        </div>
+        <div>
+          <h3>Q5：记忆的遗忘机制怎么设计？</h3>
+          <p>A：四种手段：<code>TTL</code>（过期时间）、<code>容量上限</code>（每用户最多 N 条）、<code>显式删除</code>（用户撤回或合规要求）、<code>重要性衰减</code>（长时间未访问降权）。设计原则：用户可控、可解释、有日志。</p>
+        </div>
+        <div>
+          <h3>Q6：多用户隔离怎么做？</h3>
+          <p>A：三个层次：<code>命名空间</code>（user_id 作向量前缀）、<code>独立 collection</code>（每个用户 / 租户一份）、<code>ACL 校验</code>（召回时强制过 user_id 过滤）。生产建议命名空间 + ACL 组合，独立 collection 仅在租户级隔离时用。</p>
+        </div>
+        <div>
+          <h3>Q7：什么时候记忆反而有害？</h3>
+          <p>A：三个反模式：<code>陈旧偏好</code>（用户改了地址没同步）、<code>错误抽取</code>（LLM 把玩笑当事实）、<code>污染 prompt</code>（低质量记忆塞满上下文）。设计时必须有"召回质量评估"和"用户纠正反馈回路"。</p>
+        </div>
+        <div>
+          <h3>Q8：怎么评估记忆系统？</h3>
+          <p>A：三类指标：<code>召回质量</code>（top-K 命中率、MRR）、<code>压缩比</code>（输入 token / 摘要 token）、<code>用户感知</code>（跨会话是否复用偏好、用户是否主动撤回记忆）。建议用 LLM-as-Judge 定期抽检。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>面试开场可以这样讲：Agent 记忆分四层 — Working（上下文窗口）、Episodic（事件流）、Semantic（事实库）、Procedural（流程技能）。短期用窗口、长期用向量库，跨会话靠 Embedding 召回；关键设计是压缩（摘要 + 抽取 + 滑动窗口）和冲突更新（时间戳 + 版本号 + 显式覆盖）。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从四层模型 → 读写时序 → 压缩策略 → 冲突治理 → 多用户隔离，逐层展开。最后落到你们项目的记忆系统架构、召回指标、压缩比、错误率。有真实数据能立刻拉开差距。</p>
+        </div>
+        <div>
+          <h3>加分：知道记忆的局限</h3>
+          <p>记忆不是银弹：错误抽取会污染 prompt、陈旧偏好会误导用户、容量爆炸会增加 token 成本。建议结合"用户可控的编辑入口 + 召回质量评估 + 显式遗忘"三件套缓解。</p>
+        </div>
+        <div>
+          <h3>加分：能讲一次踩坑</h3>
+          <p>比如：抽取时把"我以前喜欢蓝色"误存为"喜欢蓝色"导致后续推荐错误；压缩比设太高导致关键订单号丢失；多用户场景下忘了加 user_id 过滤导致跨用户召回。讲一次具体排查过程，面试官会立刻认定你有真经验。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>分层模型</td><td>四层记忆分别怎么实现？</td><td>Working → 上下文窗口；Episodic → 时间序列 + 向量；Semantic → KV + Embedding；Procedural → 提示模板 + 微调。抓住"存储位置 + 生命周期"两个维度。</td></tr>
+          <tr><td>压缩策略</td><td>压缩比怎么权衡？</td><td>答"先抽后压"：先做事实抽取保关键信息，再做摘要补充语境；通过离线评估集调阈值。生产经验是 5-15x 摘要 + 显式抽取组合。</td></tr>
+          <tr><td>冲突治理</td><td>用户偏好改了怎么更新？</td><td>答"检测 + 确认 + 写入"：LLM 检测到"我改地址了"触发 update；新条目带时间戳覆盖旧；如果新旧冲突明显可先向用户确认。结合版本号回溯。</td></tr>
+          <tr><td>与 RAG 协作</td><td>记忆和 RAG 怎么配合？</td><td>答"上下文拼装时按层组装"：System Prompt = 角色定义 + 用户偏好（Memory） + 知识片段（RAG） + 当前对话（Working）。优先级：用户偏好 > 知识片段。</td></tr>
+          <tr><td>隐私与合规</td><td>记忆数据怎么保护？</td><td>答"全链路加密 + 显式遗忘"：存储加密、传输 HTTPS、提供用户删除入口、敏感字段（身份证 / 卡号）不写入记忆；遵循 GDPR / 个保法要求。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：记忆系统是 Agent 长期演进的关键模块，面试允许说"这块我了解设计模式但没在生产完整做过"，但要能讲清楚分层逻辑 + 给出假设场景的设计。诚实 + 思路清晰 > 假装熟练。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Working Memory</td><td>当前对话上下文，存于 LLM 上下文窗口，容量有限但访问快</td></tr>
+          <tr><td>Episodic Memory</td><td>事件序列记忆，按时间戳索引，存于向量库 + 时序库</td></tr>
+          <tr><td>Semantic Memory</td><td>事实性知识、用户偏好，存于 KV / 关系库 / 向量库</td></tr>
+          <tr><td>Procedural Memory</td><td>技能与流程，由模型权重 + 提示模板承载，迭代升级</td></tr>
+          <tr><td>摘要压缩</td><td>用 LLM 把多轮对话压缩成短文本，5-10x 压缩比</td></tr>
+          <tr><td>事实抽取</td><td>从对话中抽取结构化字段（prefs / events），10-50x 压缩比</td></tr>
+          <tr><td>滑动窗口</td><td>只保留最近 K 轮，最简单但容易丢早期信息</td></tr>
+          <tr><td>分层递归</td><td>旧摘要再压缩成更短摘要，20-100x 压缩比</td></tr>
+          <tr><td>时间戳冲突</td><td>用 last_updated 字段实现新覆盖旧，最简单直接</td></tr>
+          <tr><td>版本号冲突</td><td>同 key 多版本共存，检索时取最新，回溯时可看历史</td></tr>
+          <tr><td>TTL 遗忘</td><td>记忆条目带过期时间，到期自动清理</td></tr>
+          <tr><td>命名空间隔离</td><td>用 user_id 作向量前缀或独立 collection，召回时强制过滤</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

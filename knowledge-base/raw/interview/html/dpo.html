@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DPO 知识页</title>
+  <style>
+    :root{--bg:#fff7f8;--panel:#fff;--text:#0f172a;--muted:#475569;--line:#f1c9d1;--accent:#e11d48;--accent-soft:#ffe4e6;--accent-soft-2:#fff1f2;--shadow:0 10px 30px rgba(15,23,42,.08)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#fff7f8);border:1px solid #f3c9d5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:1.9;color:#111827}
+    .mathline .op{padding:0 .18em}
+    .mathline .sub{font-size:.78em;vertical-align:sub}
+    .mathline .sup{font-size:.78em;vertical-align:super}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#fff1f2;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./transformer.html">Transformer</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./sft.html">SFT</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Direct Preference Optimization</span>
+    <h1>DPO：不用显式 Reward Model 的偏好对齐</h1>
+    <p class="lead">DPO 的核心是用 chosen / rejected 偏好对直接训练模型，让模型更偏向人类更喜欢的回答，同时通过 reference model 防止模型偏离基座太远。面试里要讲清楚它和 SFT、PPO 的区别，以及 beta、KL、reference model 的意义。</p>
+    <div class="pillrow"><span class="pill">Chosen / Rejected</span><span class="pill">Reference Model</span><span class="pill">Beta</span><span class="pill">KL</span><span class="pill">PPO 对比</span></div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>DPO 数据和训练流</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1100 280" width="100%" height="auto" role="img" aria-label="DPO training flow">
+          <defs><marker id="arrow-d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#e11d48"/></marker></defs>
+          <rect x="30" y="105" width="130" height="70" rx="14" fill="#ffe4e6" stroke="#e11d48"/><text x="95" y="134" text-anchor="middle" font-size="18" font-weight="700">Prompt</text><text x="95" y="156" text-anchor="middle" font-size="12" fill="#475569">同一个问题</text>
+          <rect x="210" y="55" width="170" height="70" rx="14" fill="#fff1f2" stroke="#e11d48"/><text x="295" y="84" text-anchor="middle" font-size="18" font-weight="700">Chosen</text><text x="295" y="106" text-anchor="middle" font-size="12" fill="#475569">更优回答</text>
+          <rect x="210" y="155" width="170" height="70" rx="14" fill="#fff1f2" stroke="#e11d48"/><text x="295" y="184" text-anchor="middle" font-size="18" font-weight="700">Rejected</text><text x="295" y="206" text-anchor="middle" font-size="12" fill="#475569">较差回答</text>
+          <rect x="450" y="75" width="170" height="130" rx="16" fill="#fff" stroke="#e11d48"/><text x="535" y="106" text-anchor="middle" font-size="18" font-weight="700">当前模型</text><text x="535" y="132" text-anchor="middle" font-size="12" fill="#475569">log pi(chosen)</text><text x="535" y="154" text-anchor="middle" font-size="12" fill="#475569">log pi(rejected)</text>
+          <rect x="680" y="75" width="170" height="130" rx="16" fill="#fff" stroke="#e11d48"/><text x="765" y="106" text-anchor="middle" font-size="18" font-weight="700">参考模型</text><text x="765" y="132" text-anchor="middle" font-size="12" fill="#475569">log ref(chosen)</text><text x="765" y="154" text-anchor="middle" font-size="12" fill="#475569">log ref(rejected)</text>
+          <rect x="910" y="105" width="160" height="70" rx="14" fill="#ffe4e6" stroke="#e11d48"/><text x="990" y="134" text-anchor="middle" font-size="18" font-weight="700">DPO Loss</text><text x="990" y="156" text-anchor="middle" font-size="12" fill="#475569">拉开偏好差距</text>
+          <line x1="160" y1="140" x2="210" y2="90" stroke="#e11d48" stroke-width="3" marker-end="url(#arrow-d)"/>
+          <line x1="160" y1="140" x2="210" y2="190" stroke="#e11d48" stroke-width="3" marker-end="url(#arrow-d)"/>
+          <line x1="380" y1="90" x2="450" y2="110" stroke="#e11d48" stroke-width="3" marker-end="url(#arrow-d)"/>
+          <line x1="380" y1="190" x2="450" y2="165" stroke="#e11d48" stroke-width="3" marker-end="url(#arrow-d)"/>
+          <line x1="620" y1="140" x2="680" y2="140" stroke="#e11d48" stroke-width="3" marker-end="url(#arrow-d)"/>
+          <line x1="850" y1="140" x2="910" y2="140" stroke="#e11d48" stroke-width="3" marker-end="url(#arrow-d)"/>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>DPO 公式</h2>
+      <div class="mathbox">
+        <div class="mathline">
+          <span class="op">loss</span> = -log σ(
+          <span class="op">β</span> · [
+          log π<span class="sub">θ</span>(chosen) - log π<span class="sub">θ</span>(rejected)
+          - log π<span class="sub">ref</span>(chosen) + log π<span class="sub">ref</span>(rejected)
+          ]
+          )
+        </div>
+        <div class="mathnote">
+          记号解释：π<span class="sub">θ</span> 是当前模型，π<span class="sub">ref</span> 是参考模型，β 控制偏好强化强度。
+        </div>
+      </div>
+      <div class="callout">直觉：让当前模型相对参考模型，更偏向 chosen，而不是 rejected。</div>
+    </article>
+
+    <article class="card">
+      <h2>DPO vs PPO</h2>
+      <table>
+        <thead><tr><th>维度</th><th>PPO / RLHF</th><th>DPO</th></tr></thead>
+        <tbody>
+          <tr><td>Reward Model</td><td>通常需要</td><td>不显式需要</td></tr>
+          <tr><td>Rollout</td><td>需要在线采样</td><td>基于偏好对训练</td></tr>
+          <tr><td>复杂度</td><td>高</td><td>较低</td></tr>
+          <tr><td>稳定性</td><td>调参敏感</td><td>相对稳定</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>知识点拆解</h2>
+      <div class="qa">
+        <div><h3>1. Reference Model</h3><p>提供稳定基线，防止当前模型为了偏好数据过度漂移，丢掉原有语言能力。</p></div>
+        <div><h3>2. beta</h3><p>控制偏好强度。太小学不到偏好，太大可能过拟合偏好对，导致输出风格变窄。</p></div>
+        <div><h3>3. KL</h3><p>衡量新模型和参考模型的分布差异，对齐训练里常用来限制策略漂移。</p></div>
+        <div><h3>4. 数据风险</h3><p>如果 chosen 总是更长，模型可能学到长度偏好，而不是质量偏好，所以要控制样本偏差。</p></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>面试回答模板</h2>
+      <p>“DPO 是一种直接利用偏好对做对齐的方法。它不显式训练 reward model，而是让模型在同一 prompt 下提升 chosen 相对 rejected 的概率，同时用 reference model 约束不要偏离基座太远。”</p>
+    </article>
+    <article class="card full">
+      <h2>常见追问与回答</h2>
+      <div class="qa">
+        <div>
+          <h3>为什么不只做 SFT？</h3>
+          <p>SFT 解决的是“会不会答”，但当同一个问题有多个都算对的答案时，还需要决定“哪种回答更好”。DPO 的作用就是把偏好排序这件事显式学进去，比如更简洁、更安全、更符合语气、更少幻觉。</p>
+        </div>
+        <div>
+          <h3>没有 reference model 会怎样？</h3>
+          <p>模型更新会更容易漂移，可能为了偏好数据牺牲原本的语言能力和通用性。reference model 相当于一个稳定锚点，用来约束策略不要偏离基座太远。</p>
+        </div>
+        <div>
+          <h3>beta 怎么调？</h3>
+          <p>β 越大，偏好信号越强，模型越容易明显区分 chosen 和 rejected；但太大可能让模型过度迎合偏好样本，造成风格变窄或泛化下降。通常要结合验证集做消融。</p>
+        </div>
+        <div>
+          <h3>正负样本长度不一致有什么影响？</h3>
+          <p>如果 chosen 总是更长，模型可能学到“长答案更好”的表面偏差，而不是真正的质量偏好。所以需要控制样本长度、按步骤对齐，或者在 judge 阶段显式忽略长度因素。</p>
+        </div>
+        <div>
+          <h3>为什么 DPO 比 PPO 更容易落地？</h3>
+          <p>DPO 不需要单独训练 reward model，也不需要在线 rollout 和复杂的策略更新链路，工程上更轻，训练更稳定，适合多数偏好对齐任务。</p>
+        </div>
+        <div>
+          <h3>什么时候还是应该用 PPO / RLHF？</h3>
+          <p>当奖励很复杂、需要在线探索、或者你希望模型在长链路决策里通过环境反馈学习时，PPO 仍然有价值。DPO 更像偏好对的监督优化，不是所有场景的替代品。</p>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

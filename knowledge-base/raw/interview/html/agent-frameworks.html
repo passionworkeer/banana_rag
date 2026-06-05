@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LLM 应用开发框架生态 知识页</title>
+  <style>
+    :root{
+      --bg:#f4f4ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8d8ee;
+      --accent:#4f46e5;
+      --accent-soft:#e0e7ff;
+      --accent-soft-2:#eef2ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);color:#0f172a;padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{color:var(--text);line-height:1.8}
+    .muted{color:var(--muted)}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eef2ff);border:1px solid #c7d0ed;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eef2ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./langchain.html">LangChain</a>
+    <a href="./rag.html">RAG</a>
+    <a href="./multi-agent.html">Multi-Agent</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">应用开发框架 · LLM 编排生态</span>
+    <h1>LLM 应用开发框架生态：9 大主流框架全景</h1>
+    <p class="lead">LangChain 之外，还有 LlamaIndex / Haystack / Semantic Kernel / DSPy / Guidance / LMQL / Outlines / NeMo Guardrails 共同构成 LLM 应用层框架生态。本页聚焦"为什么有这么多框架 → 9 大框架横向对比 → 核心架构（SVG）→ DSPy 公式+代码 → LlamaIndex vs LangChain 重点对比 → Semantic Kernel Planner → 结构化生成三剑客 → 选型决策树 → 项目落地 → 面试 FAQ"一次性串清楚。</p>
+    <div class="pillrow">
+      <span class="pill">LangChain</span><span class="pill">LlamaIndex</span><span class="pill">Haystack</span><span class="pill">Semantic Kernel</span><span class="pill">DSPy</span><span class="pill">Guidance</span><span class="pill">LMQL</span><span class="pill">Outlines</span><span class="pill">NeMo Guardrails</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、为什么需要这么多 LLM 框架</h2>
+      <ul>
+        <li><strong>单一框架无法覆盖全场景</strong>：LangChain 偏编排通用，LlamaIndex 偏 RAG 索引，Semantic Kernel 绑死 .NET，DSPy 偏 prompt 优化——每个框架都解决了某一类问题</li>
+        <li><strong>抽象层级不同</strong>：底层（Outlines / Guidance）做 token-level 控制；中层（LangChain / LlamaIndex）做 Chain/RAG 编排；上层（DSPy）做声明式编译</li>
+        <li><strong>企业生态绑定</strong>：微软系→Semantic Kernel，.NET/企业；英伟达系→NeMo Guardrails，硬件/安全；斯坦福系→DSPy，科研</li>
+        <li><strong>结构化输出刚需</strong>：JSON / Regex / Grammar 受限生成是生产 LLM 应用核心痛点，催生 Outlines / Guidance / LMQL</li>
+        <li><strong>可移植性诉求</strong>：不同 LLM 切换（OpenAI→Anthropic→开源）成本高，框架抽象能降低迁移成本</li>
+        <li><strong>代价</strong>：① 选型困难，每个新框架都带来学习成本；② 抽象泄漏（leaky abstraction），复杂场景仍要深入底层；③ 生态碎片化，跨框架难以组合</li>
+      </ul>
+      <div class="callout">核心判断：生产 LLM 应用选型本质是"在通用性 vs 专业性"之间权衡。LangChain 是万金油，但 RAG 重活选 LlamaIndex，结构化生成选 Outlines/Guidance，企业 .NET 选 Semantic Kernel，prompt 自动优化选 DSPy。</div>
+    </article>
+
+    <article class="card full">
+      <h2>二、9 大框架全景对比表</h2>      <table>
+        <thead><tr><th>框架</th><th>核心抽象</th><th>最擅长</th><th>主语言</th><th>适用场景</th><th>代表特性</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LangChain</strong></td><td>Chain / Runnable / Agent</td><td>通用 LLM 编排</td><td>Python/TS</td><td>RAG / Agent / ChatBot</td><td>LCEL · LangGraph · LangSmith</td></tr>
+          <tr><td><strong>LlamaIndex</strong></td><td>Index / QueryEngine / Agent</td><td>文档 RAG 索引</td><td>Python/TS</td><td>知识库 / 文档问答 / 结构化 RAG</td><td>100+ Loader · 索引类型丰富</td></tr>
+          <tr><td><strong>Haystack</strong></td><td>Pipeline / Component / Node</td><td>NLP 管道 / 搜索</td><td>Python</td><td>企业搜索 / Elastic 集成</td><td>deepset 出品 · 生产级</td></tr>
+          <tr><td><strong>Semantic Kernel</strong></td><td>Kernel / Planner / Function</td><td>.NET 企业集成</td><td>C# / Python</td><td>企业微软栈 / Office 集成</td><td>Planner 自动编排</td></tr>
+          <tr><td><strong>DSPy</strong></td><td>Signature / Module / Optimizer</td><td>prompt 自动优化</td><td>Python</td><td>科研 / 评测 / 复杂 pipeline</td><td>声明式 · 编译器自动优化 prompt</td></tr>
+          <tr><td><strong>Guidance</strong></td><td>Template / Gen / Select</td><td>token-level 结构化</td><td>Python</td><td>受限生成 / 模板填空</td><td>微软 · regex 约束</td></tr>
+          <tr><td><strong>LMQL</strong></td><td>Query (SQL-like)</td><td>约束查询语言</td><td>Python</td><td>声明式 LLM 编程</td><td>SQL-like 语法 · 静态分析</td></tr>
+          <tr><td><strong>Outlines</strong></td><td>Generator / Regex / JSON / CFG</td><td>100% 合规结构化输出</td><td>Python</td><td>JSON Schema / Pydantic 受限解码</td><td>CFG 受限解码 · 开源</td></tr>
+          <tr><td><strong>NeMo Guardrails</strong></td><td>Rail / Colang / Action</td><td>对话护栏 / 安全</td><td>Python</td><td>Jailbreak 防御 / 领域限制</td><td>英伟达 · Colang DSL</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>三、核心架构图（按抽象层级分类）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 560" width="100%" height="auto" role="img" aria-label="LLM frameworks architecture">
+          <defs>
+            <marker id="arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#4f46e5"></path>
+            </marker>
+          </defs>
+          <text x="590" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">LLM 应用开发框架：三层抽象全景</text>
+          <text x="80" y="80" font-size="13" font-weight="700" fill="#4f46e5">上层 · 声明式</text>
+          <rect x="200" y="60" width="220" height="70" rx="14" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="310" y="90" text-anchor="middle" font-size="14" font-weight="700">DSPy</text>
+          <text x="310" y="112" text-anchor="middle" font-size="11" fill="#475569">Signature + 编译器</text>
+          <rect x="450" y="60" width="220" height="70" rx="14" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="560" y="90" text-anchor="middle" font-size="14" font-weight="700">LMQL</text>
+          <text x="560" y="112" text-anchor="middle" font-size="11" fill="#475569">SQL-like Query</text>
+          <rect x="700" y="60" width="220" height="70" rx="14" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="810" y="90" text-anchor="middle" font-size="14" font-weight="700">Semantic Kernel</text>
+          <text x="810" y="112" text-anchor="middle" font-size="11" fill="#475569">Planner + Skills</text>
+          <text x="80" y="180" font-size="13" font-weight="700" fill="#4f46e5">中层 · 编排</text>
+          <rect x="60" y="160" width="220" height="70" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="170" y="190" text-anchor="middle" font-size="14" font-weight="700">LangChain</text>
+          <text x="170" y="212" text-anchor="middle" font-size="11" fill="#475569">LCEL · Agent · 100+ 集成</text>
+          <rect x="310" y="160" width="220" height="70" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="420" y="190" text-anchor="middle" font-size="14" font-weight="700">LlamaIndex</text>
+          <text x="420" y="212" text-anchor="middle" font-size="11" fill="#475569">Index · QueryEngine</text>
+          <rect x="560" y="160" width="220" height="70" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="670" y="190" text-anchor="middle" font-size="14" font-weight="700">Haystack</text>
+          <text x="670" y="212" text-anchor="middle" font-size="11" fill="#475569">Pipeline · Component</text>
+          <rect x="810" y="160" width="240" height="70" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="930" y="190" text-anchor="middle" font-size="14" font-weight="700">NeMo Guardrails</text>
+          <text x="930" y="212" text-anchor="middle" font-size="11" fill="#475569">Colang · 护栏</text>
+          <text x="80" y="280" font-size="13" font-weight="700" fill="#4f46e5">下层 · Token 控制</text>
+          <rect x="200" y="260" width="220" height="70" rx="14" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="310" y="290" text-anchor="middle" font-size="14" font-weight="700">Guidance</text>
+          <text x="310" y="312" text-anchor="middle" font-size="11" fill="#475569">微软 · 模板填空</text>
+          <rect x="450" y="260" width="220" height="70" rx="14" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="560" y="290" text-anchor="middle" font-size="14" font-weight="700">Outlines</text>
+          <text x="560" y="312" text-anchor="middle" font-size="11" fill="#475569">CFG 受限解码</text>
+          <rect x="700" y="260" width="220" height="70" rx="14" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="810" y="290" text-anchor="middle" font-size="14" font-weight="700">Logits Processor</text>
+          <text x="810" y="312" text-anchor="middle" font-size="11" fill="#475569">HF 内置 · token mask</text>
+          <rect x="60" y="370" width="1060" height="70" rx="14" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="590" y="400" text-anchor="middle" font-size="14" font-weight="700">底层 LLM 模型层（OpenAI / Anthropic / Ollama / vLLM / TGI）</text>
+          <text x="590" y="420" text-anchor="middle" font-size="11" fill="#475569">所有框架都依赖此层 · Token 生成 + Chat Completion API</text>
+          <line x1="310" y1="130" x2="170" y2="160" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow-a)" opacity="0.6"/>
+          <line x1="560" y1="130" x2="420" y2="160" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow-a)" opacity="0.6"/>
+          <line x1="810" y1="130" x2="930" y2="160" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow-a)" opacity="0.6"/>
+          <line x1="170" y1="230" x2="310" y2="260" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow-a)" opacity="0.6"/>
+          <line x1="420" y1="230" x2="560" y2="260" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrow-a)" opacity="0.6"/>
+          <text x="590" y="478" text-anchor="middle" font-size="12" fill="#475569">上层偏声明/编译 · 中层偏编排/Agent · 下层偏 token-level 受控生成</text>
+          <text x="590" y="498" text-anchor="middle" font-size="12" fill="#475569">生产常组合：LangChain 编排 + Outlines 结构化 + NeMo Guardrails 安全</text>
+          <text x="590" y="518" text-anchor="middle" font-size="12" fill="#475569">DSPy 适合科研 / 评测驱动 · 微软栈选 SK · 文档重选 LlamaIndex</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>四、DSPy 核心公式 + 声明式编程代码</h2>
+      <p>DSPy（Stanford）核心思想：把 prompt 当作可编译的程序——用 Signature 声明输入输出，用 Module 组合模块，用 Optimizer（BootstrapFewShot / MIPRO）自动优化 prompt 和 few-shot 示例。</p>
+      <div class="mathbox">
+        <p class="mathnote" style="margin-top:0"><strong>核心公式：模块化 LLM pipeline 的优化目标</strong></p>
+        <p class="mathline">M* = argmax<sub>M</sub> &nbsp; E<sub>(x, y*) ~ D</sub> [ &nbsp; Score( M(x), y* ) &nbsp;]</p>
+        <p class="mathline">s.t. &nbsp; Cost( M ) &le; Budget</p>
+        <p class="mathnote">M 是 Module（ChainOfThought / ReAct / ProgramOfThought），D 是带标签数据集，Score 是 metric（accuracy / faithfulness / F1）。Optimizers（BootstrapFewShot / MIPRO）在这个搜索空间里自动找最优 prompt 和 few-shot demos。</p>
+      </div>
+      <pre class="code">import dspy
+from dspy.teleprompt import BootstrapFewShot
+
+# 1. 配置 LM
+lm = dspy.OpenAI(model="gpt-4o-mini")
+dspy.settings.configure(lm=lm)
+
+# 2. 定义 Signature（声明输入输出）
+class GenerateAnswer(dspy.Signature):
+    """基于上下文回答问题"""
+    context = dspy.InputField(desc="相关文档片段")
+    question = dspy.InputField()
+    answer = dspy.OutputField(desc="简洁准确的答案")
+
+# 3. 定义 Module（用 ChainOfThought 包装）
+class RAG(dspy.Module):
+    def __init__(self):
+        super().__init__()
+        self.generate = dspy.ChainOfThought(GenerateAnswer)
+    def forward(self, question, context):
+        return self.generate(context=context, question=question)
+
+# 4. 定义评估指标
+def validate_answer(example, pred, trace=None):
+    return dspy.evaluate.answer_exact_match(example, pred)
+
+# 5. 用 BootstrapFewShot 自动优化
+teleprompter = BootstrapFewShot(metric=validate_answer)
+compiled_rag = teleprompter.compile(RAG(), trainset=trainset)
+
+# 6. 推理
+pred = compiled_rag(question="什么是 MoE？", context="MoE 是混合专家...")
+print(pred.answer)</pre>
+      <div class="callout">DSPy 杀手锏：① 不手写 prompt——用 Signature 声明意图；② 自动选 few-shot demos；③ 用 MIPROv2 做贝叶斯 prompt 优化；④ 评测驱动 + 编译思想，类似传统 ML 编译器。适合 prompt 调优耗时的复杂 pipeline（多步 RAG / Agent / 评估系统）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>五、LlamaIndex vs LangChain 重点对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>LangChain</th><th>LlamaIndex</th></tr></thead>
+        <tbody>
+          <tr><td><strong>核心定位</strong></td><td>通用 LLM 编排（Chain / Agent / Tool）</td><td>LLM × 数据（Index / Retrieval）</td></tr>
+          <tr><td><strong>数据抽象</strong></td><td>Loader + Retriever + VectorStore</td><td>Node / Index（List / Vector / Tree / Keyword）</td></tr>
+          <tr><td><strong>RAG 范式</strong></td><td>LCEL 链：`retriever | prompt | model | parser`</td><td>QueryEngine：retrieve → synthesize 一行</td></tr>
+          <tr><td><strong>高级 RAG</strong></td><td>MultiQuery / SelfQuery / ContextualCompression</td><td>RouterQuery / SubQuestion / ReActAgent</td></tr>
+          <tr><td><strong>Agent 能力</strong></td><td>原生 Tool Calling Agent / LangGraph</td><td>OpenAI / ReAct Agent（v0.10+ 完善）</td></tr>
+          <tr><td><strong>连接器</strong></td><td>100+ Loader / 50+ VectorStore</td><td>100+ Loader / 深度索引 API（节点关系/元数据）</td></tr>
+          <tr><td><strong>优势场景</strong></td><td>RAG + Agent + 工具组合 / 跨域</td><td>重 RAG / 多索引 / 结构化文档 / 知识图谱</td></tr>
+          <tr><td><strong>劣势</strong></td><td>RAG 抽象偏通用，复杂索引力不从心</td><td>Agent / 工具调用比 LangChain 弱</td></tr>
+          <tr><td><strong>生态</strong></td><td>LangSmith / LangServe / LangGraph</td><td>LlamaParse（高级文档解析） / LlamaHub</td></tr>
+          <tr><td><strong>组合用法</strong></td><td colspan="2">生产常见：LlamaIndex 索引层 + LangChain Agent 层（互调 Retriever/Chain）</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">选型口诀：① 纯文档 RAG + 多索引 → LlamaIndex 优先；② RAG + Agent + 多工具 → LangChain 优先；③ 复杂混合 → LlamaIndex 索引 + LangChain Agent（两者可互调 Retriever/Chain）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>六、Semantic Kernel 架构图（Planner + Skills）</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 480" width="100%" height="auto" role="img" aria-label="Semantic Kernel architecture">
+          <defs>
+            <marker id="arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#4f46e5"></path>
+            </marker>
+          </defs>
+          <text x="590" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">Semantic Kernel：Kernel + Planner + Skills</text>
+          <!-- Center: Kernel -->
+          <rect x="490" y="170" width="200" height="100" rx="16" fill="#e0e7ff" stroke="#4f46e5" stroke-width="3"/>
+          <text x="590" y="208" text-anchor="middle" font-size="18" font-weight="700">Kernel</text>
+          <text x="590" y="232" text-anchor="middle" font-size="11" fill="#475569">AI 编排核心 · C# / Python 双 SDK</text>
+          <text x="590" y="252" text-anchor="middle" font-size="11" fill="#475569">调度 Planner + Skills</text>
+          <!-- Top: Planner -->
+          <rect x="490" y="60" width="200" height="80" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="590" y="90" text-anchor="middle" font-size="14" font-weight="700">Planner</text>
+          <text x="590" y="110" text-anchor="middle" font-size="11" fill="#475569">自动编排 Skills</text>
+          <text x="590" y="128" text-anchor="middle" font-size="11" fill="#475569">Sequential / Stepwise / Action</text>
+          <line x1="590" y1="140" x2="590" y2="170" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <!-- Left: Native Skills -->
+          <rect x="60" y="170" width="220" height="80" rx="14" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="170" y="200" text-anchor="middle" font-size="14" font-weight="700">Native Skills（C# / Python）</text>
+          <text x="170" y="220" text-anchor="middle" font-size="11" fill="#475569">业务函数 / 数据库 / HTTP</text>
+          <text x="170" y="240" text-anchor="middle" font-size="11" fill="#475569">[SKFunction] 装饰器</text>
+          <line x1="280" y1="210" x2="490" y2="210" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <!-- Right: Semantic Skills -->
+          <rect x="900" y="170" width="220" height="80" rx="14" fill="#fff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="1010" y="200" text-anchor="middle" font-size="14" font-weight="700">Semantic Skills（Prompt）</text>
+          <text x="1010" y="220" text-anchor="middle" font-size="11" fill="#475569">Prompt 模板 / 配置文件</text>
+          <text x="1010" y="240" text-anchor="middle" font-size="11" fill="#475569">skprompt.txt + config.json</text>
+          <line x1="900" y1="210" x2="690" y2="210" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <!-- Bottom: Memory + Connectors -->
+          <rect x="60" y="320" width="320" height="100" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="220" y="350" text-anchor="middle" font-size="14" font-weight="700">Memory（向量检索）</text>
+          <text x="220" y="375" text-anchor="middle" font-size="11" fill="#475569">Volatile / Pinecone / Redis / Postgres</text>
+          <text x="220" y="395" text-anchor="middle" font-size="11" fill="#475569">KernelMemory + Embedding · ask/save/recall</text>
+          <line x1="220" y1="320" x2="490" y2="270" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <rect x="800" y="320" width="320" height="100" rx="14" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <text x="960" y="350" text-anchor="middle" font-size="14" font-weight="700">Connectors（.NET 生态）</text>
+          <text x="960" y="375" text-anchor="middle" font-size="11" fill="#475569">Office 365 / Teams / Outlook</text>
+          <text x="960" y="395" text-anchor="middle" font-size="11" fill="#475569">Microsoft Graph / Azure OpenAI · Copilot Stack</text>
+          <line x1="960" y1="320" x2="690" y2="270" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrow-s)"/>
+          <text x="590" y="450" text-anchor="middle" font-size="12" fill="#475569">SK 核心：Kernel 调度 Planner + Skills；Planner 决定调用顺序；Skills 分为代码函数 + Prompt 模板</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>七、Guidance / LMQL / Outlines 结构化生成对比</h2>      <p>三大框架都解决"如何让 LLM 输出严格符合 JSON / Regex / Grammar 约束"问题，方案各异。</p>
+      <table>
+        <thead><tr><th>维度</th><th>Guidance（微软）</th><th>LMQL</th><th>Outlines</th></tr></thead>
+        <tbody>
+          <tr><td><strong>核心机制</strong></td><td>token-level 模板 + 上下文注入</td><td>SQL-like 查询语言 + 静态分析</td><td>CFG（上下文无关文法）受限解码</td></tr>
+          <tr><td><strong>约束方式</strong></td><td>模板中 `gen(...)` + `select(...)`</td><td>`"""SELECT ... WHERE ..."""` 块</td><td>JSON Schema / Regex / Pydantic / CFG</td></tr>
+          <tr><td><strong>合规性</strong></td><td>高（运行时约束）</td><td>高（编译时静态检查）</td><td>100%（解码时禁止违规 token）</td></tr>
+          <tr><td><strong>性能开销</strong></td><td>中（需改 LLM 调用）</td><td>中（生成额外查询）</td><td>低（编译 FSM 直接 mask logits）</td></tr>
+          <tr><td><strong>本地模型支持</strong></td><td>transformers / llama.cpp</td><td>transformers / OpenAI</td><td>transformers / vLLM / llama.cpp</td></tr>
+          <tr><td><strong>代码风格</strong></td><td>Python DSL 模板</td><td>类 SQL 语言</td><td>Python 函数式（`outlines.generate.json`）</td></tr>
+          <tr><td><strong>适用场景</strong></td><td>模板填空 / 复杂流程</td><td>科研 / 静态分析友好</td><td>100% 合规 JSON / 高频生产</td></tr>
+          <tr><td><strong>限制</strong></td><td>非 100% 合规（依赖 LLM 服从）</td><td>学习曲线陡</td><td>需本地模型（OpenAI API 不支持）</td></tr>
+        </tbody>
+      </table>
+      <pre class="code"># Outlines：100% 合规 JSON 示例
+import outlines
+
+model = outlines.models.transformers("Qwen/Qwen2.5-7B-Instruct")
+generator = outlines.generate.json(model, Person)
+
+# 生成 100% 合法 JSON（解码时强制 mask 违规 token）
+result = generator("提取人物：Steve Jobs 在 1955 年生于旧金山")
+print(result.name, result.birth_year, result.city)  # 永远满足 Pydantic schema，零重试</pre>
+    </article>
+
+    <article class="card full">
+      <h2>八、选型决策树（按场景选）</h2>
+      <table>
+        <thead><tr><th>场景</th><th>推荐框架</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>通用 LLM 应用 / RAG / Agent</td><td>LangChain</td><td>生态最全 / LCEL 简洁 / 100+ 集成</td></tr>
+          <tr><td>重 RAG / 多索引 / 文档解析</td><td>LlamaIndex</td><td>Index API 丰富 / 100+ Loader / LlamaParse</td></tr>
+          <tr><td>企业搜索 / Elasticsearch 集成</td><td>Haystack</td><td>深绑 ES / Pipeline 范式 / deepset 出品</td></tr>
+          <tr><td>微软 .NET / 企业 / Office 集成</td><td>Semantic Kernel</td><td>微软官方 / 双 SDK / Planner 编排</td></tr>
+          <tr><td>复杂 pipeline / 评测驱动 prompt 优化</td><td>DSPy</td><td>声明式 + 编译器自动选 demo</td></tr>
+          <tr><td>100% JSON 合规 / Pydantic 输出</td><td>Outlines</td><td>CFG 受限解码 / 零重试</td></tr>
+          <tr><td>复杂模板 / 条件分支 / 多步填空</td><td>Guidance</td><td>token-level 灵活 / 微软系</td></tr>
+          <tr><td>科研 / 静态分析 LLM 查询</td><td>LMQL</td><td>SQL-like 语法 / 编译时检查</td></tr>
+          <tr><td>Jailbreak 防御 / 领域限制 / 安全</td><td>NeMo Guardrails</td><td>Colang DSL / 输入输出轨 / 英伟达</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">2024 实际选型：① MVP 阶段 → LangChain + LCEL；② RAG 重 → LlamaIndex 或 LangChain + LlamaParse；③ .NET 必上 Semantic Kernel；④ 强结构化输出 → Outlines（本地模型）或 OpenAI JSON Mode（云端）；⑤ 评测驱动 prompt 迭代 → DSPy；⑥ 防护栏 → NeMo Guardrails。生产常组合：LangChain 编排 + Outlines JSON + NeMo 护栏。</div>
+    </article>
+
+    <article class="card full">
+      <h2>九、项目落地 / 业务场景 / 简历表达</h2>
+      <ul>
+        <li><strong>企业 RAG（LangChain + LlamaIndex 组合）</strong>：LlamaIndex 索引层 + LangChain Agent 层，互调 Retriever，LlamaParse 处理复杂 PDF</li>
+        <li><strong>Prompt 优化流水线（DSPy）</strong>：用 Signature + BootstrapFewShot 自动选 demo，eval 驱动 prompt 迭代，准确率 +15-30%</li>
+        <li><strong>100% JSON 合规 API（Outlines）</strong>：用 Qwen 本地模型 + Outlines CFG 受限解码做信息抽取，零重试、100% 合法 Pydantic 输出</li>
+        <li><strong>企业 .NET 集成（Semantic Kernel）</strong>：Planner 编排 Teams / Outlook / Graph API Skills，Copilot Stack 一等公民</li>
+        <li><strong>多步对话护栏（NeMo Guardrails）</strong>：Colang 写输入/输出/对话轨，jailbreak 拦截率从 60% 提升到 90%+</li>
+        <li><strong>混合架构</strong>：LangChain 编排 + Outlines 结构化 + NeMo 护栏 + DSPy 优化 prompt，单服务 100+ QPS</li>
+      </ul>
+      <table>
+        <thead><tr><th>角色</th><th>做的事</th><th>价值点（简历可写）</th></tr></thead>
+        <tbody>
+          <tr><td>多框架选型</td><td>按场景选 LangChain / LlamaIndex / SK</td><td>"完成 9 大 LLM 框架对比与选型决策树，RAG 选 LlamaIndex、Agent 选 LangChain、.NET 选 SK"</td></tr>
+          <tr><td>DSPy 优化</td><td>Signature + BootstrapFewShot 自动调 prompt</td><td>"用 DSPy 替代手写 prompt，3 跳 RAG 准确率从 67% 提升到 84%"</td></tr>
+          <tr><td>结构化输出</td><td>Outlines CFG 受限解码</td><td>"用 Outlines + Qwen-7B 本地模型做信息抽取，JSON 合规率 100%、重试率 0%、延迟 -40%"</td></tr>
+          <tr><td>护栏</td><td>NeMo Guardrails 拦截 jailbreak</td><td>"用 NeMo Guardrails + Colang 设计输入输出对话轨，jailbreak 拦截率 60% → 92%，误拦率 &lt;3%"</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>十、面试 FAQ</h2>
+      <div class="qa">
+        <div><h3>Q1：DSPy 和 LangChain 区别？</h3>
+          <p>A：LangChain 是"手写 prompt + 手动调 few-shot"——你控制每一行 prompt。DSPy 是"声明 Signature + 编译器自动优化"——你只声明输入输出，DSPy 用 BootstrapFewShot / MIPRO 自动找最优 prompt 和 demos。LangChain 偏编排灵活，DSPy 偏评测驱动自动化。科研 / 复杂 pipeline 选 DSPy，工程 / Agent / 工具调用选 LangChain。</p>
+        </div>
+        <div><h3>Q2：Outlines 如何保证 JSON 100% 合规？</h3>
+          <p>A：核心是 CFG（上下文无关文法）受限解码——把 JSON Schema 编译成 FSM，生成每个 token 前把当前状态下所有不合法 token 的 logits mask 设为 -inf，模型只能从合法 token 中采样。100% 合规、零重试。注意：仅支持本地模型（transformers / vLLM / llama.cpp），不支持 OpenAI API。</p>
+        </div>
+        <div><h3>Q3：NeMo Guardrails 怎么防 jailbreak？</h3>
+          <p>A：三层护栏：① Input Rails 拦截违规输入；② Output Rails 检查 LLM 输出；③ Dialog Rails 控制对话流（不能从"金融问答"跳到"医疗建议"）。Colang DSL 描述轨。不替代系统 prompt，仍需配合内容审核；误拦率需人工 review 调优。</p>
+        </div>
+        <div><h3>Q4：LlamaIndex 和 LangChain 怎么选？</h3>
+          <p>A：① 纯文档 RAG（重索引 / 多数据源 / 高级 RAG 范式）→ LlamaIndex；② RAG + Agent + 工具 + 跨域 → LangChain；③ 复杂混合 → LlamaIndex 索引 + LangChain Agent（互调 Retriever / Chain）。两者非互斥，v0.10 后 LlamaIndex Agent 也强了。</p>
+        </div>
+        <div><h3>Q5：Semantic Kernel 相比 LangChain 优势？</h3>
+          <p>A：① 微软官方，深度集成 .NET / Azure / Microsoft Graph / Office 365；② Planner 自动编排 Native + Semantic Skills；③ Copilot Stack 一等公民；④ C# / Python 双 SDK。劣势：社区小、文档偏 .NET、非 .NET 栈优势不明显。</p>
+        </div>
+        <div><h3>Q6：DSPy 怎么自动优化 prompt？</h3>
+          <p>A：三步：① 用 Signature 声明输入输出语义；② 用 Module（ChainOfThought / ReAct / ProgramOfThought）组合逻辑；③ 选 Optimizer——BootstrapFewShot（自动找 demos）、MIPRO（贝叶斯优化 instruction + demos）、COPRO（坐标下降调 instruction）。Optimizers 在训练集上反复跑评估 metric，类似传统 ML 超参搜索。</p>
+        </div>
+        <div><h3>Q7：Haystack 适合什么场景？</h3>
+          <p>A：Haystack（deepset）核心是 Pipeline + Component + Node，类似 Linux 管道。优势：① 生产级（最早企业搜索框架之一）；② 深绑 Elasticsearch / OpenSearch；③ 组件化设计清晰；④ 文档/QA/检索/Agent 都覆盖。劣势：社区比 LangChain 小、Python only。适合企业搜索 + Elastic 集成场景。</p>
+        </div>
+        <div><h3>Q8：Guidance / LMQL / Outlines 怎么选？</h3>
+          <p>A：① 100% JSON 合规 + 本地模型 + 高频生产 → Outlines（CFG 受限解码）；② 复杂模板 + 条件分支 + token-level 灵活 → Guidance；③ 静态分析 + 科研 + 类 SQL 语法 → LMQL。Outlines 最严格、Guidance 灵活度最高、LMQL 学术派。云端 API 用 OpenAI JSON Mode / Function Calling。</p>
+        </div>
+        <div><h3>Q9：为什么 LangChain 之外还需要 LlamaIndex？</h3>
+          <p>A：LangChain 偏"通用 LLM 编排"（Chain / Agent / Tool），RAG 抽象偏通用。LlamaIndex 专门做"LLM × 数据"——Index API（List / Vector / Tree / Keyword / Knowledge Graph）、QueryEngine、SubQuestionQueryEngine、RouterQueryEngine 等高级 RAG 范式更丰富。LlamaParse 是高级文档解析（表格 / 图 / 公式）业界最强。</p>
+        </div>
+        <div><h3>Q10：DSPy 适合哪些场景？</h3>
+          <p>A：① 复杂 pipeline（3+ 步 RAG / Agent）；② 评测驱动（离线 metric 完整）；③ prompt 调优耗时；④ 科研 / 论文复现。劣势：① 学习曲线陡；② 简单单步 prompt 反而比手写繁琐；③ Optimizer 计算开销大；④ 中文社区少。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>回答模板与加分项</h2>
+      <div class="qa">
+        <div><h3>30 秒电梯版</h3>
+          <p>LLM 应用层框架生态按抽象层级分三层：① 上层声明式（DSPy / LMQL / Semantic Kernel）—— DSPy 编译器自动优化 prompt、LMQL 类 SQL 语法、SK 微软 .NET 集成；② 中层编排（LangChain / LlamaIndex / Haystack / NeMo Guardrails）—— LangChain 万金油、LlamaIndex 专注 RAG、Haystack 企业搜索、NeMo 护栏；③ 下层 token 控制（Guidance / Outlines）—— Outlines CFG 受限解码 100% JSON 合规。生产常组合：LangChain + Outlines + NeMo。</p>
+        </div>
+        <div><h3>5 分钟深入版</h3>
+          <p>从动机（为什么这么多框架：抽象层级 + 生态绑定 + 结构化输出刚需）→ 9 大框架横向对比表（抽象/擅长/语言/场景）→ 三层架构图（上层声明 / 中层编排 / 下层 token）→ DSPy 公式 M* = argmax Score + BootstrapFewShot 代码 → LlamaIndex vs LangChain 重点对比（数据 vs 编排）→ Semantic Kernel Planner + Skills 架构 → 结构化生成三剑客对比（Guidance / LMQL / Outlines）→ 选型决策树。能讲清"为什么 DSPy 偏科研"、"为什么 Outlines 100% 合规"，立刻显出框架广度。</p>
+        </div>
+        <div><h3>加分：知道框架局限</h3>
+          <p>① LangChain 抽象重，复杂场景仍要深入底层；② LlamaIndex Agent 能力比 LangChain 弱；③ Semantic Kernel 强绑 .NET 生态；④ DSPy 学习曲线陡、Optimizer 计算开销大；⑤ Outlines 仅支持本地模型（不支持 OpenAI API）；⑥ Guidance 非 100% 合规（依赖 LLM 服从模板）；⑦ NeMo Guardrails 误拦率需人工调优；⑧ Haystack 社区比 LangChain 小。</p>
+        </div>
+        <div><h3>加分：能讲一次工程踩坑</h3>
+          <p>比如：手写 prompt 调 3 跳 RAG 准确率卡在 67%，引入 DSPy 写 Signature + BootstrapFewShot 自动选 demo，跑 50 轮评估后准确率提升到 84%。再叠加 Outlines 做最后一跳 JSON 抽取（CFG 受限解码），结构化输出从 92% 合规率提升到 100% 零重试，token 成本 -30%。讲清"手写 prompt 痛点 → DSPy 自动化 → Outlines 结构化 → 收益"四步，面试官会认定你真用过。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>面试官可能怎么追问</h2>
+      <table>
+        <thead><tr><th>追问方向</th><th>示范追问</th><th>建议回应思路</th></tr></thead>
+        <tbody>
+          <tr><td>选型</td><td>什么时候选 LlamaIndex 不选 LangChain？</td><td>答"按数据 vs 编排"：纯文档 RAG / 多索引 / 高级 RAG 范式（RouterQuery / SubQuestion）→ LlamaIndex；RAG + Agent + 工具 + 跨域 → LangChain。两者可互调（LlamaIndex Retriever → LangChain Agent）。</td></tr>
+          <tr><td>DSPy</td><td>DSPy 怎么自动优化 prompt？</td><td>答"评测驱动编译"：用 Signature 声明输入输出 → 选 Module（CoT / ReAct）→ 跑 Optimizer（BootstrapFewShot 选 demo / MIPRO 贝叶斯优化 instruction + demo）→ 在训练集上反复评估 metric 保留最佳。类似传统 ML 超参搜索。</td></tr>
+          <tr><td>结构化</td><td>Outlines 为什么 100% 合规？</td><td>答"CFG 受限解码"：把 JSON Schema 编译成 FSM，生成 token 前把不合法 token 的 logits mask 设为 -inf，模型只能从合法 token 采样。注意仅支持本地模型。</td></tr>
+          <tr><td>护栏</td><td>NeMo Guardrails 怎么防 jailbreak？</td><td>答"三层护栏"：Input Rails（拦截违规输入） + Output Rails（检查输出） + Dialog Rails（控制对话流）。Colang DSL 写轨。注意不替代系统 prompt，仍需配合内容审核。</td></tr>
+          <tr><td>SK</td><td>Semantic Kernel 优势场景？</td><td>答".NET + 微软生态"：微软官方出品，深度集成 Azure / Office 365 / Teams / Graph，Planner 自动编排 Native + Semantic Skills。Copilot Stack 一等公民。非 .NET 栈优势不明显。</td></tr>
+          <tr><td>组合</td><td>生产 LLM 应用怎么组合框架？</td><td>答"按职责拆分"：LangChain 编排 Chain/Agent + Outlines 结构化输出（本地模型）/ JSON Mode（云端）+ NeMo Guardrails 护栏 + LlamaIndex 索引层（如有）+ DSPy prompt 优化（如评测驱动）。每层独立选型。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">最后提示：面试允许说"我只深入用过 LangChain + LlamaIndex + Outlines，未深入所有框架"，但要能讲清 9 大框架的定位、DSPy 自动化原理、Outlines 100% 合规机制、LlamaIndex vs LangChain 区别、SK 的 .NET 定位。诚实 + 思路清晰 &gt; 假装全栈。</div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>LangChain</td><td>LLM 应用层最主流框架，LCEL + LangGraph + LangSmith 三件套</td></tr>
+          <tr><td>LlamaIndex</td><td>专注 RAG / 文档索引，Index / QueryEngine / LlamaParse</td></tr>
+          <tr><td>Haystack</td><td>deepset 出品的 NLP Pipeline 框架，深绑 Elasticsearch</td></tr>
+          <tr><td>Semantic Kernel</td><td>微软 .NET / Python 双 SDK，Planner + Skills 编排</td></tr>
+          <tr><td>DSPy</td><td>斯坦福，声明式编程 + 编译器自动优化 prompt</td></tr>
+          <tr><td>Guidance</td><td>微软，token-level 模板控制 + Regex 约束</td></tr>
+          <tr><td>LMQL</td><td>SQL-like LLM 编程语言，编译时静态分析</td></tr>
+          <tr><td>Outlines</td><td>CFG 受限解码，100% JSON/Pydantic/Regex 合规</td></tr>
+          <tr><td>NeMo Guardrails</td><td>英伟达，Colang DSL 三层护栏（输入/输出/对话）</td></tr>
+          <tr><td>Signature</td><td>DSPy 核心，输入输出语义声明</td></tr>
+          <tr><td>BootstrapFewShot</td><td>DSPy Optimizer，自动选 few-shot demos</td></tr>
+          <tr><td>MIPRO</td><td>DSPy Optimizer，贝叶斯优化 instruction + demos</td></tr>
+          <tr><td>CFG（上下文无关文法）</td><td>Outlines 核心，编译为 FSM 强制受限解码</td></tr>
+          <tr><td>Colang</td><td>NeMo 护栏 DSL，描述输入/输出/对话轨</td></tr>
+          <tr><td>Planner</td><td>SK 核心，自动编排 Native + Semantic Skills</td></tr>
+          <tr><td>QueryEngine</td><td>LlamaIndex 核心，retrieve → synthesize 一行</td></tr>
+          <tr><td>Pipeline</td><td>Haystack 核心，Component 串联管道</td></tr>
+          <tr><td>FSM（有限状态机）</td><td>Outlines 把 JSON Schema 编译成的数据结构</td></tr>
+          <tr><td>Logits Mask</td><td>把不合法 token 的 logits 设为 -inf，模型无法采样</td></tr>
+          <tr><td>Skills</td><td>SK 概念，分为 Native（C# 函数）和 Semantic（Prompt 模板）</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

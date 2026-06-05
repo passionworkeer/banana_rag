@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LLM 量化 知识页</title>
+  <style>
+    :root{
+      --bg:#f7faff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#d8e1f0;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --accent-soft-2:#eff6ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .mathbox{background:linear-gradient(180deg,#fff,#eff6ff);border:1px solid #c8d9f5;border-radius:18px;padding:16px 18px}
+    .mathline{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;line-height:2;color:#111827}
+    .mathnote{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.75}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./kv-cache.html">KV Cache</a>
+    <a href="./paged-attention.html">PagedAttention</a>
+    <a href="./flash-attention.html">FlashAttention</a>
+    <a href="./speculative-decoding.html">Speculative Decoding</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">推理部署 · 模型压缩</span>
+    <h1>LLM 量化：用更少 bit 装下同一个模型</h1>
+    <p class="lead">把 FP16/BF16 权重 / 激活 / KV Cache 压到 INT8/INT4 甚至 INT2，显存砍 2-4x、推理吞吐 2-3x。代价是模型质量轻微下降（&lt;1% perplexity）。主流方案：GPTQ（INT4 权重量化）、AWQ（激活感知权重量化）、SmoothQuant（W8A8 平衡）、GGUF（llama.cpp 生态）。本页讲清粒度、PTQ/QAT、精度损失来源。</p>
+    <div class="pillrow">
+      <span class="pill">INT4 / INT8 / FP8</span><span class="pill">Per-Tensor / Per-Channel</span><span class="pill">PTQ / QAT</span><span class="pill">GPTQ / AWQ / SmoothQuant</span><span class="pill">GGUF</span><span class="pill">KV Cache 量化</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、量化的基本原理</h2>
+      <div class="mathbox">
+        <p class="mathline">FP16 权重 W ∈ [W_min, W_max]（连续浮点）</p>
+        <p class="mathline">INT8 量化：$$W_{q} = \mathrm{round}\!\left(\, \tfrac{W - z}{s} \,\right)$$</p>
+        <p class="mathline">反量化：$$W \approx s \cdot W_{q} + z$$</p>
+        <p class="mathline">$$s = \tfrac{W_{\max} - W_{\min}}{q_{\max} - q_{\min}} \quad\text{（缩放因子）}$$</p>
+        <p class="mathline">z = zero point</p>
+        <p class="mathnote">对称量化（z=0）vs 非对称量化（z≠0）：权重分布对称时用对称更简单，分布偏时非对称更准。LLM 权重一般对称。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、量化粒度（4 个层级）</h2>
+      <table>
+        <thead><tr><th>粒度</th><th>压缩</th><th>精度</th><th>适用</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Per-Tensor</strong></td><td>最高</td><td>最低</td><td>简单模型</td></tr>
+          <tr><td><strong>Per-Channel</strong></td><td>高</td><td>中</td><td>CNN / LLM 小模型</td></tr>
+          <tr><td><strong>Per-Group</strong></td><td>中</td><td>高</td><td>LLM 主流（GPTQ group_size=128）</td></tr>
+          <tr><td><strong>Per-Token</strong></td><td>中</td><td>高</td><td>激活值量化</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">LLM 量化基本是 per-channel 权重 + per-token 激活的组合。group_size=128（per-group 的 128 个 weight 共用一组 scale/zero）是 GPTQ 黄金参数。</div>
+    </article>
+
+    <article class="card">
+      <h2>三、PTQ vs QAT</h2>
+      <ul>
+        <li><strong>PTQ (Post-Training Quantization)</strong>：训后量化，用小校准集（128-1024 条）算 scale/zero。便宜、几分钟搞定，效果可接受（&lt;1% ppl 损失）</li>
+        <li><strong>QAT (Quantization-Aware Training)</strong>：训练时模拟量化误差，finetune 数小时到数天。效果更好但贵，工业上少用</li>
+      </ul>
+      <div class="callout">LLM 几乎全用 PTQ：成本低、效果可接受。QAT 仅在"PTQ 效果不达标"时考虑（如 INT2 极端量化）。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、5 大主流方案对比</h2>
+      <table>
+        <thead><tr><th>方案</th><th>精度</th><th>核心思想</th><th>代表论文</th><th>生态</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GPTQ</strong></td><td>INT4 权重量化</td><td>二阶 Hessian 优化量化误差，per-group</td><td>Frantar 2022</td><td>AutoGPTQ、vLLM</td></tr>
+          <tr><td><strong>AWQ</strong></td><td>INT4 权重量化</td><td>激活感知：保护 1% salient 权重不过量化</td><td>Lin 2023</td><td>AutoAWQ、vLLM</td></tr>
+          <tr><td><strong>SmoothQuant</strong></td><td>W8A8（权+激活）</td><td>激活难度量化到权重，平衡</td><td>Xiao 2022</td><td>TensorRT-LLM</td></tr>
+          <tr><td><strong>GGUF</strong></td><td>多档（Q2-Q8）</td><td>llama.cpp 生态，CPU/GPU 混合推理</td><td>llama.cpp</td><td>Ollama、LM Studio</td></tr>
+          <tr><td><strong>BitsAndBytes</strong></td><td>INT8/INT4</td><td>NF4 量化 + Double Quant</td><td>Dettmers 2022</td><td>Transformers、PEFT</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、GPTQ 核心</h2>
+      <div class="mathbox">
+        <p class="mathline">目标：$$\min \|W - \hat{W}\|_{F}^{2}$$</p>
+        <p class="mathline">逐列量化 + 二阶信息（Hessian）补偿</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">步骤：</p>
+        <p class="mathline">① 准备校准集（128 条文本）</p>
+        <p class="mathline">② 算 Hessian 矩阵</p>
+        <p class="mathline">③ 逐列贪心量化</p>
+        <p class="mathline">④ 误差补偿更新</p>
+        <p class="mathnote">精度损失 &lt; 1% ppl，是 LLM INT4 量化的事实标准之一。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>六、AWQ 核心</h2>
+      <div class="mathbox">
+        <p class="mathline">观察：1% salient 权重（激活值大的输入对应）</p>
+        <p class="mathline">决定输出大部分信息</p>
+        <p class="mathline">— — —</p>
+        <p class="mathline">做法：</p>
+        <p class="mathline">① 找 salient weight（用激活值分布）</p>
+        <p class="mathline">② salient weight 用更高精度（如 FP16）</p>
+        <p class="mathline">③ 其余 INT4</p>
+        <p class="mathnote">硬件友好：salient weight 只占 1%，几乎无速度损失。效果略优于 GPTQ。</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>七、KV Cache 量化</h2>
+      <ul>
+        <li><strong>动机</strong>：长上下文场景下 KV Cache 显存巨大（LLaMA-70B 8K 上下文 → ~10GB KV）</li>
+        <li><strong>方案</strong>：KV 量化到 INT8 或 INT4，per-token / per-head 量化</li>
+        <li><strong>代表</strong>：KIVI、KVQuant、CacheQuant</li>
+        <li><strong>效果</strong>：KV 显存砍 2-4x，长上下文吞吐显著提升</li>
+        <li><strong>代价</strong>：质量轻微下降（&lt; 0.5% ppl），需校准</li>
+      </ul>
+      <div class="callout">KV 量化是"在精度可接受前提下把长上下文推到极限"的关键技术，与 PagedAttention 互补（一个管存储、一个管计算 IO）。</div>
+    </article>
+
+    <article class="card">
+      <h2>八、量化精度损失来源</h2>
+      <ul>
+        <li><strong>Outlier 权重</strong>：少数极端大值主导 scale，挤掉小值精度</li>
+        <li><strong>激活分布</strong>：激活值动态范围大，per-token 量化仍有损失</li>
+        <li><strong>校准集偏差</strong>：校准分布与生产分布不一致</li>
+        <li><strong>累积误差</strong>：多层量化误差逐层放大</li>
+        <li><strong>小模型更敏感</strong>：&lt;7B 模型量化损失比 70B 大</li>
+      </ul>
+    </article>
+
+    <article class="card full">
+      <h2>九、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：INT4 量化精度损失多大？</h3>
+          <p>A：经验 INT4 让 perplexity 上升 &lt; 1%（LLaMA-2 7B WikiText-2 上 ppl 5.47 → 5.55）。下游任务准确率损失 0.5-2%。但小模型（&lt;3B）INT4 损失显著（3-5%），需考虑 INT8 或 AWQ 保护 salient。</p>
+        </div>
+        <div>
+          <h3>Q2：GPTQ 和 AWQ 选哪个？</h3>
+          <p>A：默认 AWQ——保护 salient weight 效果好，硬件友好。GPTQ 是老牌方案、生态更全。两者在 LLaMA-70B 上效果接近，AWQ 在小模型上略胜。生产中可两个都试，看下游任务表现。</p>
+        </div>
+        <div>
+          <h3>Q3：SmoothQuant 适合什么场景？</h3>
+          <p>A：W8A8（权重 INT8 + 激活 INT8）场景——比纯权重量化多砍一档。NVIDIA GPU 上配合 TensorRT-LLM 部署。比 INT4 精度好、比 FP16 显存省一半。推理服务规模化时是首选。</p>
+        </div>
+        <div>
+          <h3>Q4：GGUF 和 GPTQ 区别？</h3>
+          <p>A：GGUF 是 llama.cpp 生态的格式（Q2-Q8 多档可选），主打 CPU + Apple Silicon + 消费级 GPU。GPTQ 是 PyTorch 生态，主打 GPU + 数据中心。同一模型可两套都量化，看部署目标。</p>
+        </div>
+        <div>
+          <h3>Q5：KV Cache 量化值得做吗？</h3>
+          <p>A：长上下文（&gt; 4K）场景必做。短上下文收益小。生产中"模型 INT4 + KV INT8"是常见组合（兼顾模型精度和 KV 显存）。</p>
+        </div>
+        <div>
+          <h3>Q6：FP8 是什么？</h3>
+          <p>A：8-bit 浮点（E4M3 / E5M2 两种格式），Hopper GPU 原生支持。比 INT4 范围大、精度略好，比 FP16 显存砍半。训练和推理都能用，是 NVIDIA 新一代 AI 芯片的"甜点格式"。</p>
+        </div>
+        <div>
+          <h3>Q7：QLoRA 和量化什么关系？</h3>
+          <p>A：QLoRA = NF4 量化基础模型 + LoRA adapter。量化是"冻结基础模型用低精度存储"，LoRA 是"在量化基础上加少量可训参数"。两者结合：消费级 GPU 训 7B 模型成为可能（24GB 显存）。</p>
+        </div>
+        <div>
+          <h3>Q8：量化怎么评估？</h3>
+          <p>A：3 个层面：① 量化误差（perplexity 变化、weight 重构 MSE）；② 任务表现（下游 benchmark 准确率）；③ 部署表现（吞吐量、延迟）。只看 ppl 不够，必须测真实业务指标。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>十、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>LLM 量化把 FP16 权重 / 激活 / KV 压到 INT4/INT8，显存砍 2-4x、吞吐 2-3x。精度损失 &lt; 1%。主流方案：GPTQ（INT4 二阶优化）、AWQ（保护 salient 权重）、SmoothQuant（W8A8）、GGUF（llama.cpp 生态）。LLM 几乎全用 PTQ 训后量化，校准集 128-1024 条就够。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（显存 / 吞吐是推理瓶颈）→ 基本公式（Wq = round((W-z)/s)）→ 量化粒度（per-tensor / per-channel / per-group / per-token）→ PTQ vs QAT → 5 大方案对比 → GPTQ 核心（二阶 Hessian 优化）→ AWQ 核心（salient 保护）→ KV Cache 量化 → 精度损失来源 → 评估方法。能讲清"为什么 group_size=128 是黄金参数"、"为什么 outlier 是量化最大敌人"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"为什么从 FP16 切到 INT4"——比如 LLaMA-70B FP16 需 140GB 显存，单机跑不动；GPTQ-INT4 压到 40GB，1×A100 80G 跑起来，吞吐还 2x 提升。配上 vLLM + PagedAttention + SpD 后 QPS 涨 4-5x。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>量化不是银弹：① 小模型 INT4 损失大；② 校准集偏差会放大；③ 极端 INT2/INT3 需 QAT；④ 量化与 SpD 接受率略冲突。诚实说"量化是部署标配，但要做下游任务验证而不是只看 perplexity"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>量化</td><td>FP16/BF16 权重压到 INT8/INT4 的精度转换</td></tr>
+          <tr><td>PTQ</td><td>Post-Training Quantization，训后量化（便宜、效果可）</td></tr>
+          <tr><td>QAT</td><td>Quantization-Aware Training，训练时模拟量化（贵、效果好）</td></tr>
+          <tr><td>Per-Group</td><td>每 N 个 weight 共用一组 scale/zero，group_size=128 黄金</td></tr>
+          <tr><td>Per-Channel</td><td>每个输出通道独立 scale</td></tr>
+          <tr><td>GPTQ</td><td>INT4 权重量化，二阶 Hessian 优化</td></tr>
+          <tr><td>AWQ</td><td>激活感知权重量化，保护 salient weight</td></tr>
+          <tr><td>SmoothQuant</td><td>W8A8，把激活难度量化转移到权重</td></tr>
+          <tr><td>GGUF</td><td>llama.cpp 生态格式，Q2-Q8 多档</td></tr>
+          <tr><td>NF4</td><td>4-bit NormalFloat，QLoRA 用，分布感知的 INT4</td></tr>
+          <tr><td>Salient Weight</td><td>激活值大的输入对应的 1% 关键权重</td></tr>
+          <tr><td>KV Cache 量化</td><td>KV 量化到 INT8/INT4，长上下文显存砍半</td></tr>
+          <tr><td>FP8</td><td>8-bit 浮点（E4M3 / E5M2），Hopper 原生支持</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent 可观测性 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./multi-agent.html">Multi-Agent</a>
+    <a href="./ai-pm.html">AI PM</a>
+    <a href="./router.html">Router</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Agent 工程 · 可观测性</span>
+    <h1>Agent 可观测性：让 Agent 系统的"黑盒"变"白盒"</h1>
+    <p class="lead">传统软件靠日志 / 指标 / Trace 三大支柱做可观测性。Agent 系统需要"第 4 个支柱"——LLM Trace：消息流、Token 成本、Tool 调用、决策路径、Eval 分数。LangSmith / Langfuse / Helicone 是主流平台。本页讲清 Trace 数据结构、Eval 集成、生产级监控指标。</p>
+    <div class="pillrow">
+      <span class="pill">LLM Trace</span><span class="pill">OpenTelemetry</span><span class="pill">LangSmith</span><span class="pill">Langfuse</span><span class="pill">Helicone</span><span class="pill">Eval 集成</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、Agent Trace 数据结构</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 360" width="100%" height="auto" role="img" aria-label="Agent trace structure">
+          <defs>
+            <marker id="arrow-ao" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <rect x="40" y="40" width="1080" height="280" rx="14" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="580" y="70" text-anchor="middle" font-size="16" font-weight="700">Agent Trace 完整结构</text>
+
+          <rect x="60" y="95" width="200" height="50" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+          <text x="160" y="118" text-anchor="middle" font-size="12" font-weight="600">① Run（会话）</text>
+          <text x="160" y="135" text-anchor="middle" font-size="11" fill="#475569">id / start / end / status / user_id</text>
+
+          <rect x="280" y="95" width="200" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="380" y="118" text-anchor="middle" font-size="12" font-weight="600">② Message（消息）</text>
+          <text x="380" y="135" text-anchor="middle" font-size="11" fill="#475569">role / content / tool_call / latency</text>
+
+          <rect x="500" y="95" width="200" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="600" y="118" text-anchor="middle" font-size="12" font-weight="600">③ LLM Call（模型调用）</text>
+          <text x="600" y="135" text-anchor="middle" font-size="11" fill="#475569">model / tokens / cost / prompt / completion</text>
+
+          <rect x="720" y="95" width="200" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="820" y="118" text-anchor="middle" font-size="12" font-weight="600">④ Tool Call（工具）</text>
+          <text x="820" y="135" text-anchor="middle" font-size="11" fill="#475569">name / args / result / duration / error</text>
+
+          <rect x="940" y="95" width="160" height="50" rx="10" fill="#fff" stroke="#7c3aed"/>
+          <text x="1020" y="118" text-anchor="middle" font-size="12" font-weight="600">⑤ Eval</text>
+          <text x="1020" y="135" text-anchor="middle" font-size="11" fill="#475569">score / feedback / grader</text>
+
+          <rect x="60" y="160" width="1040" height="40" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-dasharray="6 4"/>
+          <text x="580" y="184" text-anchor="middle" font-size="13" font-weight="600">父子结构：Run 包含多个 Message，每个 Message 触发 LLM Call + Tool Call + Eval</text>
+
+          <rect x="60" y="215" width="1040" height="90" rx="10" fill="#ddd6fe" stroke="#7c3aed"/>
+          <text x="580" y="238" text-anchor="middle" font-size="13" font-weight="600">关键 metadata</text>
+          <text x="80" y="260" font-size="11" fill="#0f172a">· 消息时间戳、Token 数、成本估算</text>
+          <text x="80" y="278" font-size="11" fill="#0f172a">· Tool 调用的输入输出、错误堆栈</text>
+          <text x="80" y="296" font-size="11" fill="#0f172a">· LLM 完整 prompt / completion（可脱敏）</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、为什么 Agent 需要专门的 Trace</h2>
+      <ul>
+        <li><strong>非确定性</strong>：同样输入可能走不同路径，传统日志不够</li>
+        <li><strong>多步</strong>：一个任务 N 步，调试要还原"哪步错了"</li>
+        <li><strong>成本敏感</strong>：LLM 按 token 计费，需要看到底哪步贵</li>
+        <li><strong>质量难评估</strong>：输出对不对需要 LLM-as-Judge 评分</li>
+        <li><strong>幻觉</strong>：需要看 prompt / retrieval / 工具结果，定位幻觉来源</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>三、3 大平台对比</h2>
+      <table>
+        <thead><tr><th>维度</th><th>LangSmith</th><th>Langfuse</th><th>Helicone</th></tr></thead>
+        <tbody>
+          <tr><td>厂商</td><td>LangChain</td><td>开源</td><td>开源</td></tr>
+          <tr><td>部署</td><td>SaaS + 自托管（企业版）</td><td>自托管 + SaaS</td><td>SaaS + 自托管</td></tr>
+          <tr><td>框架集成</td><td>LangChain 一等公民</td><td>LangChain / LlamaIndex / OpenLLMetry</td><td>OpenAI 代理（最简单）</td></tr>
+          <tr><td>Trace 可视化</td><td>★★★★★</td><td>★★★★</td><td>★★★</td></tr>
+          <tr><td>Eval 集成</td><td>★★★★★（Dataset + Run）</td><td>★★★★（Score API）</td><td>★★</td></tr>
+          <tr><td>成本监控</td><td>★★★★</td><td>★★★★</td><td>★★★★★</td></tr>
+          <tr><td>开源</td><td>否</td><td>是（MIT）</td><td>是（MIT）</td></tr>
+          <tr><td>适合</td><td>LangChain 生态</td><td>框架无关 / 自托管</td><td>OpenAI 快速接入</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card full">
+      <h2>四、关键监控指标 4 类</h2>
+      <table>
+        <thead><tr><th>类别</th><th>指标</th><th>告警阈值</th></tr></thead>
+        <tbody>
+          <tr><td><strong>质量</strong></td><td>任务完成率 / 用户满意度 / 幻觉率</td><td>完成率 &lt; 70% / 幻觉率 &gt; 10%</td></tr>
+          <tr><td><strong>成本</strong></td><td>单次任务 token / 单日总成本 / Token 增长率</td><td>单日 &gt; 预算 120%</td></tr>
+          <tr><td><strong>延迟</strong></td><td>P50 / P95 / P99 端到端延迟、Tool 调用延迟</td><td>P95 &gt; 5s 持续 5min</td></tr>
+          <tr><td><strong>错误</strong></td><td>Tool 失败率 / LLM 解析失败率 / 重规划次数</td><td>Tool 失败率 &gt; 5%</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>五、OpenTelemetry + GenAI 语义</h2>
+      <ul>
+        <li><strong>OpenTelemetry</strong>：CNCF 标准的 Trace 协议（opentelemetry.io）</li>
+        <li><strong>OTLP</strong>：trace / metrics / logs 通用传输协议</li>
+        <li><strong>OpenLLMetry</strong>：在 OTel 上加 LLM 专属 span 类型（prompt / completion / token usage）</li>
+        <li><strong>优势</strong>：和 Jaeger / Tempo / Datadog 等通用 trace 平台兼容</li>
+        <li><strong>劣势</strong>：LLM 专用语义还在演进，比 LangSmith 弱</li>
+      </ul>
+      <div class="callout">Langfuse / Helicone 都支持 OpenLLMetry——选 OpenLLMetry 不会"被厂商绑死"。</div>
+    </article>
+
+    <article class="card">
+      <h2>六、Eval 集成 3 模式</h2>
+      <ul>
+        <li><strong>在线 Eval</strong>：每次 Run 完成后跑 LLM-as-Judge，记录分数</li>
+        <li><strong>离线 Eval</strong>：从 Trace 库采样、跑评估集、回归对比</li>
+        <li><strong>用户反馈</strong>：👍 / 👎 / 文字反馈回流到 Trace 关联</li>
+      </ul>
+      <div class="callout">生产中"在线 Eval + 用户反馈"双轨是金标准——前者自动化覆盖广、后者信号真实。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：Agent 可观测性为什么比传统可观测性复杂？</h3>
+          <p>A：3 个差异：① 非确定性（同样输入可能走不同路径）；② 多步（一个任务 N 步 trace 嵌套）；③ 质量难评（输出对不对需要 LLM-as-Judge）。传统 Logs/Metrics/Traces 三大支柱不够，需要 LLM Trace（第 4 支柱）+ 评估体系。</p>
+        </div>
+        <div>
+          <h3>Q2：LangSmith / Langfuse / Helicone 选哪个？</h3>
+          <p>A：① LangChain 生态深度用 LangSmith；② 自托管 / 框架无关 / 开源用 Langfuse；③ 简单 OpenAI 代理 / 成本优先用 Helicone。三者核心能力（trace + cost + eval）有重叠，关键是部署方式和生态契合度。</p>
+        </div>
+        <div>
+          <h3>Q3：Agent Trace 最该看什么？</h3>
+          <p>A：3 个核心：① 哪步耗时最长（找瓶颈）；② 哪步成本最高（找优化点）；③ 哪步 LLM-as-Judge 分数低（找质量短板）。其次看 Tool 失败率、Replan 次数、消息 token 长度。</p>
+        </div>
+        <div>
+          <h3>Q4：怎么用 Trace 调试 Agent 失败？</h3>
+          <p>A：4 步：① 找到失败 Run；② 看 LLM 评分低的 message；③ 检查 prompt / completion（看是否理解错）；④ 看 Tool 调用结果（看是否拿错数据）。LangSmith 的一键回放 + 时间轴最直观。</p>
+        </div>
+        <div>
+          <h3>Q5：Trace 数据要不要存？存多久？</h3>
+          <p>A：存，但要分层：① 完整 prompt / completion 存 7-30 天（合规 + 容量）；② 元数据（token / cost / score）永久存（用于分析）；③ 敏感数据要脱敏（手机号 / 邮箱 / 身份证）。生产中 PII 检测是 Trace 平台的标配功能。</p>
+        </div>
+        <div>
+          <h3>Q6：OpenLLMetry 和 LangSmith 谁更标准？</h3>
+          <p>A：OpenLLMetry 基于 OTel 标准、跨厂商；LangSmith 是 LangChain 私有实现。前者更"开放"、不会绑死；后者功能更完善、上手快。生产中"LangSmith 调试 + OpenLLMetry 上报"双链路是常见组合。</p>
+        </div>
+        <div>
+          <h3>Q7：怎么把 Trace 接到 Grafana / Datadog？</h3>
+          <p>A：OpenLLMetry 把 LLM 事件转成 OTel span，通过 OTLP 协议发给 Grafana Tempo / Datadog APM。需要：① OpenLLMetry SDK 集成；② OTel Collector；③ Grafana / Datadog 配置 OTLP endpoint。Langfuse / Helicone 也支持这种导出。</p>
+        </div>
+        <div>
+          <h3>Q8：Agent Eval 和传统单元测试区别？</h3>
+          <p>A：3 个差异：① 输入分布（Eval 集是抽样代表性 / 单元测试是边界覆盖）；② 期望输出（Eval 是模糊"好"/"坏"、单元测试是精确断言）；③ 执行频率（Eval 持续跑 / 单元测试每次 CI）。Eval 体系是 Agent 系统的"持续质量门"。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Agent 可观测性 = LLM Trace（第 4 支柱）+ Eval 集成。平台：LangSmith（LangChain 一等公民）/ Langfuse（开源 + 框架无关）/ Helicone（OpenAI 代理）。关键指标：质量（完成率 / 幻觉率）、成本（token / 单日预算）、延迟（P95）、错误（Tool 失败率）。OpenLLMetry 基于 OTel 是开放标准。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（Agent 黑盒难调）→ Trace 数据结构（Run / Message / LLM Call / Tool Call / Eval）→ 3 大平台对比 → 4 类关键指标 → OpenLLMetry 标准 → Eval 集成 3 模式（在线 / 离线 / 用户反馈）→ 调试 4 步法 → 数据保留与脱敏。能讲清"为什么 LLM Trace 是第 4 支柱"、"为什么 OpenLLMetry 不绑死"，立刻显得懂生产 Agent 工程。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"用 Trace 调试 Agent 失败"——比如客服 Agent 失败率突涨，LangSmith 看到"Tool 失败率从 2% 涨到 15%"，定位到第三方 API 限流；加 retry + 缓存后恢复。讲排查过程立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>Agent 可观测性不是银弹：① Trace 本身有成本（存储 + 索引）；② 敏感数据脱敏难（prompt 里混着 PII）；③ LLM-as-Judge 评估本身有偏差；④ 跨 vendor 切换成本。诚实说"可观测性是 Agent 上线前提，不是上线后补救"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>LLM Trace</td><td>可观测性第 4 支柱，记录 Run / Message / LLM / Tool</td></tr>
+          <tr><td>LangSmith</td><td>LangChain 官方平台，深度集成 LangChain 生态</td></tr>
+          <tr><td>Langfuse</td><td>开源 + 自托管，框架无关，OTel 兼容</td></tr>
+          <tr><td>Helicone</td><td>OpenAI 代理式接入，最简单</td></tr>
+          <tr><td>OpenTelemetry</td><td>CNCF 标准 trace 协议</td></tr>
+          <tr><td>OpenLLMetry</td><td>OTel 上加 LLM 专属 span 类型</td></tr>
+          <tr><td>OTLP</td><td>OTel 数据传输协议</td></tr>
+          <tr><td>LLM-as-Judge</td><td>用 LLM 评 LLM 输出</td></tr>
+          <tr><td>Run</td><td>一次 Agent 会话的根节点</td></tr>
+          <tr><td>Span</td><td>trace 中的单个操作（LLM Call / Tool Call 等）</td></tr>
+          <tr><td>P95 延迟</td><td>95% 请求在该时间内完成</td></tr>
+          <tr><td>Token 成本</td><td>按输入 + 输出 token 累计计费</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

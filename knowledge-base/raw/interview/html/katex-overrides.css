@@ -1,0 +1,24 @@
+/* KaTeX global tuning for knowledge pages.
+   Loaded after katex.min.css to override defaults that fight with .mathline.
+   - font-size: 1.05em (down from 1.21em) — fits inside .mathline (18px/2)
+   - display margin: trim vertical spacing so multi-line mathboxes stay compact
+   - inline .katex: tiny negative margin so it sits on the baseline
+*/
+.katex {
+  font-size: 1.05em !important;
+}
+.katex-display {
+  margin: 0.4em 0 !important;
+}
+.katex-display > .katex {
+  display: inline-block;
+  text-align: left;
+}
+/* Render errors: red box + small text — visible but not page-breaking */
+.katex .katex-error {
+  color: #dc2626;
+  font-size: 0.9em;
+  background: #fef2f2;
+  padding: 0 4px;
+  border-radius: 3px;
+}

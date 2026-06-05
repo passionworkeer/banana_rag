@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planner 知识页</title>
+  <style>
+    :root{
+      --bg:#fbf8ff;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#e5ddf4;
+      --accent:#7c3aed;
+      --accent-soft:#ede9fe;
+      --accent-soft-2:#f5f3ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 56px}
+    .crumb{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .crumb a{font-size:13px;border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px}
+    .hero{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px;padding:28px}
+    .eyebrow{display:inline-flex;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    h1{margin:16px 0 10px;font-size:42px;line-height:1.05}
+    .lead{margin:0;color:var(--muted);font-size:17px;line-height:1.8;max-width:940px}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .pill{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:18px}
+    .card{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .card.full{grid-column:span 12}
+    h2{margin:0 0 12px;font-size:24px}
+    p,li{line-height:1.8}
+    .svgbox{background:linear-gradient(180deg,var(--accent-soft-2),#fff);border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .callout{border-left:4px solid var(--accent);background:#f5f3ff;padding:14px 16px;border-radius:14px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;line-height:1.7}
+    th{background:#f8fafc;font-size:13px;color:#475569}
+    .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .qa > div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .qa h3{margin:0 0 8px;font-size:16px}
+    pre.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:14px;font-family:"SFMono-Regular",Consolas,Monaco,monospace;font-size:13px;line-height:1.7;overflow:auto}
+    @media (max-width: 920px){.card,.card.full{grid-column:span 12}.qa{grid-template-columns:1fr}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">
+    <a href="./index.html">首页</a>
+    <a href="./agent.html">Agent</a>
+    <a href="./router.html">Router</a>
+    <a href="./react-cot.html">ReAct / CoT</a>
+    <a href="./multi-agent.html">Multi-Agent</a>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Agent 架构 · 任务规划</span>
+    <h1>Planner：让 Agent 从"想到哪做到哪"变成"先想后做"</h1>
+    <p class="lead">Planner 是 Agent 系统的"项目经理"——把"完成用户目标"拆成可执行的步骤序列。主流范式 4 种：ReAct（边想边做）、Plan-and-Execute（先全部规划再执行）、ReWOO（Reasoning WithOUT Observation，规划与执行解耦）、LLMCompiler（并行执行）。本页讲清规划质量、失败回滚、Plan 评估。</p>
+    <div class="pillrow">
+      <span class="pill">ReAct</span><span class="pill">Plan-and-Execute</span><span class="pill">ReWOO</span><span class="pill">LLMCompiler</span><span class="pill">Subgoal</span><span class="pill">Replanning</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card full">
+      <h2>一、4 种主流规划范式</h2>
+      <div class="svgbox">
+        <svg viewBox="0 0 1180 440" width="100%" height="auto" role="img" aria-label="Planner paradigms">
+          <defs>
+            <marker id="arrow-pl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"></path>
+            </marker>
+          </defs>
+
+          <!-- ReAct -->
+          <rect x="40" y="40" width="270" height="180" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="175" y="68" text-anchor="middle" font-size="15" font-weight="700">ReAct（边想边做）</text>
+          <text x="50" y="95" font-size="11">Thought 1 → Action 1 → Obs 1</text>
+          <text x="50" y="115" font-size="11">Thought 2 → Action 2 → Obs 2</text>
+          <text x="50" y="135" font-size="11">Thought 3 → Action 3 → Obs 3</text>
+          <text x="50" y="155" font-size="11">...</text>
+          <text x="50" y="180" font-size="11" fill="#475569">优：反应灵活 / 缺：易跑偏</text>
+          <text x="50" y="200" font-size="11" fill="#475569">代表：LangChain ReAct Agent</text>
+
+          <!-- Plan-and-Execute -->
+          <rect x="320" y="40" width="270" height="180" rx="14" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="455" y="68" text-anchor="middle" font-size="15" font-weight="700">Plan-and-Execute</text>
+          <text x="330" y="95" font-size="11">Plan: [step1, step2, step3]</text>
+          <text x="330" y="115" font-size="11">Execute step1 → result1</text>
+          <text x="330" y="135" font-size="11">Execute step2 → result2</text>
+          <text x="330" y="155" font-size="11">Execute step3 → result3</text>
+          <text x="330" y="180" font-size="11" fill="#475569">优：目标明确 / 缺：plan 错全错</text>
+          <text x="330" y="200" font-size="11" fill="#475569">代表：LangChain Plan-and-Execute</text>
+
+          <!-- ReWOO -->
+          <rect x="600" y="40" width="270" height="180" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="735" y="68" text-anchor="middle" font-size="15" font-weight="700">ReWOO（解耦规划/执行）</text>
+          <text x="610" y="95" font-size="11">Planner: 规划带 #E1 #E2 变量</text>
+          <text x="610" y="115" font-size="11">Worker: 收集所有 evidence</text>
+          <text x="610" y="135" font-size="11">Solver: 用 evidence 回答</text>
+          <text x="610" y="155" font-size="11">token 省 50%+</text>
+          <text x="610" y="180" font-size="11" fill="#475569">优：省 token / 缺：plan 错没救</text>
+          <text x="610" y="200" font-size="11" fill="#475569">代表：ReWOO 论文</text>
+
+          <!-- LLMCompiler -->
+          <rect x="880" y="40" width="270" height="180" rx="14" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="1015" y="68" text-anchor="middle" font-size="15" font-weight="700">LLMCompiler（并行）</text>
+          <text x="890" y="95" font-size="11">Planner: 生成 DAG 任务图</text>
+          <text x="890" y="115" font-size="11">无依赖任务并行执行</text>
+          <text x="890" y="135" font-size="11">Task Fetch Unit 调度</text>
+          <text x="890" y="155" font-size="11">结果 join + 续推</text>
+          <text x="890" y="180" font-size="11" fill="#475569">优：快 / 缺：实现复杂</text>
+          <text x="890" y="200" font-size="11" fill="#475569">代表：LLMCompiler 论文</text>
+
+          <rect x="40" y="250" width="1110" height="160" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="595" y="275" text-anchor="middle" font-size="14" font-weight="700">选择口诀</text>
+          <text x="595" y="298" text-anchor="middle" font-size="12" fill="#0f172a">· 短任务 / 工具多 → ReAct</text>
+          <text x="595" y="318" text-anchor="middle" font-size="12" fill="#0f172a">· 长任务 / 步骤清晰 → Plan-and-Execute</text>
+          <text x="595" y="338" text-anchor="middle" font-size="12" fill="#0f172a">· 检索密集 / 成本敏感 → ReWOO</text>
+          <text x="595" y="358" text-anchor="middle" font-size="12" fill="#0f172a">· 多步独立 / 延迟敏感 → LLMCompiler</text>
+          <text x="595" y="380" text-anchor="middle" font-size="12" fill="#0f172a">· 失败多 → ReAct（边走边纠）</text>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>二、规划质量的关键</h2>
+      <ul>
+        <li><strong>粒度</strong>：步骤不能太粗（"完成任务"）也不能太细（"点击按钮"）</li>
+        <li><strong>可执行</strong>：每步必须有清晰输入输出、能用工具 / 函数表达</li>
+        <li><strong>依赖关系</strong>：步骤间数据流正确（A 依赖 B 的输出）</li>
+        <li><strong>终止条件</strong>：明确何时算完成、什么情况下放弃</li>
+        <li><strong>回滚策略</strong>：步骤失败时如何恢复</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>三、Plan 评估指标</h2>
+      <ul>
+        <li><strong>Plan 准确率</strong>：规划步骤是否合理（人工评估）</li>
+        <li><strong>完成率</strong>：按 plan 走到最后的比例</li>
+        <li><strong>步数利用率</strong>：完成任务的平均步数 vs 计划步数</li>
+        <li><strong>重规划次数</strong>：失败时需要 replan 几次</li>
+        <li><strong>总成本</strong>：规划 + 执行 + 重规划的总 token</li>
+      </ul>
+      <div class="callout">"计划完美但执行差"和"计划粗糙但执行强"在生产中后者更常见——Planner 别过度设计，让执行有冗余。</div>
+    </article>
+
+    <article class="card full">
+      <h2>四、ReWOO 代码示例</h2>
+      <pre class="code"># ReWOO 三步
+# Step 1: Planner 生成 plan
+plan = """
+Plan: 为了回答"特斯拉今年股价"需要：
+Step 1: #E1 = Search["Tesla stock price 2024"]
+Step 2: #E2 = Search["Tesla stock price 2023"]
+Step 3: Answer = LLM["结合 #E1 和 #E2 总结变化"]
+"""
+
+# Step 2: Worker 收集 evidence
+evidence = {
+  "#E1": search("Tesla stock price 2024"),
+  "#E2": search("Tesla stock price 2023")
+}
+
+# Step 3: Solver 填充变量、生成答案
+filled = plan.replace("#E1", evidence["#E1"])
+              .replace("#E2", evidence["#E2"])
+answer = llm(filled)</pre>
+      <p>ReWOO 核心思想：plan 阶段不调工具（省 token）、worker 阶段一次性收集所有 evidence、solver 阶段合并输出。适合检索密集型任务。</p>
+    </article>
+
+    <article class="card">
+      <h2>五、失败回滚 4 策略</h2>
+      <ul>
+        <li><strong>重试当前步</strong>：参数错误时重试，3 次后升级</li>
+        <li><strong>回退到上一步</strong>：用新信息重新规划</li>
+        <li><strong>全盘重规划</strong>：replan from scratch，复杂场景</li>
+        <li><strong>人工介入</strong>：超过 N 次重规划则升级</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>六、Subgoal 分解</h2>
+      <p>把大目标拆成 2-5 个 subgoal，每个 subgoal 有独立完成判断。优势：</p>
+      <ul>
+        <li>每个 subgoal 可独立测试 / 评估</li>
+        <li>失败定位快（哪个 subgoal 错一目了然）</li>
+        <li>可并行（独立 subgoal 一起做）</li>
+        <li>支持增量发布（先做核心 subgoal）</li>
+      </ul>
+      <div class="callout">2-5 是经验 sweet spot：太少粒度粗，太多管理成本反而高。</div>
+    </article>
+
+    <article class="card full">
+      <h2>七、面试 FAQ</h2>
+      <div class="qa">
+        <div>
+          <h3>Q1：ReAct vs Plan-and-Execute 怎么选？</h3>
+          <p>A：任务短 / 工具多 / 反馈频繁 → ReAct（边走边纠）；任务长 / 步骤清晰 / 工具少 → Plan-and-Execute（先想后做）。ReAct 反应灵活但易跑偏；Plan-and-Execute 目标明确但 plan 错全错。</p>
+        </div>
+        <div>
+          <h3>Q2：ReWOO 适合什么场景？</h3>
+          <p>A：检索密集型任务（如"调研 X 公司"），需要并行查多个数据源。优点：plan 不调工具省 50% token，worker 一次性收齐 evidence。缺点：plan 错没救，所以对 planner 质量要求高。</p>
+        </div>
+        <div>
+          <h3>Q3：LLMCompiler 和 ReWOO 区别？</h3>
+          <p>A：LLMCompiler 把任务抽象成 DAG，无依赖任务并行执行、依赖任务串行。ReWOO 简单串行收集 evidence。LLMCompiler 实现复杂但并行加速显著。</p>
+        </div>
+        <div>
+          <h3>Q4：Planner 错了怎么发现？</h3>
+          <p>A：3 个信号：① 执行步数远超 plan（plan 不够细）；② 频繁回退 / replan（plan 整体方向错）；③ 下游工具返回"参数不合法"（plan 对工具能力理解错）。监控"完成率 / 平均步数 / replan 次数"三件套。</p>
+        </div>
+        <div>
+          <h3>Q5：怎么让 Planner 输出更稳定？</h3>
+          <p>A：4 个手段：① 强制 JSON schema 输出；② few-shot 给示例；③ 用 CoT 让 Planner 解释"为什么这么拆"；④ 校验每步输入输出格式（用 Pydantic）。</p>
+        </div>
+        <div>
+          <h3>Q6：什么时候该 Replan？</h3>
+          <p>A：3 个 trigger：① 步骤执行失败 N 次（如 3 次）；② 步骤返回"unexpected result"（说明 plan 假设错）；③ 上下文发生重大变化（用户改需求）。不要每步都 replan（成本爆炸）。</p>
+        </div>
+        <div>
+          <h3>Q7：Planner 与 Router 关系？</h3>
+          <p>A：Planner 决定"做什么"（任务分解），Router 决定"谁来做"（分配到哪个下游）。典型流程：Planner 出 plan → 每步交给 Router 选下游执行。两者常合并成一个 Agent（Plan + Route 一起做）。</p>
+        </div>
+        <div>
+          <h3>Q8：Multi-Agent 系统中的 Planner 怎么设计？</h3>
+          <p>A：常见模式"全局 Planner + 局部 Planner"：全局 Planner 拆子任务给子 Agent，每个子 Agent 内部有自己的局部 Planner 处理子任务。避免一个 Planner 管太多（易成瓶颈）。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>八、回答模板与加分项</h2>
+      <div class="qa">
+        <div>
+          <h3>30 秒电梯版</h3>
+          <p>Planner 是 Agent 的"项目经理"，把用户目标拆成可执行步骤。4 种主流范式：ReAct（边想边做）、Plan-and-Execute（先想后做）、ReWOO（规划/执行解耦省 token）、LLMCompiler（并行 DAG）。选择口诀：短任务 → ReAct，长任务 → Plan-and-Execute，检索密集 → ReWOO，延迟敏感 → LLMCompiler。失败时要 replan 但别每步都 replan。</p>
+        </div>
+        <div>
+          <h3>5 分钟深入版</h3>
+          <p>从动机（Agent 不会规划 = 想到哪做到哪）→ 4 种范式对比 → 规划质量 5 要素（粒度/可执行/依赖/终止/回滚）→ 评估指标 → ReWOO 代码示例 → 4 种回滚策略 → Subgoal 分解 2-5 sweet spot → Planner 与 Router 关系。能讲清"为什么 ReWOO 省 token"、"什么时候该 Replan"、"为什么 Plan-and-Execute 在长任务上更稳"，立刻显得有真经验。</p>
+        </div>
+        <div>
+          <h3>加分：项目案例</h3>
+          <p>讲一次"从 ReAct 切到 Plan-and-Execute"——比如数据分析 Agent 早期 ReAct 走 10+ 步仍找不到数据源，原因是没先想清楚"先查元数据还是直接查表"；切到 Plan-and-Execute 后先列"步骤 1 查元数据 → 步骤 2 选字段 → 步骤 3 跑 SQL"，3 步搞定，token 成本 -60%。</p>
+        </div>
+        <div>
+          <h3>加分：知道局限</h3>
+          <p>Planner 不是银弹：① Plan-and-Execute plan 错全错；② ReWOO 不能边走边纠；③ LLMCompiler 实现复杂；④ 多数场景 ReAct 已经够用。诚实说"Planner 选择取决于任务长度和反馈频率"得分更高。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card full">
+      <h2>概念清单（速查表）</h2>
+      <table>
+        <thead><tr><th>概念</th><th>一句话</th></tr></thead>
+        <tbody>
+          <tr><td>Planner</td><td>把用户目标拆成可执行步骤序列</td></tr>
+          <tr><td>ReAct</td><td>Reason + Act 交替，边想边做</td></tr>
+          <tr><td>Plan-and-Execute</td><td>先全部规划再逐步执行</td></tr>
+          <tr><td>ReWOO</td><td>Reasoning WithOUT Observation，规划与执行解耦</td></tr>
+          <tr><td>LLMCompiler</td><td>DAG 任务图，无依赖并行执行</td></tr>
+          <tr><td>Subgoal</td><td>把大目标拆成 2-5 个可独立验证的小目标</td></tr>
+          <tr><td>Replanning</td><td>失败时重新规划，而非逐步修补</td></tr>
+          <tr><td>Plan 粒度</td><td>步骤不能太粗（"完成任务"）也不能太细（"点按钮"）</td></tr>
+          <tr><td>DAG</td><td>有向无环图，表达任务依赖关系</td></tr>
+          <tr><td>Plan 评估</td><td>准确率 / 完成率 / 步数利用率 / replan 次数</td></tr>
+          <tr><td>Plan-and-Execute 风险</td><td>plan 错全盘皆错</td></tr>
+          <tr><td>Planner vs Router</td><td>Planner 决定"做什么"，Router 决定"谁来做"</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </section>
+</div>
+</body>
+</html>

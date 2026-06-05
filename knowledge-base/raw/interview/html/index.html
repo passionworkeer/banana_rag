@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>面试与学习中心 · Jianjun</title>
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --panel:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#dbe3ee;
+      --accent:#2563eb;
+      --accent-weak:#dbeafe;
+      --green:#059669;
+      --green-weak:#d1fae5;
+      --purple:#7c3aed;
+      --purple-weak:#ede9fe;
+      --orange:#d97706;
+      --orange-weak:#fef3c7;
+      --code:#0f172a;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      color:var(--text);
+      background:
+        linear-gradient(180deg,#eef4ff 0%, #f8fafc 18%, #f8fafc 100%);
+    }
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1280px;margin:0 auto;padding:28px 20px 56px}
+
+    /* Top hero */
+    .top{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:32px;
+      box-shadow:var(--shadow);
+    }
+    .eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-weak);padding:8px 12px;border-radius:999px}
+    h1{margin:18px 0 10px;font-size:42px;line-height:1.1}
+    .lead{max-width:920px;color:var(--muted);font-size:17px;line-height:1.75;margin:0}
+    .meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px;color:var(--muted);font-size:13px}
+    .meta b{color:var(--text)}
+
+    /* Section */
+    .section{
+      margin-top:22px;background:var(--panel);border:1px solid var(--line);
+      border-radius:24px;box-shadow:var(--shadow);padding:24px
+    }
+    .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+    .section h2{margin:0;font-size:24px}
+    .section-sub{color:var(--muted);font-size:14px;line-height:1.7;margin:0 0 16px}
+
+    /* Grid */
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+    .card{
+      background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;
+      transition:transform .2s ease, box-shadow .2s ease;
+    }
+    a.card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(15,23,42,.12)}
+    .card h3{margin:0 0 8px;font-size:18px;display:flex;align-items:center;gap:8px}
+    .card p{margin:0;color:var(--muted);font-size:14px;line-height:1.7}
+    .tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+    .tag{font-size:11px;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:4px 9px;border-radius:999px;font-weight:500}
+    .tag.accent{background:var(--accent-weak);color:var(--accent);border-color:#bfdbfe}
+    .tag.green{background:var(--green-weak);color:var(--green);border-color:#a7f3d0}
+    .tag.purple{background:var(--purple-weak);color:var(--purple);border-color:#ddd6fe}
+    .tag.orange{background:var(--orange-weak);color:var(--orange);border-color:#fde68a}
+    .date{font-size:12px;color:var(--muted);font-weight:500;margin-left:auto}
+
+    /* Span helpers */
+    .span-3{grid-column:span 3}
+    .span-4{grid-column:span 4}
+    .span-6{grid-column:span 6}
+    .span-8{grid-column:span 8}
+    .span-12{grid-column:span 12}
+
+    /* Path cards (学习路径) */
+    .path{
+      border:1px solid var(--line);
+      border-left:4px solid var(--accent);
+      border-radius:14px;
+      padding:18px 20px;
+      background:#fbfdff;
+    }
+    .path.green{border-left-color:var(--green);background:#f7fefa}
+    .path.purple{border-left-color:var(--purple);background:#faf8ff}
+    .path h3{margin:0 0 8px;font-size:17px}
+    .path ol{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:14px;line-height:1.9}
+    .path ol li a{color:var(--accent)}
+    .path ol li a:hover{text-decoration:underline}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:16px}
+    th,td{padding:14px 12px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}
+    th{font-size:13px;color:#475569;background:#f8fafc;font-weight:600}
+    td{color:#0f172a;line-height:1.7;font-size:14px}
+
+    .footer{margin-top:24px;color:#64748b;font-size:13px;line-height:1.7;text-align:center}
+    @media (max-width: 1100px){
+      .span-3{grid-column:span 6}
+      .span-4{grid-column:span 6}
+    }
+    @media (max-width: 640px){
+      h1{font-size:30px}
+      .span-3,.span-4,.span-6,.span-8{grid-column:span 12}
+      .top,.section{padding:20px}
+    }
+  </style>
+
+  <script defer src="./katex-init.js"></script>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- HERO -->
+    <div class="top">
+      <span class="eyebrow">Interview & Learning Hub</span>
+      <h1>面试与学习中心</h1>
+      <p class="lead">这里集中沉淀我为 AI Agent / AI 产品岗准备的 <b>可视化知识页</b>、<b>题库</b>、<b>日常学习指南</b> 和 <b>行业早报</b>。建议从首页按需进入对应模块：面试前看「核心知识 + 题库」，日常学习看「Agent 学习指南」，保持行业敏感度看「AI 早报」。</p>
+      <div class="meta">
+        <span><b>18</b> 大模块</span>
+        <span>·</span>
+        <span><b>55</b> 个知识页</span>
+        <span>·</span>
+        <span><b>4</b> 份每日学习指南</span>
+        <span>·</span>
+        <span><b>8</b> 套分类题库</span>
+        <span>·</span>
+        <span><b>1</b> 份行业早报</span>
+      </div>
+    </div>
+
+    <!-- MODULE 0: 首期专项 -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🎯 首期专项 · 6 面试页</h2>
+        <span class="section-sub" style="margin:0">高频追问补齐：从现有 5 个核心页出发，覆盖面试 6 个最常被追问的主题。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./mcp.html">
+          <h3>MCP <span class="tag accent">新</span></h3>
+          <p>Model Context Protocol — Agent 工具调用的标准化协议。</p>
+          <div class="tagrow">
+            <span class="tag">JSON-RPC</span><span class="tag">Tool</span><span class="tag">Resource</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./memory.html">
+          <h3>Memory <span class="tag accent">新</span></h3>
+          <p>Agent 短期/长期记忆机制，长对话保留用户偏好。</p>
+          <div class="tagrow">
+            <span class="tag">Working</span><span class="tag">Episodic</span><span class="tag">Semantic</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./lora.html">
+          <h3>LoRA <span class="tag accent">新</span></h3>
+          <p>低秩适应 — 用极小参数量微调大模型。</p>
+          <div class="tagrow">
+            <span class="tag">Low-Rank</span><span class="tag">Adapter</span><span class="tag">A·B</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./kv-cache.html">
+          <h3>KV Cache <span class="tag accent">新</span></h3>
+          <p>Transformer 推理加速 — 缓存已计算的 K/V。</p>
+          <div class="tagrow">
+            <span class="tag">Paged</span><span class="tag">MQA</span><span class="tag">Throughput</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./react-cot.html">
+          <h3>ReAct / CoT <span class="tag accent">新</span></h3>
+          <p>推理与行动交织的 Agent 思维范式。</p>
+          <div class="tagrow">
+            <span class="tag">Thought</span><span class="tag">Action</span><span class="tag">Loop</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./multi-agent.html">
+          <h3>Multi-Agent <span class="tag accent">新</span></h3>
+          <p>Multi-Agent 架构 — 用专门子 Agent 分担复杂任务。</p>
+          <div class="tagrow">
+            <span class="tag">Router</span><span class="tag">Supervisor</span><span class="tag">Handoff</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 0.5: 学习资源 -->
+    <div class="section">
+      <div class="section-head">
+        <h2>📖 学习资源 · 7 主题</h2>
+        <span class="section-sub" style="margin:0">深度学习方向：每个主题 1 页讲解稿，覆盖原理 + 工程 + 项目落地 + FAQ。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./rerank.html">
+          <h3>Rerank <span class="tag purple">学</span></h3>
+          <p>Cross-Encoder / ColBERT / LLM Rerank 原理与选型。</p>
+          <div class="tagrow">
+            <span class="tag">Cross-Encoder</span><span class="tag">ColBERT</span><span class="tag">MRR</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./embedding.html">
+          <h3>Embedding <span class="tag purple">学</span></h3>
+          <p>向量化原理、模型选型、稀疏 vs 稠密检索。</p>
+          <div class="tagrow">
+            <span class="tag">BGE</span><span class="tag">M3E</span><span class="tag">Dense</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./llm-cache.html">
+          <h3>API 缓存 <span class="tag purple">学</span></h3>
+          <p>Prompt Cache / KV Cache 复用 / 语义缓存。</p>
+          <div class="tagrow">
+            <span class="tag">Prompt</span><span class="tag">Semantic</span><span class="tag">Hit Rate</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./model-distributed.html">
+          <h3>分布式部署 <span class="tag purple">学</span></h3>
+          <p>vLLM / SGLang / PagedAttention / TP/PP/DP。</p>
+          <div class="tagrow">
+            <span class="tag">vLLM</span><span class="tag">SGLang</span><span class="tag">TPS</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./skill.html">
+          <h3>Skill 机制 <span class="tag purple">学</span></h3>
+          <p>Skill 创建方式（NL / 代码 / hybrid）、与 MCP/Tool 区别。</p>
+          <div class="tagrow">
+            <span class="tag">Skill</span><span class="tag">MCP</span><span class="tag">Hybrid</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./tool-use.html">
+          <h3>Tool Use <span class="tag purple">学</span></h3>
+          <p>Function Calling 原理、JSON Schema、多轮调用。</p>
+          <div class="tagrow">
+            <span class="tag">Function Call</span><span class="tag">JSON</span><span class="tag">Multi-turn</span>
+          </div>
+        </a>
+        <a class="card span-8" href="./llm-tuning.html">
+          <h3>大模型调优 <span class="tag purple">学</span></h3>
+          <p>Prompt 调优、采样参数、结构化输出、推理激活。</p>
+          <div class="tagrow">
+            <span class="tag">Prompt</span><span class="tag">Temperature</span><span class="tag">CoT</span><span class="tag">JSON Mode</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 0.6: 大模型对齐训练（5 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🧪 对齐训练 · 5 主题</h2>
+        <span class="section-sub" style="margin:0">从 RLHF 三阶段到 DPO 家族、GRPO、Constitutional AI、Reward Model 训练：每页 1 个方向，覆盖推导 + 实战 + FAQ。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./rlhf.html">
+          <h3>RLHF <span class="tag purple">训练</span></h3>
+          <p>SFT + Reward Model + PPO 三阶段流水线，4 模型显存结构，Reward Hacking 排查。</p>
+          <div class="tagrow">
+            <span class="tag">SFT</span><span class="tag">Reward</span><span class="tag">PPO</span><span class="tag">KL</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./ppo.html">
+          <h3>PPO <span class="tag purple">策略</span></h3>
+          <p>策略梯度、重要性采样、clip objective、GAE、LLM 上的 4 模型显存成本。</p>
+          <div class="tagrow">
+            <span class="tag">Clip</span><span class="tag">GAE</span><span class="tag">Importance</span><span class="tag">Value</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./grpo.html">
+          <h3>GRPO <span class="tag purple">DeepSeek</span></h3>
+          <p>免 critic 的组内相对优化，砍一半显存，R1 推理涌现的算法基石。</p>
+          <div class="tagrow">
+            <span class="tag">Group</span><span class="tag">No Critic</span><span class="tag">R1</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./dpo-advanced.html">
+          <h3>DPO 进阶 <span class="tag purple">家族</span></h3>
+          <p>DPO 推导 + IPO / KTO / SimPO / ORPO / Iterative DPO 变体对比。</p>
+          <div class="tagrow">
+            <span class="tag">IPO</span><span class="tag">KTO</span><span class="tag">SimPO</span><span class="tag">ORPO</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./reward-model.html">
+          <h3>Reward Model <span class="tag purple">打分</span></h3>
+          <p>Bradley-Terry pairwise loss、Scalar head、6 类 Reward Hacking + 解法。</p>
+          <div class="tagrow">
+            <span class="tag">BT</span><span class="tag">Pairwise</span><span class="tag">Hacking</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./constitutional-ai.html">
+          <h3>Constitutional AI <span class="tag purple">RLAIF</span></h3>
+          <p>Anthropic 宪法自我批评 + AI 反馈，省标注成本 + 可解释 + 双轨制落地。</p>
+          <div class="tagrow">
+            <span class="tag">Constitution</span><span class="tag">Critique</span><span class="tag">RLAIF</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 0.7: Agent 架构与协议（5 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🤖 Agent 架构 · 5 主题</h2>
+        <span class="section-sub" style="margin:0">从 A2A 协议、Multi-Agent 协作、Router、Planner 到 Reflexion / ToT 推理增强：覆盖 Agent 系统设计全链路。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./a2a.html">
+          <h3>A2A 协议 <span class="tag accent">互联</span></h3>
+          <p>Google Agent-to-Agent 协议，Agent Card + JSON-RPC + SSE，与 MCP 互补。</p>
+          <div class="tagrow">
+            <span class="tag">Agent Card</span><span class="tag">JSON-RPC</span><span class="tag">SSE</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./multi-agent.html">
+          <h3>Multi-Agent 架构 <span class="tag accent">合并</span></h3>
+          <p>5 类模式 + 6 类角色 + 3 类通信 + 4 种共识 + 3 框架对比（AutoGen / CrewAI / LangGraph）。</p>
+          <div class="tagrow">
+            <span class="tag">Router</span><span class="tag">Supervisor</span><span class="tag">Debate</span><span class="tag">AutoGen</span><span class="tag">LangGraph</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./router.html">
+          <h3>Router <span class="tag accent">调度</span></h3>
+          <p>3 类路由（规则 / LLM / Embedding）+ Cascade 路由省 60-80% 成本。</p>
+          <div class="tagrow">
+            <span class="tag">Intent</span><span class="tag">Cascade</span><span class="tag">Hybrid</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./planner.html">
+          <h3>Planner <span class="tag accent">规划</span></h3>
+          <p>4 种范式（ReAct / Plan-and-Execute / ReWOO / LLMCompiler）+ 失败回滚 4 策略。</p>
+          <div class="tagrow">
+            <span class="tag">ReAct</span><span class="tag">ReWOO</span><span class="tag">Replan</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./reflexion.html">
+          <h3>Reflexion <span class="tag accent">反思</span></h3>
+          <p>Verbal RL 自我反思 + Episodic Memory 跨 session 试错循环。</p>
+          <div class="tagrow">
+            <span class="tag">Verbal RL</span><span class="tag">Memory</span><span class="tag">Self-Critique</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./tree-of-thoughts.html">
+          <h3>Tree of Thoughts <span class="tag accent">思维树</span></h3>
+          <p>BFS / DFS 思维树 + 评估函数 + 回溯，难题上比 CoT 提升 2-5x。</p>
+          <div class="tagrow">
+            <span class="tag">BFS/DFS</span><span class="tag">Pruning</span><span class="tag">Backtrack</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 0.8: 推理部署与性能（4 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>⚡ 推理部署 · 4 主题</h2>
+        <span class="section-sub" style="margin:0">从 FlashAttention、Speculative Decoding、量化到 PagedAttention：当前推理优化四件套原理 + 实战。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./flash-attention.html">
+          <h3>FlashAttention <span class="tag green">IO</span></h3>
+          <p>IO-aware + tiling + 在线 softmax，O(N) 显存、长序列 4-7x 加速。</p>
+          <div class="tagrow">
+            <span class="tag">HBM/SRAM</span><span class="tag">Tiling</span><span class="tag">FA-2/3</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./paged-attention.html">
+          <h3>PagedAttention <span class="tag green">KV</span></h3>
+          <p>vLLM 虚拟内存分页，碎片 60-80% → &lt;4%，连续批处理 14-24x 吞吐。</p>
+          <div class="tagrow">
+            <span class="tag">Block</span><span class="tag">vLLM</span><span class="tag">Prefix Share</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./speculative-decoding.html">
+          <h3>Speculative Decoding <span class="tag green">加速</span></h3>
+          <p>小模型 draft + 大模型 verify，2-3x 加速且数学保证无损。</p>
+          <div class="tagrow">
+            <span class="tag">Draft</span><span class="tag">Verify</span><span class="tag">α Rate</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./quantization.html">
+          <h3>LLM 量化 <span class="tag green">压缩</span></h3>
+          <p>GPTQ / AWQ / SmoothQuant / GGUF 5 大方案对比，KV 量化 + FP8。</p>
+          <div class="tagrow">
+            <span class="tag">INT4</span><span class="tag">PTQ</span><span class="tag">GGUF</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 0.9: AI 产品 / AI PM（2 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🎨 AI 产品 · 2 主题</h2>
+        <span class="section-sub" style="margin:0">AI PM 视角 + Prompt Engineering 模板化：技术 PM 必备。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-6" href="./ai-pm.html">
+          <h3>AI PM 工作流 <span class="tag orange">PM</span></h3>
+          <p>5 阶段工作流（需求抽象 / SOP / 评估 / 上线 / 迭代）+ 4 类指标 + ROI 测算 + 4 真实踩坑案例。</p>
+          <div class="tagrow">
+            <span class="tag">需求</span><span class="tag">SOP</span><span class="tag">评估</span><span class="tag">ROI</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./prompt-engineering.html">
+          <h3>Prompt Engineering <span class="tag orange">方法</span></h3>
+          <p>5 大技法 + 4 层结构 + Few-shot / CoT 设计 + 模板管理 + A/B 评估。</p>
+          <div class="tagrow">
+            <span class="tag">CoT</span><span class="tag">Few-shot</span><span class="tag">System</span><span class="tag">A/B</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1: 面试核心知识 -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🎯 模块一 · 面试核心知识</h2>
+        <span class="section-sub" style="margin:0">面试前必看。每个页面都是独立讲解稿，包含图示、公式、知识点拆解和面试答法。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./rag.html">
+          <h3>RAG <span class="tag accent">高频</span></h3>
+          <p>检索增强生成完整链路：切片、召回（BM25/Dense/混合）、Rerank、上下文拼装、生成和评估指标。</p>
+          <div class="tagrow">
+            <span class="tag">BM25</span><span class="tag">Dense</span><span class="tag">Rerank</span><span class="tag">Faithfulness</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./transformer.html">
+          <h3>Transformer <span class="tag accent">基础</span></h3>
+          <p>Attention、Multi-Head、KV Cache、RoPE、长上下文、MoE 和复杂度控制。</p>
+          <div class="tagrow">
+            <span class="tag">Attention</span><span class="tag">RoPE</span><span class="tag">KV Cache</span><span class="tag">MoE</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./agent.html">
+          <h3>Agent <span class="tag accent">架构</span></h3>
+          <p>规划、工具调用、记忆、Router、Human-in-the-loop、评估和延迟优化。</p>
+          <div class="tagrow">
+            <span class="tag">MCP</span><span class="tag">Function Call</span><span class="tag">Memory</span><span class="tag">Workflow</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./sft.html">
+          <h3>SFT <span class="tag accent">训练</span></h3>
+          <p>监督微调的训练数据、shift right、Loss Mask、LoRA 冻结层选择和样本质量控制。</p>
+          <div class="tagrow">
+            <span class="tag">Causal LM</span><span class="tag">Shift</span><span class="tag">Mask</span><span class="tag">LoRA</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./dpo.html">
+          <h3>DPO <span class="tag accent">对齐</span></h3>
+          <p>偏好对齐、Reference Model、β、KL 散度、PPO 对比和 Reward Hacking 防范。</p>
+          <div class="tagrow">
+            <span class="tag">Preference</span><span class="tag">KL</span><span class="tag">Beta</span><span class="tag">RLHF</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.1: Reasoning / 推理新范式（1 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🧠 Reasoning · 1 主题</h2>
+        <span class="section-sub" style="margin:0">2025 范式：o1 / R1 / Claude 3.7 Thinking 开启的 Test-Time Compute Scaling 时代。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-12" href="./reasoning-models.html">
+          <h3>Reasoning 模型 <span class="tag purple">2025</span></h3>
+          <p>o1 / o3 / R1 / Claude 3.7 Thinking：内部 CoT + Test-Time Compute Scaling + PRM vs ORM + R1 蒸馏路径。</p>
+          <div class="tagrow">
+            <span class="tag">Internal CoT</span><span class="tag">Test-Time Compute</span><span class="tag">PRM</span><span class="tag">R1-Distill</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.2: 长上下文 / 推理引擎（2 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>⚡ 长上下文 / 推理引擎 · 2 主题</h2>
+        <span class="section-sub" style="margin:0">2025 推理部署新主题：长文本 1M context 实战、5 大推理引擎选型。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-6" href="./long-context.html">
+          <h3>长上下文工程 <span class="tag green">上下文</span></h3>
+          <p>RoPE 插值 / YaRN / LongLoRA / 滑动窗口 / Lost in the Middle / Needle-in-Haystack 评测。</p>
+          <div class="tagrow">
+            <span class="tag">RoPE</span><span class="tag">YaRN</span><span class="tag">LongLoRA</span><span class="tag">NIAH</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./inference-engines.html">
+          <h3>推理引擎对比 <span class="tag green">部署</span></h3>
+          <p>vLLM / SGLang / TensorRT-LLM / LMDeploy / TGI 5 大引擎定位、杀手锏、选型决策树。</p>
+          <div class="tagrow">
+            <span class="tag">PagedAttn</span><span class="tag">RadixAttn</span><span class="tag">TRT-LLM</span><span class="tag">TGI</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.3: Agent 工程 / 安全（3 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🛡️ Agent 工程 / 安全 · 3 主题</h2>
+        <span class="section-sub" style="margin:0">2025 Agent 落地必备：可观测性、Context Engineering、Prompt Injection 防御、Computer Use 浏览器操控。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./agent-observability.html">
+          <h3>Agent 可观测性 <span class="tag accent">可观测</span></h3>
+          <p>LLM Trace 第 4 支柱、LangSmith / Langfuse / Helicone 平台对比、4 类关键监控指标。</p>
+          <div class="tagrow">
+            <span class="tag">LLM Trace</span><span class="tag">OpenLLMetry</span><span class="tag">Eval</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./context-engineering.html">
+          <h3>Context Engineering <span class="tag accent">Anthropic</span></h3>
+          <p>Prompt Engineering 升级版：Instructions + Knowledge + Tools + Examples，5 原则、5 失败模式。</p>
+          <div class="tagrow">
+            <span class="tag">JIT</span><span class="tag">Memory</span><span class="tag">Attribution</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./prompt-injection.html">
+          <h3>Prompt Injection <span class="tag accent">安全</span></h3>
+          <p>OWASP LLM01 风险：直接注入 / 间接注入 / Jailbreak 三大类、5 层 Defense in Depth 防御。</p>
+          <div class="tagrow">
+            <span class="tag">Direct</span><span class="tag">Indirect</span><span class="tag">Defense</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./browser-agent.html">
+          <h3>Browser Agent <span class="tag accent">Computer Use</span></h3>
+          <p>Anthropic Computer Use / OpenAI Operator / browser-use 开源框架、WebArena 评测、沙箱安全。</p>
+          <div class="tagrow">
+            <span class="tag">CUA</span><span class="tag">Playwright</span><span class="tag">Sandbox</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./multi-agent.html">
+          <h3>Multi-Agent 架构 <span class="tag accent">合并</span></h3>
+          <p>5 类模式 + 6 类角色 + 3 类通信 + 4 种共识 + 3 框架对比（AutoGen / CrewAI / LangGraph）。</p>
+          <div class="tagrow">
+            <span class="tag">Router</span><span class="tag">Supervisor</span><span class="tag">AutoGen</span><span class="tag">LangGraph</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.4: 多模态（2 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🖼️ 多模态 · 2 主题</h2>
+        <span class="section-sub" style="margin:0">2025 多模态主线：VLM 视觉语言模型 + 企业 RAG 文档解析。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-6" href="./vlm.html">
+          <h3>VLM 视觉语言模型 <span class="tag green">多模态</span></h3>
+          <p>3 段架构（Vision Encoder + Projector + LLM）+ 3 阶段训练 + 5 大开源模型（LLaVA / Qwen-VL / InternVL）。</p>
+          <div class="tagrow">
+            <span class="tag">CLIP / SigLIP</span><span class="tag">Projector</span><span class="tag">3 阶段</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./document-parsing.html">
+          <h3>文档解析 <span class="tag green">RAG</span></h3>
+          <p>PDF / 表格 / 扫描件 / 公式 4 大挑战、MinerU / PaddleOCR / Unstructured / Marker 选型。</p>
+          <div class="tagrow">
+            <span class="tag">Layout</span><span class="tag">OCR</span><span class="tag">Table</span><span class="tag">Nougat</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.5: 架构与范式（5 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🧬 架构与范式 · 5 主题</h2>
+        <span class="section-sub" style="margin:0">2024-2026 范式主线：Mamba / SSM 线性注意力、MoE 稀疏激活、Distillation 能力压缩、Scaling Law 规模定律。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./mamba-ssm.html">
+          <h3>Mamba / SSM <span class="tag green">新</span></h3>
+          <p>非 Transformer 线性架构：SSM 基础 + Mamba Selective Scan + 5 大家族（RWKV / RetNet / Hyena / xLSTM）+ Jamba / Falcon Mamba 混合架构。</p>
+          <div class="tagrow">
+            <span class="tag">S6 / SSD</span><span class="tag">Linear</span><span class="tag">Jamba</span><span class="tag">ICR 短板</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./moe.html">
+          <h3>MoE 混合专家 <span class="tag orange">新</span></h3>
+          <p>Sparse MoE：Top-K 路由 + 负载均衡（aux loss / 无损均衡）+ 专家并行 + 5 大开源模型（Mixtral / DeepSeek-V3）。</p>
+          <div class="tagrow">
+            <span class="tag">Top-K</span><span class="tag">Balance</span><span class="tag">All-to-All</span><span class="tag">Mixtral</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./distillation.html">
+          <h3>Distillation 蒸馏 <span class="tag purple">新</span></h3>
+          <p>Hinton KD + MiniLLM 逆向 KL + R1-Distill（800K reasoning trace SFT 1.5B 超 o1-mini）。</p>
+          <div class="tagrow">
+            <span class="tag">Logit KD</span><span class="tag">Dark Knowledge</span><span class="tag">Temperature</span><span class="tag">R1-Distill</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./scaling-law.html">
+          <h3>Scaling Law <span class="tag accent">新</span></h3>
+          <p>Kaplan → Chinchilla (20:1) → Compute-Optimal → Test-Time Compute (o1/R1) 四阶段，4 维 Scaling。</p>
+          <div class="tagrow">
+            <span class="tag">Power Law</span><span class="tag">Chinchilla</span><span class="tag">Emergent</span><span class="tag">Test-Time</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./multi-agent.html">
+          <h3>Multi-Agent 架构 <span class="tag accent">合并</span></h3>
+          <p>5 类模式 + 6 类角色 + 3 类通信 + 4 种共识 + 3 框架对比（AutoGen / CrewAI / LangGraph）。</p>
+          <div class="tagrow">
+            <span class="tag">Router</span><span class="tag">Supervisor</span><span class="tag">Debate</span><span class="tag">LangGraph</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.6: 评估体系（1 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>📏 评估体系 · 1 主题</h2>
+        <span class="section-sub" style="margin:0">2024-2026 评估主线：MMLU / GSM8K / HumanEval / Chatbot Arena / SWE-bench + LLM-as-Judge + 评测陷阱。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-12" href="./evaluation.html">
+          <h3>Evaluation 评估 <span class="tag green">新</span></h3>
+          <p>5 大类 Benchmark + 8 大评测陷阱 + LLM-as-Judge 偏置与校准 + 5 阶段评估流水线（离线→内部→A/B→监控→反馈）+ 主流框架（lm-eval-harness / OpenCompass）。</p>
+          <div class="tagrow">
+            <span class="tag">MMLU</span><span class="tag">SWE-bench</span><span class="tag">Chatbot Arena</span><span class="tag">IFEval</span><span class="tag">LLM-as-Judge</span><span class="tag">污染</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 1.7: 工具链生态（8 主题） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🧰 工具链生态 · 8 主题</h2>
+        <span class="section-sub" style="margin:0">2024-2026 LLM 应用开发生态：LangChain 核心框架 + 9 大 LLM 框架对比 + 12 个低代码平台 + 多 Agent 框架 + 推理引擎 + 微调工具 + 评估追踪 + 向量库。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="./langchain.html">
+          <h3>LangChain <span class="tag orange">核心</span></h3>
+          <p>LCEL 管道符 + 6 大抽象（ChatModel/Prompt/Parser/Tool/Retriever/Memory）+ LangGraph 状态机 + LangSmith 可观测。</p>
+          <div class="tagrow">
+            <span class="tag">LCEL</span><span class="tag">Agent</span><span class="tag">RAG</span><span class="tag">LangGraph</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./agent-frameworks.html">
+          <h3>LLM 框架生态 <span class="tag accent">9 框架</span></h3>
+          <p>LangChain / LlamaIndex / Haystack / Semantic Kernel / DSPy / Guidance / LMQL / Outlines / NeMo Guardrails。</p>
+          <div class="tagrow">
+            <span class="tag">LlamaIndex</span><span class="tag">DSPy</span><span class="tag">Semantic Kernel</span><span class="tag">Outlines</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./low-code-platforms.html">
+          <h3>低代码平台 <span class="tag green">12 平台</span></h3>
+          <p>Dify / Coze / FastGPT / RAGFlow / Flowise / Botpress / Voiceflow / MaxKB 私有化与生态对比。</p>
+          <div class="tagrow">
+            <span class="tag">Dify</span><span class="tag">Coze</span><span class="tag">FastGPT</span><span class="tag">RAGFlow</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./multi-agent-frameworks.html">
+          <h3>多 Agent 框架 <span class="tag purple">10 框架</span></h3>
+          <p>AutoGen / CrewAI / MetaGPT / ChatDev / Camel / OpenAgents / TaskWeaver / AutoGPT 生态对比。</p>
+          <div class="tagrow">
+            <span class="tag">AutoGen</span><span class="tag">CrewAI</span><span class="tag">MetaGPT</span><span class="tag">GroupChat</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./inference-tools.html">
+          <h3>推理引擎 <span class="tag accent">12 引擎</span></h3>
+          <p>vLLM / TGI / TensorRT-LLM / Triton / SGLang / LMDeploy + Ollama / LM Studio / LocalAI 本地化。</p>
+          <div class="tagrow">
+            <span class="tag">vLLM</span><span class="tag">TRT-LLM</span><span class="tag">Ollama</span><span class="tag">PagedAttn</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./finetune-tools.html">
+          <h3>微调工具 <span class="tag red">8 工具</span></h3>
+          <p>Axolotl / Unsloth / LLaMA-Factory / Firefly / TRL / Swift + PEFT / bitsandbytes 生态。</p>
+          <div class="tagrow">
+            <span class="tag">Unsloth</span><span class="tag">LLaMA-Factory</span><span class="tag">TRL</span><span class="tag">QLoRA</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./eval-tracing.html">
+          <h3>评估与追踪 <span class="tag orange">11 工具</span></h3>
+          <p>LangSmith / PromptLayer / Helicone / DeepEval / Ragas / TruLens / Guardrails AI / Promptfoo。</p>
+          <div class="tagrow">
+            <span class="tag">LangSmith</span><span class="tag">Ragas</span><span class="tag">DeepEval</span><span class="tag">LLM-as-Judge</span>
+          </div>
+        </a>
+        <a class="card span-4" href="./vector-db.html">
+          <h3>向量数据库 <span class="tag green">10 库</span></h3>
+          <p>Pinecone / Weaviate / Milvus / Qdrant / Chroma / pgvector / Redis / Elasticsearch 选型。</p>
+          <div class="tagrow">
+            <span class="tag">Milvus</span><span class="tag">Qdrant</span><span class="tag">pgvector</span><span class="tag">HNSW</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 2: Agent 学习指南（每日） -->
+    <div class="section">
+      <div class="section-head">
+        <h2>📅 模块二 · Agent 学习指南</h2>
+        <span class="section-sub" style="margin:0">按日组织的深度学习材料，把抽象概念拆成可面试回答的「原理 + 工程 + 追问」结构。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-6" href="./2026-05-26.html">
+          <h3>模型微调与长序列优化 <span class="date">05-26</span></h3>
+          <p>SFT 全流程拆解：数据准备、Loss Masking、训练配置；高质量数据集构建；Scaled Dot-Product Attention 公式与稀疏注意力变体。</p>
+          <div class="tagrow">
+            <span class="tag green">SFT</span><span class="tag green">数据集</span><span class="tag green">Attention</span><span class="tag green">长序列</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./2026-05-27.html">
+          <h3>Agent 决策冲突解决 <span class="date">05-27</span></h3>
+          <p>多 Agent 协作中的三类冲突：设计规范冲突、代码实现冲突、协作冲突；冲突代价、成功指标、解决路径。</p>
+          <div class="tagrow">
+            <span class="tag green">Multi-Agent</span><span class="tag green">冲突</span><span class="tag green">协作</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./2026-05-28.html">
+          <h3>知识库治理：RAG vs 规则系统 <span class="date">05-28</span></h3>
+          <p>知识库三种形态对比：RAG 适用场景、规则系统适用场景、混合架构（最优解）的设计要点。</p>
+          <div class="tagrow">
+            <span class="tag green">RAG</span><span class="tag green">知识库</span><span class="tag green">规则</span><span class="tag green">混合</span>
+          </div>
+        </a>
+        <a class="card span-6" href="./2026-05-29.html">
+          <h3>RLHF 与 DPO 对齐算法 <span class="date">05-29</span></h3>
+          <p>为什么需要对齐、什么时候必须引入 RLHF/DPO、RLHF 三阶段、PPO 目标函数、KL 散度核心作用。</p>
+          <div class="tagrow">
+            <span class="tag green">RLHF</span><span class="tag green">DPO</span><span class="tag green">PPO</span><span class="tag green">KL</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 3: AI 行业早报 -->
+    <div class="section">
+      <div class="section-head">
+        <h2>📰 模块三 · AI 行业早报</h2>
+        <span class="section-sub" style="margin:0">每日精选 AI / 科技 / 金融动态，培养行业敏感度，面试时能聊到最新趋势。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-12" href="./ai-daily-2026-05-29.html">
+          <h3>AI 行业早报 <span class="date">2026-05-29 周四</span></h3>
+          <p>Anthropic H 轮融资 650 亿美元、估值破万亿；月之暗面 B 端客户半年增长 5 倍；微软 Build 大会发布代码专用模型；苹果 WWDC 端侧 AI 布局。每日 4-5 条核心动态 + 商业化启示。</p>
+          <div class="tagrow">
+            <span class="tag orange">融资</span><span class="tag orange">商业化</span><span class="tag orange">Build</span><span class="tag orange">WWDC</span><span class="tag orange">端侧 AI</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE 4: 配套题库 -->
+    <div class="section">
+      <div class="section-head">
+        <h2>📚 模块四 · 配套题库（Markdown）</h2>
+        <span class="section-sub" style="margin:0">按方向整理的题库，每题给可面试回答。配套可视化页面一起使用。</span>
+      </div>
+      <div class="grid">
+        <a class="card span-4" href="../01-大模型基础.md">
+          <h3>01 · 大模型基础</h3>
+          <p>Transformer / Attention / KV Cache / MoE / 长上下文 / 重复生成。</p>
+        </a>
+        <a class="card span-4" href="../02-Agent与RAG.md">
+          <h3>02 · Agent 与 RAG</h3>
+          <p>RAG 全流程、Agent 工具调用、记忆、LangGraph、MCP、评估和延迟优化。</p>
+        </a>
+        <a class="card span-4" href="../03-模型训练与对齐.md">
+          <h3>03 · 模型训练与对齐</h3>
+          <p>SFT / LoRA / PPO / DPO / GRPO / KL / 偏好数据 / Reward / LLM-as-Judge。</p>
+        </a>
+        <a class="card span-4" href="../04-多模态与文档解析.md">
+          <h3>04 · 多模态与文档解析</h3>
+          <p>OCR / MinerU / 图文对齐 / 多模态检索 / 图纸 / 工业文档解析。</p>
+        </a>
+        <a class="card span-4" href="../05-工程基础.md">
+          <h3>05 · 工程基础</h3>
+          <p>Go / MySQL / Redis / MQ / WebSocket / 文件上传 / vLLM / 服务治理。</p>
+        </a>
+        <a class="card span-4" href="../06-手撕算法.md">
+          <h3>06 · 手撕算法</h3>
+          <p>Multi-Head Attention / SFT Loss / 快排 / 第 K 大 / 最大正方形 / 接雨水 / LIS。</p>
+        </a>
+        <a class="card span-4" href="../07-项目深挖与行为题.md">
+          <h3>07 · 项目深挖与行为题</h3>
+          <p>项目拷打 / 业务理解 / 实习经历 / Agent 项目讲述 / 长期实习 / 反问。</p>
+        </a>
+        <a class="card span-4" href="../08-前端AI应用与产品设计.md">
+          <h3>08 · 前端 AI 应用与产品设计</h3>
+          <p>AI 工作流编辑器 / 前端质量监控 / 多模态交互 / WebLLM / 幻觉反馈设计。</p>
+        </a>
+        <a class="card span-4" href="../00-答题规范与公式速查.md">
+          <h3>00 · 答题规范与公式速查</h3>
+          <p>统一答题框架（结论→原理→落地→风险）、公式速查、HTML 折叠卡展示方式。</p>
+        </a>
+        <a class="card span-4" href="../../mianshi.md">
+          <h3>📥 原始面试题入口 <span class="tag">持续更新</span></h3>
+          <p>把新题目粘到根目录 <code>mianshi.md</code>，我会按已有分类合并去重、补答案和相似问法。</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- 学习路径 -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🧭 推荐学习路径</h2>
+        <span class="section-sub" style="margin:0">按场景选择路径，避免一次性看太多。</span>
+      </div>
+      <div class="grid">
+        <div class="path span-4">
+          <h3>路径 A · 面试前 3 天速通（推荐）</h3>
+          <ol>
+            <li>看 <a href="../07-项目深挖与行为题.md">07 项目深挖</a> 确定今天主讲哪 2-3 个项目</li>
+            <li>过 <a href="./agent.html">Agent</a> + <a href="./rag.html">RAG</a> 两个核心图</li>
+            <li>刷 <a href="../02-Agent与RAG.md">02-Agent与RAG</a> 高频追问</li>
+            <li>走一遍 <a href="../06-手撕算法.md">06 手撕算法</a> 模板</li>
+            <li>过 <a href="./mcp.html">MCP</a> + <a href="./memory.html">Memory</a> 两个核心图</li>
+            <li>刷 <a href="./lora.html">LoRA</a> + <a href="./kv-cache.html">KV Cache</a> 原理</li>
+          </ol>
+        </div>
+        <div class="path green span-4">
+          <h3>路径 B · 日常学习（推荐）</h3>
+          <ol>
+            <li>每天看 1 份「Agent 学习指南」（按日期选）</li>
+            <li>读对应方向的 Markdown 题库补答案</li>
+            <li>扫「AI 行业早报」保持行业敏感度</li>
+            <li>有合适题目就粘进 <code>mianshi.md</code></li>
+            <li>看 1 个「面试首期」页（<a href="./multi-agent.html">Multi-Agent</a> 或 <a href="./react-cot.html">ReAct</a>）</li>
+            <li>看 1 个「学习资源」页（<a href="./rerank.html">Rerank</a> 或 <a href="./embedding.html">Embedding</a>）</li>
+          </ol>
+        </div>
+        <div class="path purple span-4">
+          <h3>路径 C · 训练 / 对齐方向深挖</h3>
+          <ol>
+            <li>看 <a href="./sft.html">SFT</a> + <a href="./dpo.html">DPO</a> 两页</li>
+            <li>读 <a href="../03-模型训练与对齐.md">03 训练与对齐</a></li>
+            <li>看 5/26 + 5/29 两份学习指南</li>
+            <li>刷 <a href="../06-手撕算法.md">06 手撕</a> 中的 SFT Loss</li>
+            <li>看 <a href="./lora.html">LoRA</a> 训练方向</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- 统一阅读法 -->
+    <div class="section">
+      <h2>📐 统一阅读法</h2>
+      <p class="section-sub">每页内容按这个层次组织：</p>
+      <table>
+        <thead>
+          <tr><th>层次</th><th>你要说什么</th><th>面试官听到什么</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>结论</td><td>先一句话定义问题和答案。</td><td>你知道这题在问什么。</td></tr>
+          <tr><td>图</td><td>先看流程图，再看模块关系。</td><td>你能把抽象概念画出来。</td></tr>
+          <tr><td>公式</td><td>把关键公式拆成变量解释。</td><td>你不只是背结论，还懂原理。</td></tr>
+          <tr><td>落地</td><td>说项目里怎么用、怎么验证。</td><td>你能把知识转成业务结果。</td></tr>
+          <tr><td>追问</td><td>主动准备 2-3 个常见追问。</td><td>你考虑过边界和 trade-off。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="footer">所有页面为本地静态 HTML，不依赖网络。持续扩充中，欢迎补题。</p>
+  </div>
+</body>
+</html>
