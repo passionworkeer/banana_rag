@@ -12,12 +12,6 @@
 4. [04-source-links.md](04-source-links.md)：GitHub 仓库和官方技术文档链接索引。
 5. [05-enterprise-deep-dive.md](05-enterprise-deep-dive.md)：企业落地深水区，包括 ACL 同步、连接器、治理、评估、部署和成本。
 6. [06-decision-questionnaire.md](06-decision-questionnaire.md)：后续方案设计需要确认的问题清单。
-7. [07-company-context-bananain.md](07-company-context-bananain.md)：结合蕉内当前组织、项目和会议记录提炼出来的公司定制上下文。
-8. [08-supply-chain-qa-ai-employee-mvp.md](08-supply-chain-qa-ai-employee-mvp.md)：供应链 QA AI 员工第一版 MVP 假设方案。
-9. [09-supply-chain-qa-ai-employee-prd.md](09-supply-chain-qa-ai-employee-prd.md)：供应链 QA AI 员工 PRD 草案。
-10. [10-supply-chain-qa-knowledge-structure.md](10-supply-chain-qa-knowledge-structure.md)：供应链 QA 知识结构、资料整理规则和模板。
-11. [11-supply-chain-qa-meeting-brief.md](11-supply-chain-qa-meeting-brief.md)：后续业务沟通提纲和问题清单。
-12. [plans/README.md](plans/README.md)：整体平台拆解后的多份 `plan.md` 执行计划。
 
 核心建议：
 

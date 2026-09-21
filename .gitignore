@@ -1,0 +1,10 @@
+__pycache__/
+.env
+.env.*
+!.env.example
+logs/
+scrapers/taobao-scraper/logs/
+scrapers/taobao-scraper/screenshots/
+knowledge-base/raw/background/
+knowledge-base/raw/tasks/
+wiki_karpathy.zip

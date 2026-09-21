@@ -1,6 +1,6 @@
 # Wiki 索引
 
-`wiki/` 累计已达 30 页,按 vault 维护规则写一次索引(不再追加;后续索引维护由 Obsidian 图谱视图承担)。
+本索引列出通用学习材料与演示页。
 
 ## 按来源目录分组
 
@@ -22,21 +22,11 @@
 - [[08-前端AI应用与产品设计]] — 工作流编辑器 / 质量监控 / WebLLM / 幻觉。
 - [[mianshi]] — 原始面试题汇总(含 2026-06-03 新增 29 题)。
 
-### 面试 HTML 配套(2)
+### 面试 HTML 配套(3)
 
 - [[html-README]] — 面试与学习中心浏览指南。
 - [[2026-06-03-interview-html-expansion-design]] — 13 个新 HTML 知识页设计稿。
 - [[2026-06-03-interview-html-expansion]] — 13 个新 HTML 知识页实施计划。
-
-### 个人材料 docs/(4)
-
-
-### 公司组织与系统(3)
-
-- 原始稿位于 `raw/background/raw/2026-06-aily-system-architecture-raw.md` — 组织架构的飞书 Aily 原始来源。
-
-### 实习任务(8)
-
 
 ## 维护说明
 

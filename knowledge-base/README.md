@@ -24,4 +24,4 @@
 
 ## 与项目其它部分的关系
 
-`knowledge-base/` 是独立 vault,与项目根的 `docs/`(企业 RAG 调研)、`scrapers/`(爬虫归档)、`logs/`(调试日志)互不相关。Obsidian 打开 `knowledge-base/` 时不会看到那些目录。
+`knowledge-base/` 是独立 vault，与项目根的 `docs/`（通用 RAG 调研）、`scrapers/`（爬虫研究）分别组织。Obsidian 打开 `knowledge-base/` 时不会看到那些目录。

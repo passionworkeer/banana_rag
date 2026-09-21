@@ -70,11 +70,11 @@
 
 ## 4. 给本项目（企业 RAG 调研项目）的具体建议
 
-本项目目前已有完整的 Bananain 企业知识库调研（`docs/enterprise-knowledge-base/`），缺的是"个人/小团队"和"熟悉项目"两个轻量场景的实践。建议补充：
+本项目已有通用企业知识库调研（`docs/enterprise-knowledge-base/`），可以继续补充个人、小团队与熟悉项目代码的实践：
 
-1. **加跑一次 LLM Wiki 实验**（半天）：用 Karpathy 工作流对 `docs/enterprise-knowledge-base/` 这 11 篇文档做整理，对比"扔进 Obsidian 让 AI 持续整理"和"扔进向量库做 RAG"的检索体验差异。
+1. **加跑一次 LLM Wiki 实验**（半天）：用 Karpathy 工作流对 `docs/enterprise-knowledge-base/` 这 6 篇文档做整理，对比"扔进 Obsidian 让 AI 持续整理"和"扔进向量库做 RAG"的检索体验差异。
 2. **加跑一次 Graphify 实验**（半天）：用 `/graphify ./scrapers` 分析项目里 3 轮爬虫的代码关系，验证 Graphify 在熟悉陌生代码上的效率提升。
-3. **把方法清单作为决策辅助**：未来 Bananain 的阶段 2-4 推进时，按本文档的阶段路线决定何时引入 GraphRAG / ColPali / 多 Agent。
+3. **把方法清单作为决策辅助**：按实际需求与评估结果决定何时引入 GraphRAG、ColPali 或多 Agent。
 
 ## 5. 决策 checklist
 
@@ -97,4 +97,3 @@
 - [00-rag-methods-overview.md](00-rag-methods-overview.md)：13 个方法总览与对比。
 - `../rag_idea.md`：科普原文。
 - `../enterprise-knowledge-base/README.md`：企业调研索引。
-- `../enterprise-knowledge-base/plans/00-platform-roadmap/plan.md`：企业级落地路线。

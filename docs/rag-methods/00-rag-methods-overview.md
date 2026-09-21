@@ -7,7 +7,7 @@
 本文档综合两处来源：
 
 - `rag_idea.md`：对比 RAG、卡帕西 LLM Wiki、Graphify 的科普型文章。
-- `docs/enterprise-knowledge-base/`：Bananain 企业知识库 RAG 调研（11 篇编号研究 + 7 份子计划）。
+- `docs/enterprise-knowledge-base/`：6 篇通用企业知识库 RAG 调研。
 
 两处来源里的方法去重后一共 13 个，按范式维度列出。
 
