@@ -19,12 +19,14 @@
 ## 抓取工作流
 
 1. `scrapers/taobao-scraper/taobao_scraper.py`(Round 1)→ `data/taobao_bananain_products.{csv,json}`(51 条)
-2. `scrapers/taobao-scraper/taobao_scraper_advanced.py`(Round 2)→ `data/taobao_bananain_products_full.{csv,json}`(1223 条,`source=script`)
+2. `scrapers/taobao-scraper/taobao_scraper_advanced.py`(Round 2)→ `data/taobao_bananain_products_full.{csv,json}`
 3. `scrapers/taobao-scraper/taobao_scraper_round3.py`(Round 3)→ 关键词扩展再写回 `data/taobao_bananain_products_full.*`
 4. `scrapers/taobao-browser-scraper-skill/scripts/merge_and_save.py`→ `data/taobao_bananain_products_browser.*`(1223 条,`source=browser`)
 
 ## 备注
 
+- 当前归档中，Round 1 CSV/JSON 各 51 条，`full.csv` 为 1192 条，`full.json` 与 browser CSV/JSON 各 1223 条；这些文件保留各自采集阶段的记录。
+- 商品链接保留 `id` 与适用的 `skuId`。`full.csv` 中 8 条记录只有广告跟踪跳转地址，`link` 留空，其他字段保留。
 - Python 脚本按各自依赖运行，仓库未统一配置包管理。
 - 重复数据集保留(Round 1 51 条 ⊂ Round 3 1223 条),用文件名区分
 - 脚本内硬编码路径已改为基于 `__file__` 的相对路径,可从 `scrapers/taobao-scraper/` 直接运行
